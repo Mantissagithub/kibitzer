@@ -180,6 +180,34 @@ class KibitzerEngine:
         return index_to_move(idx, current)
 
     @torch.no_grad()
+    def evaluate_at(
+        self, board: chess.Board, temperature: float = 0.0
+    ) -> chess.Move:
+        """Reposition the engine to ``board`` and return a sampled move.
+
+        Wraps the engine as a ``Callable[[chess.Board], chess.Move]`` for use
+        with :func:`kibitzer.match.play_match`. Restores the engine's previous
+        history before returning.
+
+        If ``board`` has a populated ``move_stack``, the engine replays from
+        the root so the causal trunk sees the full game history. If
+        ``move_stack`` is empty (e.g. the board was built directly from a
+        FEN), the engine treats the board as a single-ply history — fine for
+        position analysis, less ideal for mid-game queries.
+        """
+        saved = list(self.history)
+        try:
+            if board.move_stack:
+                self.reset(board.root())
+                for m in board.move_stack:
+                    self.push_move(m)
+            else:
+                self.reset(board)
+            return self.select_move(temperature=temperature)
+        finally:
+            self.history = saved
+
+    @torch.no_grad()
     def get_principal_variation(self, depth: int = 5) -> list[chess.Move]:
         """Greedy rollout: argmax-push for ``depth`` plies (or until game end).
 

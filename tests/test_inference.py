@@ -106,6 +106,21 @@ def test_full_game_loop(engine: KibitzerEngine) -> None:
         engine.push_move(rng.choice(legal))
 
 
+def test_evaluate_at(engine: KibitzerEngine) -> None:
+    _fresh(engine)
+    # Build a board with a few moves on its move_stack.
+    board = chess.Board()
+    for uci in ("e2e4", "e7e5", "g1f3"):
+        board.push(chess.Move.from_uci(uci))
+
+    saved_len = len(engine.history)
+    move = engine.evaluate_at(board)
+    # Returned move must be legal in the queried board.
+    assert move in board.legal_moves
+    # Engine state must be restored.
+    assert len(engine.history) == saved_len
+
+
 def test_principal_variation(engine: KibitzerEngine) -> None:
     _fresh(engine)
     saved_len = len(engine.history)
