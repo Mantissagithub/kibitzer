@@ -1,7 +1,7 @@
 """Round-trip verifier for scripts/uci.py.
 
 Spawns the UCI adapter as a subprocess via python-chess's
-``SimpleEngine.popen_uci``, plays 5 moves against it, and confirms every
+``SimpleEngine.popen_uci``, plays 10 moves against it, and confirms every
 response is well-formed (handshake completes, bestmove is legal in the
 position it was played from).
 
@@ -28,7 +28,7 @@ def main() -> None:
         print(f"engine id: {info}")
 
         board = chess.Board()
-        for ply in range(5):
+        for ply in range(10):
             result = engine.play(board, chess.engine.Limit(time=0.5))
             move = result.move
             assert move is not None, f"ply {ply + 1}: no bestmove returned"
@@ -38,7 +38,7 @@ def main() -> None:
             print(f"ply {ply + 1}: {board.san(move)}")
             board.push(move)
 
-    print("uci_test: all 5 plies returned legal moves.")
+    print("uci_test: all 10 plies returned legal moves.")
 
 
 if __name__ == "__main__":
