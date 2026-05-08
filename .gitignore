@@ -57,3 +57,6 @@ data/
 .env
 .env.*
 !.env.example
+
+# Claude/Anthropic
+.claude/
