@@ -155,13 +155,24 @@ class CausalSelfAttention(nn.Module):
         self.dim = dim
         self.n_heads = n_heads
         self.head_dim = dim // n_heads
+        self.max_seq_len = max_seq_len
 
         self.qkv = nn.Linear(dim, 3 * dim, bias=False)
         self.proj = nn.Linear(dim, dim, bias=False)
 
-        # freqs_cis is recomputable from constants, so don't checkpoint it.
-        freqs_cis = precompute_freqs_cis(self.head_dim, max_seq_len)
-        self.register_buffer("freqs_cis", freqs_cis, persistent=False)
+        # freqs_cis must stay complex64. Storing it as a registered buffer makes
+        # `model.to(torch.bfloat16)` silently downcast it to bf16 (warning:
+        # "Casting complex values to real discards the imaginary part") which
+        # zeros out the rotation. Keep it as a plain attribute and lazily
+        # (re)build it on the input device on first forward.
+        self._freqs_cis: torch.Tensor | None = None
+
+    def _get_freqs_cis(self, device: torch.device) -> torch.Tensor:
+        if self._freqs_cis is None or self._freqs_cis.device != device:
+            self._freqs_cis = precompute_freqs_cis(
+                self.head_dim, self.max_seq_len
+            ).to(device)
+        return self._freqs_cis
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, S, D = x.shape
@@ -170,7 +181,7 @@ class CausalSelfAttention(nn.Module):
         k = k.view(B, S, self.n_heads, self.head_dim).transpose(1, 2)
         v = v.view(B, S, self.n_heads, self.head_dim).transpose(1, 2)
 
-        freqs = self.freqs_cis[:S]
+        freqs = self._get_freqs_cis(x.device)[:S]
         q = apply_rope(q, freqs)
         k = apply_rope(k, freqs)
 
