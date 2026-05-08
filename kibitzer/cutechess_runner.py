@@ -32,7 +32,7 @@ import re
 import shlex
 import shutil
 import subprocess
-from typing import Mapping
+from typing import Callable, Mapping
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,8 @@ def run_match(
     pgn_output: str = "match.pgn",
     concurrency: int = 1,
     cutechess_path: str | None = None,
+    on_progress: Callable[[dict], None] | None = None,
+    on_log: Callable[[str], None] | None = None,
 ) -> dict:
     """Run a cutechess-cli match between engines A and B.
 
@@ -141,14 +143,27 @@ def run_match(
         for raw in proc.stdout:
             line = raw.rstrip("\n")
             logger.info("[cutechess] %s", line)
+            if on_log is not None:
+                on_log(line)
             m = _SCORE_RE.match(line)
             if m:
                 last_score = m
+                if on_progress is not None:
+                    w, l, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                    on_progress({
+                        "wins": w, "losses": l, "draws": d,
+                        "completed": w + l + d,
+                    })
                 continue
             m = _ELO_RE.match(line)
             if m:
                 elo_diff = _safe_float(m.group(1))
                 elo_err = _safe_float(m.group(2))
+                if on_progress is not None:
+                    on_progress({
+                        "elo_diff": elo_diff,
+                        "elo_err": elo_err,
+                    })
     finally:
         rc = proc.wait()
 

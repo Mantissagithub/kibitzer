@@ -7,6 +7,8 @@ dependencies = [
     "torch",
     "python-chess",
     "numpy",
+    "chess>=1.11.2",
+    "rich>=13.0",
 ]
 
 [project.optional-dependencies]

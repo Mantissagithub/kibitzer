@@ -1,166 +1,113 @@
-"""Checkpoint evaluation: run a saved Kibitzer state-dict against a baseline.
+"""Evaluate a Kibitzer checkpoint against a baseline via cutechess-cli.
 
-Wraps :func:`kibitzer.match.play_match` with a fixed list of standard opening
-positions (:data:`STARTING_FENS`) so different checkpoints are compared on the
-same starts. Returns a small scorecard dict suitable for both human eyeballs
-and machine consumption (logging to TensorBoard, JSON dumps, SPRT triggers).
+Thin wrapper around :func:`kibitzer.cutechess_runner.run_match` that picks
+the right A/B engine commands for a checkpoint-vs-Stockfish or
+checkpoint-vs-prev-checkpoint match and returns a flat scorecard.
+
+Both Kibitzer instances are spawned via ``scripts/uci.py``; the checkpoint
+path is passed to each as a UCI ``Checkpoint`` option (lazy-loaded on the
+engine's first ``isready``).
+
+Example
+-------
+    from kibitzer.eval import evaluate_checkpoint
+
+    result = evaluate_checkpoint(
+        "runs/best.pt", opponent="stockfish-3", n_games=20
+    )
+    # result["score"], result["elo_diff"], result["pgn_path"], ...
 """
 
 from __future__ import annotations
 
-import math
 import os
-from typing import Literal
+import shlex
+import sys
+from pathlib import Path
+from typing import Callable, Literal
 
-import chess
-import torch
-
-from kibitzer.inference import KibitzerEngine
-from kibitzer.match import play_match
-from kibitzer.model import Kibitzer
-from kibitzer.opponents import RandomOpponent, StockfishOpponent
+from kibitzer.cutechess_runner import run_match
 
 
-def _build_fens() -> list[str]:
-    sequences: list[list[str]] = [
-        [],                                                                 # startpos
-        ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4"],                          # Italian
-        ["e2e4", "c7c5"],                                                   # Sicilian
-        ["e2e4", "e7e6"],                                                   # French
-        ["d2d4", "d7d5", "c2c4", "e7e6"],                                   # QGD
-        ["d2d4", "g8f6", "c2c4", "g7g6", "b1c3", "f8g7"],                   # KID
-    ]
-    fens: list[str] = []
-    for seq in sequences:
-        b = chess.Board()
-        for uci in seq:
-            b.push_uci(uci)
-        fens.append(b.fen())
-    return fens
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_UCI_SCRIPT = _REPO_ROOT / "scripts" / "uci.py"
+_KIBITZER_CMD = shlex.join([sys.executable, str(_UCI_SCRIPT)])
 
-
-STARTING_FENS: list[str] = _build_fens()
-
-
-def _load_model(path: str, device: str) -> Kibitzer:
-    model = Kibitzer()
-    ckpt = torch.load(path, map_location=device, weights_only=False)
-    for key in (None, "model", "state_dict"):
-        sd = ckpt if key is None else ckpt.get(key)
-        if sd is None:
-            continue
-        try:
-            model.load_state_dict(sd)
-            return model
-        except (TypeError, RuntimeError):
-            continue
-    raise RuntimeError(
-        f"checkpoint at {path} did not match any known shape "
-        "(raw state_dict / dict['model'] / dict['state_dict'])"
-    )
-
-
-class _TrackingOpponent:
-    """Greedy Kibitzer wrapper that records ``|value|`` at every move."""
-
-    def __init__(self, engine: KibitzerEngine) -> None:
-        self.engine = engine
-        self.abs_values: list[float] = []
-
-    def __call__(self, board: chess.Board) -> chess.Move:
-        saved = list(self.engine.history)
-        try:
-            if board.move_stack:
-                self.engine.reset(board.root())
-                for m in board.move_stack:
-                    self.engine.push_move(m)
-            else:
-                self.engine.reset(board)
-            out = self.engine.evaluate()
-            self.abs_values.append(abs(out["value"]))
-            return out["move_probs"][0][0]
-        finally:
-            self.engine.history = saved
+OpponentName = Literal[
+    "stockfish-0", "stockfish-3", "stockfish-5", "stockfish-10", "self-vs-prev"
+]
+_VALID_OPPONENTS = {
+    "stockfish-0", "stockfish-3", "stockfish-5", "stockfish-10", "self-vs-prev"
+}
 
 
 def evaluate_checkpoint(
     checkpoint_path: str,
-    opponent: Literal["random", "stockfish"] = "random",
-    stockfish_skill: int = 0,
-    stockfish_depth: int = 1,
+    opponent: OpponentName = "stockfish-0",
+    prev_checkpoint: str | None = None,
     n_games: int = 20,
-    device: str = "cuda",
-    max_plies: int = 300,
-    verbose: bool = False,
+    time_per_move_ms: int = 200,
+    stockfish_path: str = "stockfish",
+    cutechess_path: str = "cutechess-cli",
+    on_progress: Callable[[dict], None] | None = None,
 ) -> dict:
-    """Score a checkpoint against the chosen baseline; return a summary dict.
+    """Run a cutechess match and return a flat scorecard.
 
-    The Kibitzer side plays greedy (temperature=0) for reproducibility. Games
-    cycle through :data:`STARTING_FENS` and swap colors every other game.
+    ``opponent`` selects the B side:
+        ``stockfish-N`` — Stockfish at ``Skill Level=N``.
+        ``self-vs-prev`` — Kibitzer at ``prev_checkpoint`` (required).
     """
-    if device == "cuda" and not torch.cuda.is_available():
-        device = "cpu"
-    dtype = torch.bfloat16 if device == "cuda" else torch.float32
-
-    model = _load_model(checkpoint_path, device)
-    engine = KibitzerEngine(model, device=device, dtype=dtype)
-    tracker = _TrackingOpponent(engine)
-
-    if opponent == "random":
-        baseline = RandomOpponent(seed=0)
-        baseline_desc = "random"
-        result = play_match(
-            tracker,
-            baseline,
-            n_games=n_games,
-            max_plies=max_plies,
-            starting_fens=STARTING_FENS,
-            swap_colors=True,
-            verbose=verbose,
+    if opponent not in _VALID_OPPONENTS:
+        raise ValueError(
+            f"unknown opponent: {opponent!r}; "
+            f"expected one of {sorted(_VALID_OPPONENTS)}"
         )
-    elif opponent == "stockfish":
-        baseline_desc = f"stockfish (skill={stockfish_skill}, depth={stockfish_depth})"
-        with StockfishOpponent(
-            depth=stockfish_depth, skill_level=stockfish_skill
-        ) as sf:
-            result = play_match(
-                tracker,
-                sf,
-                n_games=n_games,
-                max_plies=max_plies,
-                starting_fens=STARTING_FENS,
-                swap_colors=True,
-                verbose=verbose,
+
+    a_cmd = _KIBITZER_CMD
+    a_options: dict[str, str] = {"Checkpoint": checkpoint_path}
+
+    if opponent == "self-vs-prev":
+        if not prev_checkpoint:
+            raise ValueError(
+                "opponent='self-vs-prev' requires prev_checkpoint"
             )
+        b_cmd = _KIBITZER_CMD
+        b_options: dict[str, str] = {"Checkpoint": prev_checkpoint}
     else:
-        raise ValueError(f"unknown opponent: {opponent!r}")
+        skill = int(opponent.split("-", 1)[1])
+        b_cmd = stockfish_path
+        b_options = {"Skill Level": str(skill)}
 
-    wins = result["wins_a"]
-    losses = result["wins_b"]
-    draws = result["draws"]
+    pgn_path = f"{Path(checkpoint_path).stem}_vs_{opponent}.pgn"
 
-    win_rate = (wins + 0.5 * draws) / n_games if n_games else 0.0
-    wr_clamped = max(0.001, min(0.999, win_rate))
-    approx_elo_diff = 400.0 * math.log10(wr_clamped / (1.0 - wr_clamped))
-
-    avg_plies = (
-        sum(g["plies"] for g in result["games"]) / n_games if n_games else 0.0
+    raw = run_match(
+        engine_a_cmd=a_cmd,
+        engine_b_cmd=b_cmd,
+        engine_a_options=a_options,
+        engine_b_options=b_options,
+        n_games=n_games,
+        time_per_move_ms=time_per_move_ms,
+        pgn_output=pgn_path,
+        cutechess_path=cutechess_path,
+        on_progress=on_progress,
     )
-    avg_value_pred = (
-        sum(tracker.abs_values) / len(tracker.abs_values)
-        if tracker.abs_values
-        else 0.0
-    )
+
+    wins = raw["wins"]
+    losses = raw["losses"]
+    draws = raw["draws"]
+    score = wins + 0.5 * draws
+    win_rate = score / n_games if n_games else 0.0
 
     return {
         "checkpoint": os.path.abspath(checkpoint_path),
-        "opponent": baseline_desc,
+        "opponent": opponent,
         "n_games": n_games,
         "wins": wins,
         "losses": losses,
         "draws": draws,
+        "score": score,
         "win_rate": win_rate,
-        "approx_elo_diff": approx_elo_diff,
-        "avg_plies": avg_plies,
-        "avg_value_pred": avg_value_pred,
+        "elo_diff": raw["elo_diff"],
+        "elo_err": raw["elo_err"],
+        "pgn_path": raw["pgn_path"],
     }

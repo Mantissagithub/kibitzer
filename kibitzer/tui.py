@@ -1,0 +1,343 @@
+"""Shared rich-based TUI helpers for Kibitzer's user-facing scripts.
+
+Single console, single theme, a handful of renderables. Scripts decide via
+:func:`is_tty` whether to use the TUI path or a plain-print fallback so
+piped/automated invocations stay clean.
+
+Future training code should plug into the same primitives (live loss panels,
+eval bars during cutechess gauntlets) — that's why this module is in the
+package, not under ``scripts/``.
+"""
+
+from __future__ import annotations
+
+import sys
+from dataclasses import dataclass, field
+from typing import Iterable
+
+import chess
+from rich.align import Align
+from rich.console import Console, Group, RenderableType
+from rich.panel import Panel
+from rich.progress_bar import ProgressBar
+from rich.table import Table
+from rich.text import Text
+from rich.theme import Theme
+
+
+THEME = Theme(
+    {
+        "header": "bold cyan",
+        "accent": "bold magenta",
+        "success": "bold green",
+        "warning": "yellow",
+        "error": "bold red",
+        "dim": "grey50",
+        "muted": "grey62",
+        "board.light": "on grey78",
+        "board.dark": "on grey42",
+        "board.white_piece": "bright_white",
+        "board.black_piece": "black",
+        "board.highlight_light": "on yellow1",
+        "board.highlight_dark": "on dark_orange3",
+        "value.white": "bold green",
+        "value.black": "bold red",
+    }
+)
+
+console = Console(theme=THEME, highlight=False)
+
+
+_PIECE_GLYPH = {
+    "K": "♔", "Q": "♕", "R": "♖", "B": "♗", "N": "♘", "P": "♙",
+    "k": "♚", "q": "♛", "r": "♜", "b": "♝", "n": "♞", "p": "♟",
+}
+
+
+def is_tty() -> bool:
+    """True when stdout is a real terminal (so we can draw a TUI)."""
+    return sys.stdout.isatty()
+
+
+def header(title: str, subtitle: str | None = None) -> Panel:
+    body = Text(title, style="header")
+    if subtitle:
+        body.append("\n")
+        body.append(subtitle, style="muted")
+    return Panel(Align.center(body), border_style="header", padding=(0, 2))
+
+
+def board_panel(
+    board: chess.Board,
+    last_move: chess.Move | None = None,
+    perspective: chess.Color = chess.WHITE,
+    title: str | None = None,
+) -> Panel:
+    """Render a chess board with file/rank labels and last-move highlight."""
+    grid = Table.grid(padding=0, collapse_padding=True)
+    for _ in range(9):
+        grid.add_column(no_wrap=True)
+
+    files = "abcdefgh"
+    ranks = range(7, -1, -1) if perspective == chess.WHITE else range(0, 8)
+    file_order = range(0, 8) if perspective == chess.WHITE else range(7, -1, -1)
+
+    file_header = [Text("  ", style="dim")]
+    for f in file_order:
+        file_header.append(Text(f" {files[f]} ", style="dim"))
+    grid.add_row(*file_header)
+
+    highlights = set()
+    if last_move is not None:
+        highlights = {last_move.from_square, last_move.to_square}
+    check_sq = board.king(board.turn) if board.is_check() else None
+
+    for rank in ranks:
+        row = [Text(f" {rank + 1} ", style="dim")]
+        for f in file_order:
+            sq = chess.square(f, rank)
+            piece = board.piece_at(sq)
+            light_sq = (chess.square_file(sq) + chess.square_rank(sq)) % 2 == 1
+
+            if sq in highlights:
+                bg = "board.highlight_light" if light_sq else "board.highlight_dark"
+            else:
+                bg = "board.light" if light_sq else "board.dark"
+
+            if piece is None:
+                cell = Text("   ", style=bg)
+            else:
+                glyph = _PIECE_GLYPH[piece.symbol()]
+                fg = "board.white_piece" if piece.color == chess.WHITE else "board.black_piece"
+                style = f"{bg} {fg}"
+                if sq == check_sq:
+                    style = f"on red {fg}"
+                cell = Text(f" {glyph} ", style=style)
+            row.append(cell)
+        grid.add_row(*row)
+
+    return Panel(
+        Align.center(grid),
+        title=title or board.fen().split()[0],
+        title_align="left",
+        border_style="muted",
+        padding=(0, 1),
+    )
+
+
+def _value_bar(value: float, width: int = 24) -> Text:
+    """Horizontal bar from -1 (black) to +1 (white) with a marker at value."""
+    value = max(-1.0, min(1.0, value))
+    half = width // 2
+    text = Text()
+    pos = int(round((value + 1) * (width - 1) / 2))
+    for i in range(width):
+        if i == pos:
+            text.append("█", style="value.white" if value >= 0 else "value.black")
+        elif i < half:
+            text.append("░", style="value.black")
+        elif i > half:
+            text.append("░", style="value.white")
+        else:
+            text.append("│", style="dim")
+    return text
+
+
+def eval_panel(
+    value: float,
+    top_moves: list[tuple[chess.Move, float]],
+    board: chess.Board,
+    title: str = "engine",
+) -> Panel:
+    bar = _value_bar(value)
+    val_line = Text()
+    val_line.append("value ", style="muted")
+    sign_style = "value.white" if value >= 0 else "value.black"
+    val_line.append(f"{value:+.3f}  ", style=sign_style)
+    val_line.append(bar)
+
+    moves_table = Table.grid(padding=(0, 1))
+    moves_table.add_column(style="accent", no_wrap=True)
+    moves_table.add_column(no_wrap=True)
+    moves_table.add_column(style="muted", no_wrap=True)
+    for mv, prob in top_moves[:3]:
+        san = board.san(mv)
+        bar_w = 18
+        filled = int(round(prob * bar_w))
+        bar_text = Text("█" * filled, style="success") + Text(
+            "░" * (bar_w - filled), style="dim"
+        )
+        moves_table.add_row(san, bar_text, f"{prob * 100:5.1f}%")
+
+    return Panel(
+        Group(val_line, Text(""), moves_table),
+        title=title,
+        title_align="left",
+        border_style="accent",
+        padding=(0, 1),
+    )
+
+
+def move_history(board: chess.Board, max_pairs: int = 12) -> Panel:
+    """Last ``max_pairs`` move-pairs in PGN-like SAN."""
+    moves = list(board.move_stack)
+    replay = chess.Board()
+    pairs: list[tuple[str, str]] = []
+    current_pair: list[str] = []
+    for mv in moves:
+        san = replay.san(mv)
+        replay.push(mv)
+        current_pair.append(san)
+        if len(current_pair) == 2:
+            pairs.append((current_pair[0], current_pair[1]))
+            current_pair = []
+    if current_pair:
+        pairs.append((current_pair[0], ""))
+
+    visible = pairs[-max_pairs:]
+    start_num = len(pairs) - len(visible) + 1
+
+    table = Table.grid(padding=(0, 1))
+    table.add_column(style="dim", no_wrap=True, justify="right")
+    table.add_column(no_wrap=True)
+    table.add_column(no_wrap=True)
+    for i, (w, b) in enumerate(visible):
+        table.add_row(f"{start_num + i}.", w, b)
+
+    return Panel(
+        table or Text("(no moves yet)", style="dim"),
+        title="moves",
+        title_align="left",
+        border_style="muted",
+        padding=(0, 1),
+    )
+
+
+@dataclass
+class MatchState:
+    n_games: int
+    label_a: str = "A"
+    label_b: str = "B"
+    wins: int = 0
+    losses: int = 0
+    draws: int = 0
+    elo_diff: float = 0.0
+    elo_err: float = 0.0
+    completed_results: list[str] = field(default_factory=list)  # 'W'/'L'/'D'
+    log_tail: list[str] = field(default_factory=list)
+
+    @property
+    def completed(self) -> int:
+        return self.wins + self.losses + self.draws
+
+    def update(self, w: int, l: int, d: int) -> None:
+        prev_total = self.completed
+        self.wins, self.losses, self.draws = w, l, d
+        new_total = self.completed
+        if new_total <= prev_total:
+            return
+        # Append new results in best-effort order: pad with current totals.
+        delta = new_total - prev_total
+        # We can't tell *which* result was added here; the runner emits a
+        # cumulative score line, so just push 'W'/'L'/'D' based on which
+        # counter advanced (taking the first that grew).
+        for _ in range(delta):
+            if w > self.completed_results.count("W"):
+                self.completed_results.append("W")
+            elif l > self.completed_results.count("L"):
+                self.completed_results.append("L")
+            else:
+                self.completed_results.append("D")
+
+
+def match_progress(state: MatchState) -> RenderableType:
+    """Live-display body for an in-progress cutechess match."""
+    bar = ProgressBar(total=state.n_games, completed=state.completed, width=40)
+
+    counts = Table.grid(padding=(0, 2))
+    counts.add_column()
+    counts.add_column()
+    counts.add_column()
+    counts.add_row(
+        Text(f" W {state.wins} ", style="success on grey15"),
+        Text(f" L {state.losses} ", style="error on grey15"),
+        Text(f" D {state.draws} ", style="warning on grey15"),
+    )
+
+    elo_line = Text()
+    elo_line.append(f"{state.label_a} vs {state.label_b}    ", style="muted")
+    elo_line.append("Elo Δ ", style="muted")
+    if state.completed and state.elo_err == state.elo_err:  # not nan
+        elo_line.append(f"{state.elo_diff:+.1f}", style="accent")
+        elo_line.append(f" ± {state.elo_err:.1f}", style="muted")
+    else:
+        elo_line.append("(pending)", style="dim")
+
+    strip = Text()
+    for r in state.completed_results[-state.n_games:]:
+        if r == "W":
+            strip.append("■ ", style="success")
+        elif r == "L":
+            strip.append("■ ", style="error")
+        else:
+            strip.append("■ ", style="warning")
+
+    body = Group(
+        elo_line,
+        Text(""),
+        bar,
+        Text(""),
+        counts,
+        Text(""),
+        strip if strip else Text(""),
+    )
+    return Panel(body, title="match", title_align="left", border_style="header", padding=(1, 2))
+
+
+def tail_log(lines: Iterable[str], max_lines: int = 6) -> Panel:
+    snapshot = list(lines)[-max_lines:]
+    body = Text("\n".join(snapshot) if snapshot else "(no output yet)", style="dim")
+    return Panel(body, title="cutechess", title_align="left", border_style="muted", padding=(0, 1))
+
+
+def result_table(result: dict) -> Panel:
+    """Final scorecard panel for run_match / evaluate_checkpoint."""
+    table = Table.grid(padding=(0, 2))
+    table.add_column(style="muted", justify="right")
+    table.add_column(style="accent")
+
+    def _row(k: str, v: str) -> None:
+        table.add_row(k, v)
+
+    if "checkpoint" in result:
+        _row("checkpoint", str(result["checkpoint"]))
+    if "opponent" in result:
+        _row("opponent", str(result["opponent"]))
+    _row("games", str(result.get("n_games", result["wins"] + result["losses"] + result["draws"])))
+    score_line = Text()
+    score_line.append(f"{result['wins']}", style="success")
+    score_line.append(" - ", style="dim")
+    score_line.append(f"{result['losses']}", style="error")
+    score_line.append(" - ", style="dim")
+    score_line.append(f"{result['draws']}", style="warning")
+    table.add_row("W-L-D", score_line)
+    if "score" in result:
+        _row("score", f"{result['score']:.1f}")
+    if "win_rate" in result:
+        _row("win rate", f"{result['win_rate'] * 100:.1f}%")
+    elo = result.get("elo_diff", 0.0)
+    err = result.get("elo_err", 0.0)
+    if err == err:  # not nan
+        _row("Elo Δ", f"{elo:+.1f} ± {err:.1f}")
+    else:
+        _row("Elo Δ", f"{elo:+.1f} (err n/a)")
+    if "pgn_path" in result:
+        _row("pgn", result["pgn_path"])
+
+    return Panel(
+        table,
+        title="result",
+        title_align="left",
+        border_style="success",
+        padding=(1, 2),
+    )

@@ -49,16 +49,17 @@ def test_higher_skill_wins_more(tmp_path) -> None:
         engine_a_cmd="stockfish",
         engine_b_cmd="stockfish",
         engine_a_options={"Skill Level": "0"},
-        engine_b_options={"Skill Level": "5"},
+        engine_b_options={"Skill Level": "20"},
         n_games=2,
-        time_per_move_ms=100,
+        time_per_move_ms=500,
         pgn_output=str(pgn),
     )
 
+    # Stockfish "Skill Level" only differentiates with real thinking time and
+    # a wide gap; skill 0 vs 20 at 500ms/move is enough for skill 20 to win
+    # both games via -repeat (one with each color).
     assert result["wins"] + result["losses"] + result["draws"] == 2
     assert pgn.exists()
-    # A is the weaker engine (skill 0); over 2 games it should not win more
-    # often than it loses. Forgiving form so a 1-1 split or a sweep both pass.
     assert result["losses"] >= result["wins"], (
         f"expected weaker engine to lose at least as often as it wins: {result}"
     )
