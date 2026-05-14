@@ -16,19 +16,25 @@ def test_render_hf_readme_includes_pending_checkpoint_fields() -> None:
     assert "`step`: `002000`" in text
     assert "`elo_rating`: pending/unrated" in text
     assert "https://github.com/Mantissagithub/kibitzer" in text
-    assert "Policy head over 4,672 AlphaZero-style moves" in text
+    assert "policy head over 4,672 AlphaZero-style moves" in text
+    assert "Position encoder: bidirectional square-level transformer" in text
 
 
 def test_render_hf_readme_includes_rated_eval_fields() -> None:
     text = render_hf_readme(
-        repo_id="Pradheep1647/kibitzer-sft-elo-plus-0032-step-002000",
+        repo_id="Pradheep1647/kibitzer-sft-elo-1352-step-002000",
         checkpoint_name="step_002000.pt",
         step=2000,
         elo=32.4,
+        opponent="stockfish-elo-1320",
         post_eval={"n_games": 20, "score": 11.5, "elo_err": 42.1},
     )
 
-    assert "`elo_rating`: +32.4 vs configured Stockfish baseline" in text
+    assert "`elo_rating`: 1352 estimated vs stockfish-elo-1320 (+32.4 Elo diff)" in text
+    assert "`eval_opponent`: `stockfish-elo-1320`" in text
+    assert "`elo_diff`: 32.4" in text
     assert "`eval_games`: 20" in text
     assert "`eval_score`: 11.50" in text
     assert "`elo_error`: 42.1" in text
+    assert "Timeline trunk: causal transformer" in text
+    assert "RoPE on causal Q/K attention" in text

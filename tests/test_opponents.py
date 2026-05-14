@@ -64,3 +64,8 @@ def test_stockfish_rejects_both_limits() -> None:
 def test_stockfish_rejects_no_limit() -> None:
     with pytest.raises(ValueError, match="exactly one"):
         StockfishOpponent()
+
+
+def test_stockfish_rejects_out_of_range_uci_elo() -> None:
+    with pytest.raises(ValueError, match="uci_elo"):
+        StockfishOpponent(depth=1, uci_elo=1000)

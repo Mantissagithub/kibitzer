@@ -4,8 +4,8 @@ examples:
     # random-init kibitzer vs random opponent — sanity check the harness:
     uv run python scripts/play_match.py --opponent random --n-games 4
 
-    # trained kibitzer vs stockfish skill 0, depth 1, 20 games:
-    uv run python scripts/play_match.py         --checkpoint runs/best.pt         --opponent stockfish --skill 0 --depth 1 --n-games 20 --verbose
+    # trained kibitzer vs rated-limited stockfish, depth 1, 20 games:
+    uv run python scripts/play_match.py         --checkpoint runs/best.pt         --opponent stockfish --stockfish-elo 1320 --depth 1 --n-games 20 --verbose
 
     # stockfish at fixed time per move:
     uv run python scripts/play_match.py         --opponent stockfish --time-ms 100 --n-games 10
@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--temp", type=float, default=0.0)
     p.add_argument("--opponent", required=True, choices=["random", "stockfish"])
     p.add_argument("--stockfish-path", default=None)
-    p.add_argument("--skill", type=int, default=None)
+    p.add_argument("--stockfish-elo", type=int, default=None)
     p.add_argument("--depth", type=int, default=None)
     p.add_argument("--time-ms", type=int, default=None)
     p.add_argument("--n-games", type=int, default=10)
@@ -122,7 +122,7 @@ def main() -> None:
             path=args.stockfish_path,
             depth=args.depth,
             time_ms=args.time_ms,
-            skill_level=args.skill,
+            uci_elo=args.stockfish_elo,
         ) as sf:
             result = play_match(
                 kib_op,
@@ -132,13 +132,13 @@ def main() -> None:
                 swap_colors=swap,
                 verbose=args.verbose,
             )
-        skill_str = (
-            f" skill={args.skill}" if args.skill is not None else ""
+        elo_str = (
+            f" uci_elo={args.stockfish_elo}" if args.stockfish_elo is not None else ""
         )
         limit_str = (
             f"depth={args.depth}" if args.depth is not None else f"time={args.time_ms}ms"
         )
-        print_results(f"stockfish ({limit_str}{skill_str})", args.n_games, result)
+        print_results(f"stockfish ({limit_str}{elo_str})", args.n_games, result)
 
 
 if __name__ == "__main__":

@@ -1,11 +1,11 @@
 """run a cutechess-cli match between kibitzer and a baseline (rich tui).
 
 examples:
-    # kibitzer vs stockfish at skill 0, fast time control:
-    uv run python scripts/run_match.py         --checkpoint runs/best.pt --vs-random-stockfish         --n-games 20 --time-per-move-ms 200
+    # kibitzer vs rated-limited Stockfish, fast time control:
+    uv run python scripts/run_match.py         --checkpoint runs/best.pt --vs-stockfish-elo 1320         --n-games 20 --time-per-move-ms 200
 
-    # kibitzer vs stockfish at a specific skill level:
-    uv run python scripts/run_match.py         --checkpoint runs/best.pt --vs-stockfish-skill 5         --n-games 40 --tc 40/60+0.6 --concurrency 2
+    # kibitzer vs full-strength Stockfish:
+    uv run python scripts/run_match.py         --checkpoint runs/best.pt --vs-stockfish-full         --n-games 40 --tc 40/60+0.6 --concurrency 2
 
     # plain output (no tty decoration), e.g. for piping into a log file:
     uv run python scripts/run_match.py ... --no-tui
@@ -39,10 +39,10 @@ def parse_args() -> argparse.Namespace:
                    help="A's Temperature option (UCI string)")
 
     presets = p.add_mutually_exclusive_group()
-    presets.add_argument("--vs-random-stockfish", action="store_true",
-                         help="set B to stockfish at Skill Level 0")
-    presets.add_argument("--vs-stockfish-skill", type=int, default=None, metavar="N",
-                         help="set B to stockfish at Skill Level N (0-20)")
+    presets.add_argument("--vs-stockfish-elo", type=int, default=None, metavar="ELO",
+                         help="set B to stockfish with UCI_LimitStrength=true and UCI_Elo=ELO")
+    presets.add_argument("--vs-stockfish-full", action="store_true",
+                         help="set B to stockfish with no strength-limiting options")
 
     p.add_argument("--n-games", type=int, default=20)
     p.add_argument("--time-per-move-ms", type=int, default=1000)
@@ -77,12 +77,12 @@ def _build_options(args: argparse.Namespace) -> tuple[str, dict[str, str], dict[
 
     b_cmd = args.engine_b
     b_options: dict[str, str] = {}
-    if args.vs_random_stockfish:
+    if args.vs_stockfish_elo is not None:
         b_cmd = b_cmd or "stockfish"
-        b_options["Skill Level"] = "0"
-    elif args.vs_stockfish_skill is not None:
+        b_options["UCI_LimitStrength"] = "true"
+        b_options["UCI_Elo"] = str(args.vs_stockfish_elo)
+    elif args.vs_stockfish_full:
         b_cmd = b_cmd or "stockfish"
-        b_options["Skill Level"] = str(args.vs_stockfish_skill)
     elif b_cmd is None:
         b_cmd = "stockfish"
 

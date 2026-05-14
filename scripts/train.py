@@ -67,7 +67,7 @@ class TrainConfig:
     log_every: int = 20
     eval_every: int = 2000
     eval_n_games: int = 10
-    eval_opponent: str = "stockfish-0"
+    eval_opponent: str = "stockfish-elo-1320"
     eval_time_per_move_ms: int = 200
     checkpoint_every: int = 5000
     checkpoint_dir: str = "runs"
@@ -324,6 +324,7 @@ def _push_checkpoint_to_hf(
         config=metadata["config"],
         metrics=metrics,
         elo=elo,
+        opponent=cfg.eval_opponent,
     ))
     try:
         api = HfApi(token=hf.token)

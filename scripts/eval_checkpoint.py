@@ -1,8 +1,8 @@
 """evaluate a kibitzer checkpoint via cutechess-cli (rich tui).
 
 examples:
-    # vs stockfish at skill 3:
-    uv run python scripts/eval_checkpoint.py         --checkpoint runs/best.pt --opponent stockfish-3         --n-games 20 --output runs/best.eval.json
+    # vs rated-limited Stockfish:
+    uv run python scripts/eval_checkpoint.py         --checkpoint runs/best.pt --opponent stockfish-elo-1320         --n-games 20 --output runs/best.eval.json
 
     # new vs previous checkpoint:
     uv run python scripts/eval_checkpoint.py         --checkpoint runs/v3.pt --opponent self-vs-prev         --prev-checkpoint runs/v2.pt --n-games 40
@@ -26,10 +26,10 @@ from kibitzer import tui
 
 
 OPPONENTS = [
-    "stockfish-0",
-    "stockfish-3",
-    "stockfish-5",
-    "stockfish-10",
+    "stockfish-elo-1320",
+    "stockfish-elo-1500",
+    "stockfish-elo-1800",
+    "stockfish-full",
     "self-vs-prev",
 ]
 
@@ -37,13 +37,15 @@ OPPONENTS = [
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--checkpoint", required=True)
-    p.add_argument("--opponent", default="stockfish-0", choices=OPPONENTS)
+    p.add_argument("--opponent", default="stockfish-elo-1320", choices=OPPONENTS)
     p.add_argument("--prev-checkpoint", default=None,
                    help="required when --opponent self-vs-prev")
     p.add_argument("--n-games", type=int, default=20)
     p.add_argument("--time-per-move-ms", type=int, default=200)
     p.add_argument("--stockfish-path", default="stockfish")
     p.add_argument("--cutechess-path", default="cutechess-cli")
+    p.add_argument("--pgn-dir", default="eval_pgns",
+                   help="directory for generated cutechess PGNs")
     p.add_argument("--output", default=None,
                    help="optional JSON path to write the full result dict")
     p.add_argument("--no-tui", action="store_true",
@@ -61,6 +63,7 @@ def _run_plain(args) -> dict:
         time_per_move_ms=args.time_per_move_ms,
         stockfish_path=args.stockfish_path,
         cutechess_path=args.cutechess_path,
+        pgn_dir=args.pgn_dir,
     )
 
 
@@ -99,6 +102,7 @@ def _run_tui(args) -> dict:
             time_per_move_ms=args.time_per_move_ms,
             stockfish_path=args.stockfish_path,
             cutechess_path=args.cutechess_path,
+            pgn_dir=args.pgn_dir,
             on_progress=on_progress,
         )
         live.update(tui.match_progress(state))

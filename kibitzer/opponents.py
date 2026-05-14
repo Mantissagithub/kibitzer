@@ -30,16 +30,16 @@ class StockfishOpponent:
         path: str | None = None,
         depth: int | None = None,
         time_ms: int | None = None,
-        skill_level: int | None = None,
+        uci_elo: int | None = None,
     ) -> None:
         if (depth is None) == (time_ms is None):
             raise ValueError(
                 "exactly one of `depth` or `time_ms` must be set "
                 f"(got depth={depth}, time_ms={time_ms})"
             )
-        if skill_level is not None and not 0 <= skill_level <= 20:
+        if uci_elo is not None and not 1320 <= uci_elo <= 3190:
             raise ValueError(
-                f"skill_level must be in [0, 20], got {skill_level}"
+                f"uci_elo must be in [1320, 3190], got {uci_elo}"
             )
 
         resolved = path if path is not None else shutil.which("stockfish")
@@ -52,13 +52,16 @@ class StockfishOpponent:
         self.path = resolved
         self.depth = depth
         self.time_ms = time_ms
-        self.skill_level = skill_level
+        self.uci_elo = uci_elo
         self._engine: chess.engine.SimpleEngine | None = None
 
     def __enter__(self) -> "StockfishOpponent":
         self._engine = chess.engine.SimpleEngine.popen_uci(self.path)
-        if self.skill_level is not None:
-            self._engine.configure({"Skill Level": self.skill_level})
+        if self.uci_elo is not None:
+            self._engine.configure({
+                "UCI_LimitStrength": True,
+                "UCI_Elo": self.uci_elo,
+            })
         return self
 
     def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:

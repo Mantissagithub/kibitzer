@@ -61,6 +61,26 @@ def _elo_tag(elo: float) -> str:
     return f"elo-{sign}-{abs(int(round(elo))):04d}"
 
 
+def _opponent_rating(opponent: str) -> int | None:
+    if not opponent.startswith("stockfish-elo-"):
+        return None
+    return int(opponent.rsplit("-", 1)[1])
+
+
+def _estimated_rating(elo_diff: float, opponent: str) -> int | None:
+    opponent_rating = _opponent_rating(opponent)
+    if opponent_rating is None or not math.isfinite(elo_diff):
+        return None
+    return int(round(opponent_rating + elo_diff))
+
+
+def _rating_tag(elo_diff: float, opponent: str) -> str:
+    rating = _estimated_rating(elo_diff, opponent)
+    if rating is not None:
+        return f"elo-{rating:04d}"
+    return _elo_tag(elo_diff)
+
+
 def _log(message: str) -> None:
     tqdm.write(message)
 
@@ -80,12 +100,19 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--hf-username", default=None)
     p.add_argument("--hf-token", default=None)
     p.add_argument("--hf-repo-prefix", default="kibitzer-sft")
-    p.add_argument("--opponent", default="stockfish-0",
-                   choices=["stockfish-0", "stockfish-3", "stockfish-5", "stockfish-10"])
+    p.add_argument("--opponent", default="stockfish-elo-1320",
+                   choices=[
+                       "stockfish-elo-1320",
+                       "stockfish-elo-1500",
+                       "stockfish-elo-1800",
+                       "stockfish-full",
+                   ])
     p.add_argument("--n-games", type=int, default=20)
     p.add_argument("--time-per-move-ms", type=int, default=200)
     p.add_argument("--stockfish-path", default="stockfish")
     p.add_argument("--cutechess-path", default="cutechess-cli")
+    p.add_argument("--pgn-dir", default="eval_pgns",
+                   help="directory for generated cutechess PGNs")
     p.add_argument("--dry-run", action="store_true")
     return p.parse_args()
 
@@ -154,10 +181,11 @@ def _evaluate_and_rename(
             time_per_move_ms=args.time_per_move_ms,
             stockfish_path=args.stockfish_path,
             cutechess_path=args.cutechess_path,
+            pgn_dir=args.pgn_dir,
             on_progress=on_progress,
-        )
+    )
     elo = float(result["elo_diff"])
-    new_repo = f"{username}/{args.hf_repo_prefix}-{_elo_tag(elo)}-step-{step:06d}"
+    new_repo = f"{username}/{args.hf_repo_prefix}-{_rating_tag(elo, args.opponent)}-step-{step:06d}"
     _log(f"done: {ckpt.name} elo={elo:+.1f} {old_repo} -> {new_repo}")
     if args.dry_run:
         _log(f"dry-run: skipped HF rename/upload for {new_repo}")
@@ -179,6 +207,7 @@ def _evaluate_and_rename(
         config=training_metadata.get("config"),
         metrics=training_metadata.get("metrics"),
         elo=elo,
+        opponent=args.opponent,
         post_eval=result,
     ))
     _log(f"hf: uploading post_eval.yaml and README.md to {new_repo}")

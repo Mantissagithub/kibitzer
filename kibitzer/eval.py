@@ -16,21 +16,30 @@ _UCI_SCRIPT = _REPO_ROOT / "scripts" / "uci.py"
 _KIBITZER_CMD = shlex.join([sys.executable, str(_UCI_SCRIPT)])
 
 OpponentName = Literal[
-    "stockfish-0", "stockfish-3", "stockfish-5", "stockfish-10", "self-vs-prev"
+    "stockfish-elo-1320",
+    "stockfish-elo-1500",
+    "stockfish-elo-1800",
+    "stockfish-full",
+    "self-vs-prev",
 ]
 _VALID_OPPONENTS = {
-    "stockfish-0", "stockfish-3", "stockfish-5", "stockfish-10", "self-vs-prev"
+    "stockfish-elo-1320",
+    "stockfish-elo-1500",
+    "stockfish-elo-1800",
+    "stockfish-full",
+    "self-vs-prev",
 }
 
 
 def evaluate_checkpoint(
     checkpoint_path: str,
-    opponent: OpponentName = "stockfish-0",
+    opponent: OpponentName = "stockfish-elo-1320",
     prev_checkpoint: str | None = None,
     n_games: int = 20,
     time_per_move_ms: int = 200,
     stockfish_path: str = "stockfish",
     cutechess_path: str = "cutechess-cli",
+    pgn_dir: str = "eval_pgns",
     on_progress: Callable[[dict], None] | None = None,
 ) -> dict:
     """run cutechess and return a flat scorecard."""
@@ -50,12 +59,17 @@ def evaluate_checkpoint(
             )
         b_cmd = _KIBITZER_CMD
         b_options: dict[str, str] = {"Checkpoint": prev_checkpoint}
-    else:
-        skill = int(opponent.split("-", 1)[1])
+    elif opponent == "stockfish-full":
         b_cmd = stockfish_path
-        b_options = {"Skill Level": str(skill)}
+        b_options = {}
+    else:
+        elo = int(opponent.rsplit("-", 1)[1])
+        b_cmd = stockfish_path
+        b_options = {"UCI_LimitStrength": "true", "UCI_Elo": str(elo)}
 
-    pgn_path = f"{Path(checkpoint_path).stem}_vs_{opponent}.pgn"
+    pgn_root = Path(pgn_dir)
+    pgn_root.mkdir(parents=True, exist_ok=True)
+    pgn_path = pgn_root / f"{Path(checkpoint_path).stem}_vs_{opponent}.pgn"
 
     raw = run_match(
         engine_a_cmd=a_cmd,
@@ -64,7 +78,7 @@ def evaluate_checkpoint(
         engine_b_options=b_options,
         n_games=n_games,
         time_per_move_ms=time_per_move_ms,
-        pgn_output=pgn_path,
+        pgn_output=str(pgn_path),
         cutechess_path=cutechess_path,
         on_progress=on_progress,
     )

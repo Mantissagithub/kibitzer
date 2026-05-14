@@ -515,7 +515,7 @@ def train_layout(state: TrainState) -> Layout:
     elo_xs = [s for s, _ in state.elo_history]
     elo_ys = [v for _, v in state.elo_history]
     layout["body"]["lower"]["elo"].update(
-        trend_panel("Elo Δ vs stockfish-0", elo_xs, elo_ys, border_style="success")
+        trend_panel("Elo Δ vs Stockfish", elo_xs, elo_ys, border_style="success")
     )
 
     layout["footer"].update(tail_log(state.log_tail_lines, max_lines=6))
