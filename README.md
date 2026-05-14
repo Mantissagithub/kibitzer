@@ -1,54 +1,31 @@
 # kibitzer
 
-Chess model that treats board states as tokens, learns from game sequences, and
-plays through policy/value predictions.
+> **kibitzer** *(n.)* — someone who watches a game and offers running commentary. fitting for a model that learns to play chess by watching positions unfold, one board at a time.
 
-- GitHub: https://github.com/Mantissagithub/kibitzer
-- Hugging Face: https://huggingface.co/Pradheep1647
-- `elo_rating`: pending/unrated
-- Current checkpoint prefix: `Pradheep1647/kibitzer-sft`
-- Current checkpoint status: pending HF eval/rename through step `050000`
+A chess policy/value model: board states as tokens, learns from game sequences, plays through policy + value predictions.
+
+**[→ Checkpoints on Hugging Face (Kibitzer collection)](https://huggingface.co/collections/Pradheep1647/kibitzer-6a064b0094182a1620ada57f)**
 
 ## Architecture
 
-Kibitzer is built as a reusable chess policy/value stack:
+<p align="center">
+  <img src="docs/architecture.svg" alt="Kibitzer architecture" width="680"/>
+</p>
 
-- `PositionEncoder` embeds each board state from 64 square tokens plus 7
-  auxiliary features for side to move, castling rights, en-passant file, and
-  halfmove clock.
-- A bidirectional square-level encoder summarizes each board into one timeline
-  token.
-- A causal Llama-style transformer trunk models the game sequence with RMSNorm,
-  RoPE attention, SwiGLU MLPs, and PyTorch scaled dot-product attention.
-- The policy head predicts one of 4,672 AlphaZero-style moves (`64 * 73`).
-- The value head predicts a bounded scalar outcome estimate with `tanh`.
+- **PositionEncoder** — embeds each board from 64 square tokens plus 7 aux features (side to move, castling, en-passant, halfmove clock).
+- **Bidirectional Square Encoder** — collapses 64 squares into one timeline token per board.
+- **Causal Llama-style trunk** — RMSNorm, rotary positional embeddings, SwiGLU MLPs, PyTorch scaled dot-product attention.
+- **Policy head** — predicts one of 4,672 AlphaZero-style moves (64 × 73).
+- **Value head** — bounded scalar outcome estimate via `tanh`.
+
+Standalone architecture page: [`docs/architecture.html`](docs/architecture.html).
 
 ## Run
 
-Train locally and push checkpoints to Hugging Face:
-
 ```bash
-uv run python scripts/train.py
+uv run python scripts/train.py                          # train + push checkpoints
+uv run python scripts/eval_and_rename_hf.py --from-hf   # eval HF checkpoints, rename with Elo
+uv run pytest                                           # tests
 ```
 
-Evaluate pending Hugging Face checkpoints, rename repos with ELO, and upload
-post-eval metadata:
-
-```bash
-uv run python scripts/eval_and_rename_hf.py --from-hf
-```
-
-Run tests:
-
-```bash
-uv run pytest
-```
-
-## Notes
-
-- Credentials are read from `HF_USERNAME` and `HF_TOKEN`, either from the
-  environment or an ignored local `.env` file.
-- Training checkpoints are saved under `runs/` and pushed as individual HF model
-  repos named like `kibitzer-sft-elo-pending-step-002000`.
-- ELO is intentionally listed as pending until checkpoints are evaluated against
-  Stockfish via `cutechess-cli`.
+Set `HF_USERNAME` and `HF_TOKEN` via environment or a local `.env`.
