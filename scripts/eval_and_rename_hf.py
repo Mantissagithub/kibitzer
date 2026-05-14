@@ -20,6 +20,7 @@ import yaml
 
 from kibitzer.eval import evaluate_checkpoint
 from kibitzer import tui
+from scripts.hf_readme import render_hf_readme
 
 
 def _read_env(path: Path) -> dict[str, str]:
@@ -143,9 +144,30 @@ def _evaluate_and_rename(
     api.move_repo(from_id=old_repo, to_id=new_repo, repo_type="model", token=token)
     metadata_path = ckpt.with_suffix(".post_eval.yaml")
     metadata_path.write_text(yaml.safe_dump(result, sort_keys=True))
+    training_metadata_path = ckpt.with_name("training_metadata.yaml")
+    training_metadata = {}
+    if training_metadata_path.exists():
+        training_metadata = yaml.safe_load(training_metadata_path.read_text()) or {}
+    readme_path = ckpt.with_suffix(".README.md")
+    readme_path.write_text(render_hf_readme(
+        repo_id=new_repo,
+        checkpoint_name=ckpt.name,
+        step=step,
+        config=training_metadata.get("config"),
+        metrics=training_metadata.get("metrics"),
+        elo=elo,
+        post_eval=result,
+    ))
     api.upload_file(
         path_or_fileobj=str(metadata_path),
         path_in_repo="post_eval.yaml",
+        repo_id=new_repo,
+        repo_type="model",
+        token=token,
+    )
+    api.upload_file(
+        path_or_fileobj=str(readme_path),
+        path_in_repo="README.md",
         repo_id=new_repo,
         repo_type="model",
         token=token,

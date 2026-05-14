@@ -48,6 +48,7 @@ from kibitzer.training_utils import (
     load_checkpoint,
     save_checkpoint,
 )
+from scripts.hf_readme import render_hf_readme
 
 
 @dataclass
@@ -315,6 +316,15 @@ def _push_checkpoint_to_hf(
         "metrics": metrics,
     }
     metadata_path.write_text(yaml.safe_dump(metadata, sort_keys=True))
+    readme_path = ckpt_path.with_suffix(".README.md")
+    readme_path.write_text(render_hf_readme(
+        repo_id=repo_id,
+        checkpoint_name=ckpt_path.name,
+        step=step,
+        config=metadata["config"],
+        metrics=metrics,
+        elo=elo,
+    ))
     try:
         api = HfApi(token=hf.token)
         api.create_repo(repo_id=repo_id, repo_type="model", private=hf.private, exist_ok=True)
@@ -328,6 +338,13 @@ def _push_checkpoint_to_hf(
         api.upload_file(
             path_or_fileobj=str(metadata_path),
             path_in_repo="training_metadata.yaml",
+            repo_id=repo_id,
+            repo_type="model",
+            token=hf.token,
+        )
+        api.upload_file(
+            path_or_fileobj=str(readme_path),
+            path_in_repo="README.md",
             repo_id=repo_id,
             repo_type="model",
             token=hf.token,
