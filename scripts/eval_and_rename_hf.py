@@ -17,9 +17,9 @@ import shutil
 from pathlib import Path
 
 import yaml
+from tqdm import tqdm
 
 from kibitzer.eval import evaluate_checkpoint
-from kibitzer import tui
 from scripts.hf_readme import render_hf_readme
 
 
@@ -59,6 +59,10 @@ def _elo_tag(elo: float) -> str:
         return "elo-unrated"
     sign = "plus" if elo >= 0 else "minus"
     return f"elo-{sign}-{abs(int(round(elo))):04d}"
+
+
+def _log(message: str) -> None:
+    tqdm.write(message)
 
 
 def parse_args() -> argparse.Namespace:
@@ -123,24 +127,43 @@ def _evaluate_and_rename(
     args: argparse.Namespace,
 ) -> None:
     step = _step_from_checkpoint(ckpt)
-    tui.console.print(f"[muted]evaluating {ckpt.name}[/]")
-    result = evaluate_checkpoint(
-        checkpoint_path=str(ckpt),
-        opponent=args.opponent,
-        n_games=args.n_games,
-        time_per_move_ms=args.time_per_move_ms,
-        stockfish_path=args.stockfish_path,
-        cutechess_path=args.cutechess_path,
-    )
+    _log(f"eval: {ckpt.name} vs {args.opponent} ({args.n_games} games)")
+    completed_games = 0
+    with tqdm(
+        total=args.n_games,
+        desc=f"games {ckpt.stem}",
+        unit="game",
+        leave=False,
+    ) as game_bar:
+
+        def on_progress(progress: dict) -> None:
+            nonlocal completed_games
+            completed = int(progress.get("completed", completed_games))
+            if completed > completed_games:
+                game_bar.update(completed - completed_games)
+                completed_games = completed
+            if "elo_diff" in progress:
+                elo_diff = float(progress["elo_diff"])
+                elo_err = float(progress.get("elo_err", math.nan))
+                game_bar.set_postfix_str(f"elo={elo_diff:+.1f}±{elo_err:.1f}")
+
+        result = evaluate_checkpoint(
+            checkpoint_path=str(ckpt),
+            opponent=args.opponent,
+            n_games=args.n_games,
+            time_per_move_ms=args.time_per_move_ms,
+            stockfish_path=args.stockfish_path,
+            cutechess_path=args.cutechess_path,
+            on_progress=on_progress,
+        )
     elo = float(result["elo_diff"])
     new_repo = f"{username}/{args.hf_repo_prefix}-{_elo_tag(elo)}-step-{step:06d}"
-    tui.console.print(
-        f"[success]{ckpt.name}[/] elo={elo:+.1f} "
-        f"[muted]{old_repo} -> {new_repo}[/]"
-    )
+    _log(f"done: {ckpt.name} elo={elo:+.1f} {old_repo} -> {new_repo}")
     if args.dry_run:
+        _log(f"dry-run: skipped HF rename/upload for {new_repo}")
         return
 
+    _log(f"hf: renaming {old_repo} -> {new_repo}")
     api.move_repo(from_id=old_repo, to_id=new_repo, repo_type="model", token=token)
     metadata_path = ckpt.with_suffix(".post_eval.yaml")
     metadata_path.write_text(yaml.safe_dump(result, sort_keys=True))
@@ -158,6 +181,7 @@ def _evaluate_and_rename(
         elo=elo,
         post_eval=result,
     ))
+    _log(f"hf: uploading post_eval.yaml and README.md to {new_repo}")
     api.upload_file(
         path_or_fileobj=str(metadata_path),
         path_in_repo="post_eval.yaml",
@@ -180,29 +204,37 @@ def main() -> int:
     username = args.hf_username or _env("HF_USERNAME", env)
     token = args.hf_token or _env("HF_TOKEN", env)
     if not username or not token:
-        tui.console.print("[error]HF username/token missing; set .env or pass args[/]")
+        _log("error: HF username/token missing; set .env or pass args")
         return 1
 
     try:
         from huggingface_hub import HfApi
     except ImportError:
-        tui.console.print("[error]huggingface_hub is not installed[/]")
+        _log("error: huggingface_hub is not installed")
         return 1
 
     api = HfApi(token=token)
+    mode = "from-hf" if args.from_hf else "local"
+    suffix = " dry-run" if args.dry_run else ""
+    _log(
+        f"kibitzer HF eval: mode={mode}{suffix} user={username} "
+        f"opponent={args.opponent} games={args.n_games}"
+    )
 
     if args.from_hf:
         work_dir = Path(args.work_dir)
         work_dir.mkdir(parents=True, exist_ok=True)
+        _log(f"hf: listing pending {username}/{args.hf_repo_prefix} repos")
         repo_ids = _pending_repo_ids(api, username, args.hf_repo_prefix, token)
         if args.limit is not None:
             repo_ids = repo_ids[:args.limit]
         if not repo_ids:
-            tui.console.print("[error]no pending HF checkpoint repos found[/]")
+            _log("error: no pending HF checkpoint repos found")
             return 1
-        for repo_id in repo_ids:
+        for repo_id in tqdm(repo_ids, desc="HF repos", unit="repo"):
             local_root = work_dir / repo_id.split("/", 1)[1]
             try:
+                _log(f"hf: downloading {repo_id}")
                 ckpt = _download_one_checkpoint(api, repo_id, token, work_dir)
                 _evaluate_and_rename(
                     api=api,
@@ -215,18 +247,19 @@ def main() -> int:
             finally:
                 if not args.keep_local and local_root.exists():
                     shutil.rmtree(local_root)
+                    _log(f"clean: removed {local_root}")
         return 0
 
     if not args.checkpoint_dir:
-        tui.console.print("[error]pass --checkpoint-dir or use --from-hf[/]")
+        _log("error: pass --checkpoint-dir or use --from-hf")
         return 1
     ckpts = sorted(Path(args.checkpoint_dir).glob("step_*.pt"))
     if args.limit is not None:
         ckpts = ckpts[:args.limit]
     if not ckpts:
-        tui.console.print(f"[error]no step_*.pt checkpoints under {args.checkpoint_dir}[/]")
+        _log(f"error: no step_*.pt checkpoints under {args.checkpoint_dir}")
         return 1
-    for ckpt in ckpts:
+    for ckpt in tqdm(ckpts, desc="local checkpoints", unit="ckpt"):
         step = _step_from_checkpoint(ckpt)
         old_repo = f"{username}/{args.hf_repo_prefix}-elo-pending-step-{step:06d}"
         _evaluate_and_rename(
