@@ -24,7 +24,9 @@ from kibitzer.eval import evaluate_checkpoint
 from scripts.hf_readme import render_hf_readme
 
 
-_PENDING_REPO_RE = re.compile(r"^[^/]+/[^/]+-elo-pending-step-\d{6}$")
+_REEVAL_REPO_RE = re.compile(
+    r"^[^/]+/[^/]+-elo-(pending|plus-\d{4}|minus-\d{4})-step-\d{6}$"
+)
 
 
 def _read_env(path: Path) -> dict[str, str]:
@@ -121,15 +123,15 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def _pending_repo_ids(api, username: str, prefix: str, token: str) -> list[str]:
-    needle = f"{prefix}-elo-pending-step-"
+def _reeval_repo_ids(api, username: str, prefix: str, token: str) -> list[str]:
+    needle = f"{prefix}-elo-"
     repos = []
     for info in api.list_models(author=username, search=needle, token=token):
         repo_id = getattr(info, "id", None) or getattr(info, "modelId", None)
         if (
             repo_id
             and repo_id.startswith(f"{username}/{needle}")
-            and _PENDING_REPO_RE.match(repo_id)
+            and _REEVAL_REPO_RE.match(repo_id)
         ):
             repos.append(repo_id)
     return sorted(repos, key=_step_from_repo)
@@ -261,12 +263,12 @@ def main() -> int:
     if args.from_hf:
         work_dir = Path(args.work_dir)
         work_dir.mkdir(parents=True, exist_ok=True)
-        _log(f"hf: listing pending {username}/{args.hf_repo_prefix} repos")
-        repo_ids = _pending_repo_ids(api, username, args.hf_repo_prefix, token)
+        _log(f"hf: listing pending/legacy {username}/{args.hf_repo_prefix} repos")
+        repo_ids = _reeval_repo_ids(api, username, args.hf_repo_prefix, token)
         if args.limit is not None:
             repo_ids = repo_ids[:args.limit]
         if not repo_ids:
-            _log("error: no pending HF checkpoint repos found")
+            _log("error: no pending/legacy HF checkpoint repos found")
             return 1
         for repo_id in tqdm(repo_ids, desc="HF repos", unit="repo"):
             local_root = work_dir / repo_id.split("/", 1)[1]
