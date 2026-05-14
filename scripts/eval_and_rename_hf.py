@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import math
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -21,6 +22,9 @@ from tqdm import tqdm
 
 from kibitzer.eval import evaluate_checkpoint
 from scripts.hf_readme import render_hf_readme
+
+
+_PENDING_REPO_RE = re.compile(r"^[^/]+/[^/]+-elo-pending-step-\d{6}$")
 
 
 def _read_env(path: Path) -> dict[str, str]:
@@ -122,7 +126,11 @@ def _pending_repo_ids(api, username: str, prefix: str, token: str) -> list[str]:
     repos = []
     for info in api.list_models(author=username, search=needle, token=token):
         repo_id = getattr(info, "id", None) or getattr(info, "modelId", None)
-        if repo_id and repo_id.startswith(f"{username}/{needle}"):
+        if (
+            repo_id
+            and repo_id.startswith(f"{username}/{needle}")
+            and _PENDING_REPO_RE.match(repo_id)
+        ):
             repos.append(repo_id)
     return sorted(repos, key=_step_from_repo)
 
