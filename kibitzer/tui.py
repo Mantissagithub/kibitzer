@@ -11,28 +11,19 @@ package, not under ``scripts/``.
 
 from __future__ import annotations
 
-import io
 import sys
 from dataclasses import dataclass, field
 from typing import Iterable, Sequence
 
 import chess
-import matplotlib
-
-matplotlib.use("Agg")  # non-interactive; safe for terminals + threads
-import matplotlib.pyplot as plt  # noqa: E402
-from PIL import Image  # noqa: E402
-from rich.align import Align  # noqa: E402
-from rich.console import Console, Group, RenderableType  # noqa: E402
-from rich.layout import Layout  # noqa: E402
-from rich.panel import Panel  # noqa: E402
-from rich.progress_bar import ProgressBar  # noqa: E402
-from rich.table import Table  # noqa: E402
-from rich.text import Text  # noqa: E402
-from rich.theme import Theme  # noqa: E402
-from rich_pixels import Pixels  # noqa: E402
-
-plt.style.use("dark_background")
+from rich.align import Align
+from rich.console import Console, Group, RenderableType
+from rich.layout import Layout
+from rich.panel import Panel
+from rich.progress_bar import ProgressBar
+from rich.table import Table
+from rich.text import Text
+from rich.theme import Theme
 
 
 THEME = Theme(
@@ -310,27 +301,32 @@ def tail_log(lines: Iterable[str], max_lines: int = 6) -> Panel:
     return Panel(body, title="cutechess", title_align="left", border_style="muted", padding=(0, 1))
 
 
-def _render_to_pixels(fig) -> Pixels:
-    """Save a matplotlib Figure to PNG via BytesIO, return rich-pixels Pixels."""
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png", bbox_inches="tight", pad_inches=0.05, dpi=72)
-    plt.close(fig)
-    buf.seek(0)
-    img = Image.open(buf)
-    return Pixels.from_image(img)
+_SPARK_CHARS = "▁▂▃▄▅▆▇█"
 
 
-def plot_panel(
+def _sparkline(values: Sequence[float], width: int = 72) -> Text:
+    """Terminal-native sparkline, stable and cheap enough for live refreshes."""
+    if not values:
+        return Text("(no data yet)", style="dim")
+    vals = list(values[-width:])
+    lo = min(vals)
+    hi = max(vals)
+    span = max(hi - lo, 1e-12)
+    line = Text()
+    for v in vals:
+        idx = int(round((v - lo) / span * (len(_SPARK_CHARS) - 1)))
+        line.append(_SPARK_CHARS[idx], style="success")
+    return line
+
+
+def trend_panel(
     title: str,
     xs: Sequence[float],
     ys: Sequence[float],
     *,
-    color: str = "#00d977",
-    width_chars: int = 50,
-    height_chars: int = 10,
     border_style: str = "muted",
 ) -> Panel:
-    """Tiny matplotlib line plot, rendered to terminal cells via rich-pixels."""
+    """Compact TensorBoard-style scalar card without bitmap rendering."""
     if not xs or not ys:
         return Panel(
             Text("(no data yet)", style="dim"),
@@ -339,20 +335,23 @@ def plot_panel(
             border_style=border_style,
             padding=(0, 1),
         )
-    # rich-pixels uses 1 char per image col, 1 char per 2 image rows (half block).
-    fig_w = max(2.0, width_chars / 8.0)
-    fig_h = max(1.0, height_chars / 4.0)
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=72)
-    ax.plot(list(xs), list(ys), color=color, linewidth=1.4)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    for s in ax.spines.values():
-        s.set_visible(False)
-    ax.margins(x=0.02, y=0.08)
-    pixels = _render_to_pixels(fig)
+    vals = list(ys)
+    current = vals[-1]
+    best = min(vals) if "loss" in title.lower() else max(vals)
+    meta = Text()
+    meta.append("current ", style="muted")
+    meta.append(f"{current:.4f}", style="accent")
+    meta.append("   best ", style="muted")
+    meta.append(f"{best:.4f}", style="success")
+    meta.append("   points ", style="muted")
+    meta.append(str(len(vals)), style="accent")
+    body = Group(meta, Text(""), _sparkline(vals))
     return Panel(
-        pixels, title=title, title_align="left",
-        border_style=border_style, padding=(0, 1),
+        body,
+        title=title,
+        title_align="left",
+        border_style=border_style,
+        padding=(0, 1),
     )
 
 
@@ -486,7 +485,7 @@ def train_layout(state: TrainState) -> Layout:
     loss_xs = [s for s, _ in state.loss_history]
     loss_ys = [v for _, v in state.loss_history]
     layout["body"]["upper"]["loss"].update(
-        plot_panel("loss (EMA)", loss_xs, loss_ys, color="#00d977")
+        trend_panel("loss EMA", loss_xs, loss_ys, border_style="success")
     )
     scalars = Group(
         scalar_panel("lr", f"{state.last_lr:.2e}"),
@@ -519,8 +518,7 @@ def train_layout(state: TrainState) -> Layout:
     elo_xs = [s for s, _ in state.elo_history]
     elo_ys = [v for _, v in state.elo_history]
     layout["body"]["lower"]["elo"].update(
-        plot_panel("Elo Δ vs " + "stockfish-0", elo_xs, elo_ys, color="#ffaa00",
-                   border_style="success")
+        trend_panel("Elo Δ vs stockfish-0", elo_xs, elo_ys, border_style="success")
     )
 
     layout["footer"].update(tail_log(state.log_tail_lines, max_lines=6))

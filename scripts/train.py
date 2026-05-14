@@ -33,6 +33,7 @@ import torch
 import yaml
 from rich.live import Live
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from kibitzer import tui
 from kibitzer.data import LichessGameDataset, collate_games
@@ -71,6 +72,7 @@ class TrainConfig:
     checkpoint_dir: str = "runs"
     max_grad_norm: float = 1.0
     num_workers: int = 4
+    shuffle_buffer_size: int = 1024
     seed: int = 42
     run_name: str | None = None
     wandb: bool = False
@@ -447,7 +449,7 @@ def main() -> int:
         max_plies=cfg.max_seq_len,
         min_elo=2400,
         min_plies=10,
-        shuffle_buffer_size=4096,
+        shuffle_buffer_size=cfg.shuffle_buffer_size,
         seed=cfg.seed,
     )
     loader = DataLoader(
@@ -458,6 +460,17 @@ def main() -> int:
         persistent_workers=cfg.num_workers > 0,
     )
     it = _forever(loader)
+
+    first_batch: dict | None = None
+    if use_tui:
+        with tqdm(
+            total=1,
+            desc="Preparing DataLoader first batch",
+            unit="batch",
+            leave=True,
+        ) as bar:
+            first_batch = next(it)
+            bar.update(1)
 
     run_dir = Path(cfg.checkpoint_dir) / cfg.run_name
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -551,7 +564,7 @@ def main() -> int:
             refresh()
 
     def loop_body() -> int:
-        nonlocal start_step
+        nonlocal first_batch, start_step
         max_steps = cfg.total_steps
         if args.dry_run:
             max_steps = start_step + 5
@@ -568,7 +581,11 @@ def main() -> int:
             last_batch: dict | None = None
 
             for _ in range(cfg.grad_accum_steps):
-                batch = next(it)
+                if first_batch is not None:
+                    batch = first_batch
+                    first_batch = None
+                else:
+                    batch = next(it)
                 batch = _move_to(batch, device)
                 last_batch = batch
                 if autocast_dtype is not None:
@@ -676,8 +693,10 @@ def main() -> int:
         with Live(
             tui.train_layout(state),
             console=tui.console,
-            refresh_per_second=4,
-            screen=False,
+            refresh_per_second=1,
+            screen=True,
+            redirect_stdout=False,
+            redirect_stderr=False,
         ) as live:
             live_holder["live"] = live
             return loop_body()
