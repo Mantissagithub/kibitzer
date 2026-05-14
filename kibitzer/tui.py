@@ -11,18 +11,28 @@ package, not under ``scripts/``.
 
 from __future__ import annotations
 
+import io
 import sys
 from dataclasses import dataclass, field
-from typing import Iterable
+from typing import Iterable, Sequence
 
 import chess
-from rich.align import Align
-from rich.console import Console, Group, RenderableType
-from rich.panel import Panel
-from rich.progress_bar import ProgressBar
-from rich.table import Table
-from rich.text import Text
-from rich.theme import Theme
+import matplotlib
+
+matplotlib.use("Agg")  # non-interactive; safe for terminals + threads
+import matplotlib.pyplot as plt  # noqa: E402
+from PIL import Image  # noqa: E402
+from rich.align import Align  # noqa: E402
+from rich.console import Console, Group, RenderableType  # noqa: E402
+from rich.layout import Layout  # noqa: E402
+from rich.panel import Panel  # noqa: E402
+from rich.progress_bar import ProgressBar  # noqa: E402
+from rich.table import Table  # noqa: E402
+from rich.text import Text  # noqa: E402
+from rich.theme import Theme  # noqa: E402
+from rich_pixels import Pixels  # noqa: E402
+
+plt.style.use("dark_background")
 
 
 THEME = Theme(
@@ -298,6 +308,223 @@ def tail_log(lines: Iterable[str], max_lines: int = 6) -> Panel:
     snapshot = list(lines)[-max_lines:]
     body = Text("\n".join(snapshot) if snapshot else "(no output yet)", style="dim")
     return Panel(body, title="cutechess", title_align="left", border_style="muted", padding=(0, 1))
+
+
+def _render_to_pixels(fig) -> Pixels:
+    """Save a matplotlib Figure to PNG via BytesIO, return rich-pixels Pixels."""
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", pad_inches=0.05, dpi=72)
+    plt.close(fig)
+    buf.seek(0)
+    img = Image.open(buf)
+    return Pixels.from_image(img)
+
+
+def plot_panel(
+    title: str,
+    xs: Sequence[float],
+    ys: Sequence[float],
+    *,
+    color: str = "#00d977",
+    width_chars: int = 50,
+    height_chars: int = 10,
+    border_style: str = "muted",
+) -> Panel:
+    """Tiny matplotlib line plot, rendered to terminal cells via rich-pixels."""
+    if not xs or not ys:
+        return Panel(
+            Text("(no data yet)", style="dim"),
+            title=title,
+            title_align="left",
+            border_style=border_style,
+            padding=(0, 1),
+        )
+    # rich-pixels uses 1 char per image col, 1 char per 2 image rows (half block).
+    fig_w = max(2.0, width_chars / 8.0)
+    fig_h = max(1.0, height_chars / 4.0)
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h), dpi=72)
+    ax.plot(list(xs), list(ys), color=color, linewidth=1.4)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for s in ax.spines.values():
+        s.set_visible(False)
+    ax.margins(x=0.02, y=0.08)
+    pixels = _render_to_pixels(fig)
+    return Panel(
+        pixels, title=title, title_align="left",
+        border_style=border_style, padding=(0, 1),
+    )
+
+
+def scalar_panel(label: str, value: str, *, border_style: str = "muted") -> Panel:
+    """Single-line label/value panel for lr / grad / throughput."""
+    body = Text()
+    body.append(f"{label}\n", style="muted")
+    body.append(value, style="accent")
+    return Panel(body, border_style=border_style, padding=(0, 1))
+
+
+def policy_overlay_panel(
+    board: chess.Board,
+    top_moves: list[tuple[chess.Move, float]],
+    value: float | None = None,
+) -> Panel:
+    """Board on the left, top-5 SAN moves with prob bars on the right."""
+    board_table = Table.grid(padding=0, collapse_padding=True)
+    for _ in range(9):
+        board_table.add_column(no_wrap=True)
+    files = "abcdefgh"
+    file_header = [Text("  ", style="dim")] + [
+        Text(f" {files[f]} ", style="dim") for f in range(8)
+    ]
+    board_table.add_row(*file_header)
+    for rank in range(7, -1, -1):
+        row = [Text(f" {rank + 1} ", style="dim")]
+        for f in range(8):
+            sq = chess.square(f, rank)
+            piece = board.piece_at(sq)
+            light_sq = (chess.square_file(sq) + chess.square_rank(sq)) % 2 == 1
+            bg = "board.light" if light_sq else "board.dark"
+            if piece is None:
+                row.append(Text("   ", style=bg))
+            else:
+                glyph = _PIECE_GLYPH[piece.symbol()]
+                fg = (
+                    "board.white_piece" if piece.color == chess.WHITE
+                    else "board.black_piece"
+                )
+                row.append(Text(f" {glyph} ", style=f"{bg} {fg}"))
+        board_table.add_row(*row)
+
+    moves_table = Table.grid(padding=(0, 1))
+    moves_table.add_column(style="accent", no_wrap=True)
+    moves_table.add_column(no_wrap=True)
+    moves_table.add_column(style="muted", no_wrap=True)
+    for mv, prob in top_moves[:5]:
+        try:
+            san = board.san(mv)
+        except Exception:
+            san = mv.uci()
+        bar_w = 12
+        filled = int(round(prob * bar_w))
+        bar_text = (
+            Text("█" * filled, style="success")
+            + Text("░" * (bar_w - filled), style="dim")
+        )
+        moves_table.add_row(san, bar_text, f"{prob * 100:5.1f}%")
+
+    side = Group(
+        Text(f"value {value:+.3f}" if value is not None else "", style="accent"),
+        Text(""),
+        moves_table,
+    )
+
+    inner = Table.grid(padding=(0, 2))
+    inner.add_column()
+    inner.add_column()
+    inner.add_row(board_table, side)
+    return Panel(inner, title="latest position", title_align="left",
+                 border_style="accent", padding=(0, 1))
+
+
+@dataclass
+class TrainState:
+    run_name: str
+    step: int = 0
+    total_steps: int = 0
+    wall_seconds: float = 0.0
+    eta_seconds: float = 0.0
+    ema_loss: float = 0.0
+    ema_acc: float = 0.0
+    last_lr: float = 0.0
+    last_grad_norm: float = 0.0
+    plies_per_sec: float = 0.0
+    loss_history: list[tuple[int, float]] = field(default_factory=list)
+    elo_history: list[tuple[int, float]] = field(default_factory=list)
+    log_tail_lines: list[str] = field(default_factory=list)
+    sample_board: chess.Board | None = None
+    sample_top_moves: list[tuple[chess.Move, float]] = field(default_factory=list)
+    sample_value: float | None = None
+
+
+def _fmt_seconds(s: float) -> str:
+    s = int(max(0, s))
+    h, rem = divmod(s, 3600)
+    m, sec = divmod(rem, 60)
+    return f"{h:d}:{m:02d}:{sec:02d}"
+
+
+def train_header(state: TrainState) -> Panel:
+    title = Text()
+    title.append(state.run_name, style="header")
+    title.append(f"  ·  step {state.step}/{state.total_steps}", style="muted")
+    title.append(
+        f"  ·  wall {_fmt_seconds(state.wall_seconds)}", style="muted"
+    )
+    title.append(f"  ·  ETA {_fmt_seconds(state.eta_seconds)}", style="muted")
+    return Panel(Align.center(title), border_style="header", padding=(0, 2))
+
+
+def train_layout(state: TrainState) -> Layout:
+    layout = Layout()
+    layout.split_column(
+        Layout(train_header(state), name="header", size=3),
+        Layout(name="body", ratio=1),
+        Layout(name="footer", size=8),
+    )
+
+    layout["body"].split_column(
+        Layout(name="upper", ratio=1),
+        Layout(name="lower", ratio=1),
+    )
+
+    # Upper row: loss plot | scalars
+    layout["body"]["upper"].split_row(
+        Layout(name="loss", ratio=2),
+        Layout(name="scalars", ratio=1),
+    )
+    loss_xs = [s for s, _ in state.loss_history]
+    loss_ys = [v for _, v in state.loss_history]
+    layout["body"]["upper"]["loss"].update(
+        plot_panel("loss (EMA)", loss_xs, loss_ys, color="#00d977")
+    )
+    scalars = Group(
+        scalar_panel("lr", f"{state.last_lr:.2e}"),
+        scalar_panel("grad norm", f"{state.last_grad_norm:.3f}"),
+        scalar_panel("plies/s", f"{state.plies_per_sec:.0f}"),
+        scalar_panel("ema acc", f"{state.ema_acc * 100:.2f}%"),
+    )
+    layout["body"]["upper"]["scalars"].update(
+        Panel(scalars, border_style="muted", padding=(0, 1), title="scalars",
+              title_align="left")
+    )
+
+    # Lower row: policy overlay | Elo curve
+    layout["body"]["lower"].split_row(
+        Layout(name="board", ratio=1),
+        Layout(name="elo", ratio=1),
+    )
+    if state.sample_board is not None:
+        layout["body"]["lower"]["board"].update(
+            policy_overlay_panel(
+                state.sample_board, state.sample_top_moves, state.sample_value
+            )
+        )
+    else:
+        layout["body"]["lower"]["board"].update(
+            Panel(Text("(awaiting first batch)", style="dim"),
+                  title="latest position", title_align="left",
+                  border_style="muted")
+        )
+    elo_xs = [s for s, _ in state.elo_history]
+    elo_ys = [v for _, v in state.elo_history]
+    layout["body"]["lower"]["elo"].update(
+        plot_panel("Elo Δ vs " + "stockfish-0", elo_xs, elo_ys, color="#ffaa00",
+                   border_style="success")
+    )
+
+    layout["footer"].update(tail_log(state.log_tail_lines, max_lines=6))
+    return layout
 
 
 def result_table(result: dict) -> Panel:
