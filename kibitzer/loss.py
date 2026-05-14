@@ -1,23 +1,23 @@
-"""Policy + value losses for Kibitzer training.
+"""policy + value losses for kibitzer training.
 
-Three public callables:
+three public callables:
 
 * :func:`policy_loss` — categorical cross-entropy on the played move, with the
   softmax restricted to legal moves via a -inf mask on illegal logits.
-* :func:`value_loss`  — MSE between the value head and the per-ply target.
+* :func:`value_loss`  — mse between the value head and the per-ply target.
 * :func:`combined_loss` — convenience wrapper that returns both losses, a
   weighted total, and a top-1 policy accuracy diagnostic, all keyed off a
   ``model_output`` / ``batch`` pair (so ``scripts/train.py`` can call this
   directly on a forward-pass result and the dataset's collate).
 
-Mask handling notes:
+mask handling notes:
 
-* Illegal logits get ``-inf`` before ``log_softmax``. After the softmax this
+* illegal logits get ``-inf`` before ``log_softmax``. after the softmax this
   pushes their probability to exactly 0; gradients to those logits are zero
   too (the ``-inf`` is a constant, not a function of the parameter).
-* A row with NO legal moves would make ``log_softmax`` produce NaN. We
+* a row with no legal moves would make ``log_softmax`` produce nan. we
   defensively zero-out such rows' loss contributions before averaging — the
-  data pipeline shouldn't emit them, but this keeps a stray NaN from
+  data pipeline shouldn't emit them, but this keeps a stray nan from
   poisoning the whole step.
 """
 
@@ -34,20 +34,18 @@ def policy_loss(
     legal_mask: Tensor,
     loss_mask: Tensor,
 ) -> Tensor:
-    """Masked CE: -log P(played | legal moves), averaged over real plies.
+    """masked ce: -log p(played | legal moves), averaged over real plies.
 
-    Shapes: ``policy_logits`` (B, T, A), ``move_idx`` (B, T), ``legal_mask``
-    (B, T, A), ``loss_mask`` (B, T). Returns a 0-dim tensor.
+    shapes: ``policy_logits`` (b, t, a), ``move_idx`` (b, t), ``legal_mask``
+    (b, t, a), ``loss_mask`` (b, t). returns a 0-dim tensor.
     """
     masked_logits = policy_logits.masked_fill(~legal_mask, float("-inf"))
     log_probs = F.log_softmax(masked_logits, dim=-1)
-    # log P at the played action: gather along the action dim → (B, T).
+    # log p at the played action.
     target_lp = log_probs.gather(-1, move_idx.unsqueeze(-1)).squeeze(-1)
     per_pos = -target_lp
 
-    # Drop padded plies AND any defensive all-illegal rows (latter would have
-    # produced NaN above). torch.where replaces the NaN-or-junk path before
-    # the sum, so a NaN in a masked-out row can't propagate.
+    # drop padded plies and defensive all-illegal rows before any nan can leak.
     has_legal = legal_mask.any(dim=-1)
     effective = loss_mask & has_legal
     per_pos = torch.where(effective, per_pos, torch.zeros_like(per_pos))
@@ -61,7 +59,7 @@ def value_loss(
     value_target: Tensor,
     loss_mask: Tensor,
 ) -> Tensor:
-    """Masked MSE between predicted value (tanh in [-1, 1]) and the target."""
+    """masked mse between predicted value (tanh in [-1, 1]) and the target."""
     sq = (value_pred - value_target) ** 2
     valid = loss_mask.float()
     denom = valid.sum().clamp(min=1.0)
@@ -73,9 +71,9 @@ def combined_loss(
     batch: dict,
     value_weight: float = 1.0,
 ) -> dict:
-    """Run both losses + top-1 policy accuracy on one (model_output, batch) pair.
+    """run both losses + top-1 policy accuracy on one (model_output, batch) pair.
 
-    ``model_output`` keys: ``policy_logits`` (B, T, A), ``value`` (B, T).
+    ``model_output`` keys: ``policy_logits`` (b, t, a), ``value`` (b, t).
     ``batch`` keys: ``move_idx``, ``legal_mask``, ``loss_mask``, ``value_target``.
     """
     logits = model_output["policy_logits"]

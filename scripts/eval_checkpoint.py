@@ -1,17 +1,13 @@
-"""Evaluate a Kibitzer checkpoint via cutechess-cli (rich TUI).
+"""evaluate a kibitzer checkpoint via cutechess-cli (rich tui).
 
-Examples:
-    # vs Stockfish at skill 3:
-    uv run python scripts/eval_checkpoint.py \\
-        --checkpoint runs/best.pt --opponent stockfish-3 \\
-        --n-games 20 --output runs/best.eval.json
+examples:
+    # vs stockfish at skill 3:
+    uv run python scripts/eval_checkpoint.py         --checkpoint runs/best.pt --opponent stockfish-3         --n-games 20 --output runs/best.eval.json
 
     # new vs previous checkpoint:
-    uv run python scripts/eval_checkpoint.py \\
-        --checkpoint runs/v3.pt --opponent self-vs-prev \\
-        --prev-checkpoint runs/v2.pt --n-games 40
+    uv run python scripts/eval_checkpoint.py         --checkpoint runs/v3.pt --opponent self-vs-prev         --prev-checkpoint runs/v2.pt --n-games 40
 
-    # plain output (e.g. for CI logs):
+    # plain output (e.g. for ci logs):
     uv run python scripts/eval_checkpoint.py ... --no-tui
 """
 

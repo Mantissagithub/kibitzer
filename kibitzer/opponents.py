@@ -1,14 +1,4 @@
-"""Engine wrappers compatible with :func:`kibitzer.match.play_match`.
-
-Each opponent implements ``__call__(board) -> chess.Move`` so it can be passed
-directly as one of the engine arguments to ``play_match``:
-
-* :class:`RandomOpponent` — uniform-random legal move (seedable baseline).
-* :class:`StockfishOpponent` — wraps ``chess.engine.SimpleEngine`` over a
-  Stockfish subprocess; use as a context manager to manage the subprocess.
-* :class:`KibitzerOpponent` — wraps a :class:`KibitzerEngine` so its
-  history-driven API can be queried with a single board.
-"""
+"""opponent wrappers for ``kibitzer.match.play_match``."""
 
 from __future__ import annotations
 
@@ -23,7 +13,7 @@ from kibitzer.inference import KibitzerEngine
 
 
 class RandomOpponent:
-    """Picks a uniform-random legal move. Useful as a sanity baseline."""
+    """uniform-random legal move baseline."""
 
     def __init__(self, seed: int | None = None) -> None:
         self._rng = random.Random(seed)
@@ -33,28 +23,7 @@ class RandomOpponent:
 
 
 class StockfishOpponent:
-    """Stockfish wrapper. Must be used as a context manager.
-
-    Parameters
-    ----------
-    path : str | None
-        Path to the Stockfish binary. If ``None``, falls back to
-        ``shutil.which("stockfish")``; raises ``FileNotFoundError`` if no
-        binary can be located.
-    depth : int | None
-        Search depth limit. Mutually exclusive with ``time_ms`` — exactly one
-        must be set.
-    time_ms : int | None
-        Per-move time budget in milliseconds. Mutually exclusive with
-        ``depth``.
-    skill_level : int | None
-        Optional Stockfish skill level in ``[0, 20]``.
-
-    Example
-    -------
-    >>> with StockfishOpponent(depth=10, skill_level=0) as sf:
-    ...     result = play_match(my_engine, sf, n_games=10)
-    """
+    """stockfish wrapper; use as a context manager."""
 
     def __init__(
         self,
@@ -116,11 +85,7 @@ class StockfishOpponent:
 
 
 class KibitzerOpponent:
-    """Adapt a :class:`KibitzerEngine` to the ``play_match`` callable interface.
-
-    On each call, repositions the underlying engine (via
-    :meth:`KibitzerEngine.evaluate_at`) and returns its chosen move.
-    """
+    """adapt a ``kibitzerengine`` to the match callable interface."""
 
     def __init__(
         self, engine: KibitzerEngine, temperature: float = 0.0

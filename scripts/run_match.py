@@ -1,17 +1,13 @@
-"""Run a cutechess-cli match between Kibitzer and a baseline (rich TUI).
+"""run a cutechess-cli match between kibitzer and a baseline (rich tui).
 
-Examples:
-    # Kibitzer vs Stockfish at skill 0, fast time control:
-    uv run python scripts/run_match.py \\
-        --checkpoint runs/best.pt --vs-random-stockfish \\
-        --n-games 20 --time-per-move-ms 200
+examples:
+    # kibitzer vs stockfish at skill 0, fast time control:
+    uv run python scripts/run_match.py         --checkpoint runs/best.pt --vs-random-stockfish         --n-games 20 --time-per-move-ms 200
 
-    # Kibitzer vs Stockfish at a specific skill level:
-    uv run python scripts/run_match.py \\
-        --checkpoint runs/best.pt --vs-stockfish-skill 5 \\
-        --n-games 40 --tc 40/60+0.6 --concurrency 2
+    # kibitzer vs stockfish at a specific skill level:
+    uv run python scripts/run_match.py         --checkpoint runs/best.pt --vs-stockfish-skill 5         --n-games 40 --tc 40/60+0.6 --concurrency 2
 
-    # Plain output (no TTY decoration), e.g. for piping into a log file:
+    # plain output (no tty decoration), e.g. for piping into a log file:
     uv run python scripts/run_match.py ... --no-tui
 """
 
@@ -64,7 +60,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def _label_for(cmd: str) -> str:
-    """Short display label for an engine command (last token of basename)."""
+    """short display label for an engine command (last token of basename)."""
     parts = cmd.strip().split()
     if not parts:
         return "?"

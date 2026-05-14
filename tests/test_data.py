@@ -1,10 +1,3 @@
-"""Tests for kibitzer.data.LichessGameDataset / collate_games.
-
-Hardcoded short PGNs cover the perspective + truncation + filter logic; the
-multi-worker test patches torch.utils.data.get_worker_info to simulate two
-workers without spinning up a real DataLoader.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -13,7 +6,7 @@ from unittest.mock import MagicMock, patch
 from kibitzer.data import LichessGameDataset, collate_games
 
 
-# Scholar's mate: 1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6 4.Qxf7# — 7 plies, white wins.
+# scholar's mate: 7 plies, white wins.
 SCHOLARS_MATE = """[Event "Test Blitz"]
 [Site "?"]
 [Date "?"]
@@ -28,7 +21,7 @@ SCHOLARS_MATE = """[Event "Test Blitz"]
 1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6 4. Qxf7# 1-0
 """
 
-# Fool's mate: 1.f3 e5 2.g4 Qh4# — 4 plies, black wins.
+# fool's mate: 4 plies, black wins.
 FOOLS_MATE = """[Event "Test Blitz"]
 [Site "?"]
 [Date "?"]
@@ -43,7 +36,7 @@ FOOLS_MATE = """[Event "Test Blitz"]
 1. f3 e5 2. g4 Qh4# 0-1
 """
 
-# Short "agreed draw": 8 plies, all zeros for value_target.
+# short agreed draw: 8 plies, all zeros for value_target.
 SHORT_DRAW = """[Event "Test Blitz"]
 [Site "?"]
 [Date "?"]
@@ -58,7 +51,7 @@ SHORT_DRAW = """[Event "Test Blitz"]
 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 1/2-1/2
 """
 
-# Same moves as Scholar's mate but low Elo — should be filtered out.
+# same moves as scholar's mate, but low elo.
 LOW_ELO = """[Event "Test Blitz"]
 [Site "?"]
 [Date "?"]
@@ -100,7 +93,7 @@ def test_single_game_parses(tmp_path: Path) -> None:
     games = list(ds)
     assert len(games) == 1
     g = games[0]
-    assert g["ply_count"] == 7  # Scholar's mate is 7 plies
+    assert g["ply_count"] == 7  # scholar's mate is 7 plies
     T = g["ply_count"]
     assert g["piece_idx"].shape == (T, 64)
     assert g["aux"].shape == (T, 7)
@@ -110,17 +103,17 @@ def test_single_game_parses(tmp_path: Path) -> None:
 
 
 def test_value_target_perspective(tmp_path: Path) -> None:
-    # White wins → at white's turn (even t) +1, at black's turn (odd t) -1.
+    # white win flips by side to move.
     path_w = _write(tmp_path, SCHOLARS_MATE, "w.pgn")
     g = next(iter(LichessGameDataset([path_w], min_plies=4, shuffle_buffer_size=1)))
     assert g["value_target"].tolist() == [1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0]
 
-    # Black wins → flipped.
+    # black win flips the other way.
     path_b = _write(tmp_path, FOOLS_MATE, "b.pgn")
     g = next(iter(LichessGameDataset([path_b], min_plies=4, shuffle_buffer_size=1)))
     assert g["value_target"].tolist() == [-1.0, 1.0, -1.0, 1.0]
 
-    # Draw → zeros throughout.
+    # draw stays zero throughout.
     path_d = _write(tmp_path, SHORT_DRAW, "d.pgn")
     g = next(iter(LichessGameDataset([path_d], min_plies=4, shuffle_buffer_size=1)))
     assert g["value_target"].tolist() == [0.0] * g["ply_count"]
@@ -130,7 +123,7 @@ def test_legal_mask_correct(tmp_path: Path) -> None:
     path = _write(tmp_path, SCHOLARS_MATE)
     ds = LichessGameDataset([path], min_plies=4, shuffle_buffer_size=1)
     g = next(iter(ds))
-    # Standard starting position has 20 legal moves (16 pawn pushes + 4 knight).
+    # starting position has 20 legal moves.
     assert int(g["legal_mask"][0].sum()) == 20
 
 
@@ -156,7 +149,7 @@ def test_filter_low_elo(tmp_path: Path) -> None:
 
 
 def test_truncation(tmp_path: Path) -> None:
-    # Scholar's mate is 7 plies; truncate to 4.
+    # scholar's mate is 7 plies; truncate to 4.
     path = _write(tmp_path, SCHOLARS_MATE)
     ds = LichessGameDataset(
         [path], min_plies=4, max_plies=4, shuffle_buffer_size=1
@@ -214,7 +207,7 @@ def test_multi_worker_partitioning(tmp_path: Path) -> None:
     # paths[0::2] = [path0, path2]; paths[1::2] = [path1, path3].
     assert len(games_w0) == 2
     assert len(games_w1) == 2
-    # Disjoint and complete: 4 distinct ply_counts across the two workers
+    # disjoint and complete: 4 distinct ply_counts across the two workers
     # ([7, 8] for worker 0, [4, 10] for worker 1).
     counts = sorted(
         [g["ply_count"] for g in games_w0] + [g["ply_count"] for g in games_w1]

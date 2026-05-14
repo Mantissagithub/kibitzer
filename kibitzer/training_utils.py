@@ -1,4 +1,4 @@
-"""Utilities for the training loop: LR schedule, EMA, checkpoint I/O, param counting."""
+"""training utilities: lr schedule, ema, checkpoints, parameter counts."""
 
 from __future__ import annotations
 
@@ -16,13 +16,7 @@ def get_lr(
     peak_lr: float,
     min_lr: float,
 ) -> float:
-    """Linear warmup → cosine decay schedule.
-
-    * ``step < warmup_steps``: linear from 0 to ``peak_lr``.
-    * ``warmup_steps <= step <= total_steps``: cosine decay from ``peak_lr``
-      to ``min_lr``.
-    * ``step > total_steps``: pinned at ``min_lr``.
-    """
+    """linear warmup into cosine decay, pinned at ``min_lr`` afterward."""
     if warmup_steps > 0 and step < warmup_steps:
         return peak_lr * step / warmup_steps
     if step >= total_steps:
@@ -34,12 +28,7 @@ def get_lr(
 
 
 class EMA:
-    """Exponential moving average for streaming scalar metrics (e.g. loss).
-
-    Initializes on the first update so the first reported value is the input
-    itself (no warm-up bias). ``value`` returns 0.0 before any update so a
-    fresh tracker reads cleanly.
-    """
+    """exponential moving average for display metrics."""
 
     def __init__(self, beta: float = 0.99) -> None:
         self.beta = beta
@@ -66,7 +55,7 @@ def save_checkpoint(
     config: dict,
     metrics: dict | None = None,
 ) -> None:
-    """Persist model + optimizer + run metadata to ``path``."""
+    """persist model + optimizer + run metadata to ``path``."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -86,7 +75,7 @@ def load_checkpoint(
     optimizer: torch.optim.Optimizer | None = None,
     map_location: str | torch.device = "cpu",
 ) -> dict:
-    """Restore model state (and optionally optimizer); return the full payload."""
+    """restore model state and optionally optimizer state."""
     ckpt = torch.load(path, map_location=map_location, weights_only=False)
     model.load_state_dict(ckpt["model"])
     if optimizer is not None and ckpt.get("optimizer") is not None:
@@ -95,5 +84,5 @@ def load_checkpoint(
 
 
 def count_params(model: nn.Module) -> int:
-    """Total number of parameters in the model (trainable and frozen)."""
+    """total parameters, trainable and frozen."""
     return sum(p.numel() for p in model.parameters())

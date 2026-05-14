@@ -1,5 +1,3 @@
-"""Tests for kibitzer.opponents."""
-
 from __future__ import annotations
 
 import random
@@ -38,8 +36,8 @@ def test_kibitzer_opponent_legal() -> None:
             break
         m = op(b)
         assert m in b.legal_moves
-        # Drive the board forward with random moves so each call sees a
-        # different position. We're testing legality across many positions,
+        # drive the board forward so each call sees a different position.
+        # we're testing legality across many positions,
         # not training the engine's own play.
         b.push(rng.choice(list(b.legal_moves)))
 
@@ -58,7 +56,7 @@ def test_stockfish_opponent() -> None:
 
 
 def test_stockfish_rejects_both_limits() -> None:
-    # Limit validation runs before path resolution, so this is env-independent.
+    # limit validation runs before path resolution, so this is env-independent.
     with pytest.raises(ValueError, match="exactly one"):
         StockfishOpponent(depth=10, time_ms=100)
 

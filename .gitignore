@@ -58,5 +58,6 @@ data/
 .env.*
 !.env.example
 
-# Claude/Anthropic
+# Claude / Codex 
 .claude/
+.codex/

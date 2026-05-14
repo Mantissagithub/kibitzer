@@ -1,18 +1,17 @@
-"""Board and move encoding for AlphaZero-style chess models.
+"""board and move encoding for alphazero-style chess models.
 
-This module is the bridge between ``python-chess`` objects and the tensor /
-integer representations consumed by the policy/value network and the search.
+this module is the bridge between ``python-chess`` objects and the tensor /
+integer formats consumed by the policy/value network and search.
 
-Two responsibilities:
+two responsibilities:
 
-1. ``board_to_tensor`` — encode a ``chess.Board`` as integer piece tokens (one
+1. ``board_to_tensor`` — encode a ``chess.board`` as integer piece tokens (one
    per square) plus a small fixed-length vector of auxiliary scalars.
-2. ``move_to_index`` / ``index_to_move`` — encode/decode a ``chess.Move`` as a
-   flat integer in ``[0, 4672)`` using AlphaZero's 64×73 action layout.
+2. ``move_to_index`` / ``index_to_move`` — encode/decode a ``chess.move`` as a
+   flat integer in ``[0, 4672)`` using alphazero's 64×73 action layout.
 
-All public conventions (square ordering, piece indices, plane layout, direction
-orderings, aux slot order) are frozen here so that downstream code (encoder,
-MCTS, dataset, tests) can rely on them.
+the public conventions here are fixed: square order, piece indices, plane
+layout, direction order, and aux slot order.
 """
 
 from __future__ import annotations
@@ -20,11 +19,7 @@ from __future__ import annotations
 import chess
 import torch
 
-# ---------------------------------------------------------------------------
-# Board encoding
-# ---------------------------------------------------------------------------
-
-# Piece token layout for ``piece_idx``:
+# piece token layout for ``piece_idx``:
 #   0          empty
 #   1..6       white  P, N, B, R, Q, K
 #   7..12      black  P, N, B, R, Q, K
@@ -48,44 +43,11 @@ AUX_SIZE = 7
 
 
 def board_to_tensor(board: chess.Board) -> dict[str, torch.Tensor]:
-    """Encode a ``chess.Board`` as integer piece tokens plus auxiliary scalars.
+    """encode a board as ``piece_idx`` and ``aux`` tensors.
 
-    The function returns a dict with two tensors kept separate because the
-    encoder treats them differently: ``piece_idx`` is fed through an embedding
-    table (categorical), while ``aux`` is concatenated as continuous features.
-
-    Square ordering follows ``chess.SQUARES``: ``A1=0, B1=1, ..., H1=7, A2=8,
-    ..., H8=63``.
-
-    Returns
-    -------
-    dict[str, torch.Tensor]
-        ``"piece_idx"`` : ``LongTensor`` of shape ``(64,)``.
-            For each square, an integer in ``[0, 12]``:
-
-            * ``0``    — empty
-            * ``1..6`` — white pawn, knight, bishop, rook, queen, king
-            * ``7..12``— black pawn, knight, bishop, rook, queen, king
-
-            Kept as an index (not one-hot) because the network embeds it.
-
-        ``"aux"`` : ``FloatTensor`` of shape ``(7,)``.
-            Fixed slot order:
-
-            ============= ==================================================
-            Index         Feature
-            ============= ==================================================
-            0             side-to-move        (1.0 white, 0.0 black)
-            1             castling W kingside (0.0 / 1.0)
-            2             castling W queenside
-            3             castling B kingside
-            4             castling B queenside
-            5             en passant file     (-1.0 if none, else 0.0..7.0)
-            6             halfmove clock      (``min(hm, 100) / 100.0``)
-            ============= ==================================================
-
-            The en-passant slot is stored as a float for tensor homogeneity;
-            the encoder may round it to an int for an embedding lookup.
+    square order follows ``python-chess``: ``a1=0`` through ``h8=63``.
+    ``aux`` slots are side to move, castling rights, en-passant file
+    (``-1`` when absent), and capped halfmove clock.
     """
     piece_idx = torch.zeros(64, dtype=torch.long)
     for sq in chess.SQUARES:
@@ -111,12 +73,7 @@ def board_to_tensor(board: chess.Board) -> dict[str, torch.Tensor]:
     return {"piece_idx": piece_idx, "aux": aux}
 
 
-# ---------------------------------------------------------------------------
-# Move encoding (AlphaZero 64 × 73)
-# ---------------------------------------------------------------------------
-
-# 8 compass directions for queen-like moves, in canonical AlphaZero order.
-# Each entry is a (rank_delta, file_delta) unit vector.
+# queen-like move directions, in alphazero order.
 _QUEEN_DIRS: list[tuple[int, int]] = [
     (1, 0),    # 0  N
     (1, 1),    # 1  NE
@@ -128,7 +85,7 @@ _QUEEN_DIRS: list[tuple[int, int]] = [
     (1, -1),   # 7  NW
 ]
 
-# 8 knight (rank_delta, file_delta) offsets in fixed order.
+# knight move offsets in fixed order.
 _KNIGHT_DIRS: list[tuple[int, int]] = [
     (2, 1),    # 0
     (1, 2),    # 1
@@ -140,10 +97,9 @@ _KNIGHT_DIRS: list[tuple[int, int]] = [
     (2, -1),   # 7
 ]
 
-# Underpromotion file deltas (mover's POV). Rank delta is implied by side-to-move.
+# underpromotion file deltas from the mover's point of view.
 _UNDERPROMOTION_FILE_DELTAS: list[int] = [-1, 0, 1]
-# Underpromotion piece order. Queen promotions are NOT encoded here — they ride
-# the queen-like planes.
+# queen promotions ride the queen-like planes; only these get special planes.
 _UNDERPROMOTION_PIECES: list[int] = [chess.KNIGHT, chess.BISHOP, chess.ROOK]
 
 NUM_PLANES = 73
@@ -156,62 +112,11 @@ def _rank_file(sq: int) -> tuple[int, int]:
 
 
 def move_to_index(move: chess.Move, board: chess.Board) -> int:
-    """Encode a ``chess.Move`` as a flat action index in ``[0, 4672)``.
+    """encode a move as ``from_square * 73 + plane``.
 
-    Action layout::
-
-        idx = from_square * 73 + plane
-
-    where ``plane`` ∈ ``[0, 73)`` decomposes as:
-
-    * **0..55  — queen-like moves** (covers king, queen, rook, bishop, pawn
-      pushes/captures, and queen promotions). 8 compass directions × 7
-      distances::
-
-          plane = direction_idx * 7 + (distance - 1)
-
-      Direction indices correspond to ``_QUEEN_DIRS`` (N, NE, E, SE, S, SW, W,
-      NW). Distance is the Chebyshev distance from ``from_square`` to
-      ``to_square``, in ``{1..7}``.
-
-    * **56..63 — knight moves**::
-
-          plane = 56 + knight_idx
-
-      with ``knight_idx`` indexing ``_KNIGHT_DIRS``.
-
-    * **64..72 — underpromotions** (knight, bishop, rook only)::
-
-          plane = 64 + file_idx * 3 + piece_idx
-
-      where ``file_idx`` selects the file delta from
-      ``_UNDERPROMOTION_FILE_DELTAS = [-1, 0, +1]`` (capture-left, push,
-      capture-right from the mover's POV) and ``piece_idx`` selects the piece
-      from ``_UNDERPROMOTION_PIECES = [KNIGHT, BISHOP, ROOK]``. The rank delta
-      is implicit (+1 for white, -1 for black) and is recovered from
-      ``board.turn`` during decoding.
-
-    Notes
-    -----
-    * A move with ``promotion=chess.QUEEN`` is routed through the queen-like
-      planes (the index does not carry a promotion bit). The decoder
-      re-attaches ``promotion=chess.QUEEN`` when the from-square holds a pawn
-      reaching the back rank, so the round-trip is identity-preserving.
-    * A pawn move to the back rank with ``promotion=None`` is also routed
-      through the queen-like planes; the decoder will return the same
-      destination but with ``promotion=chess.QUEEN`` set.
-    * Castling in ``python-chess`` is the king moving two squares (e.g.
-      ``E1→G1``); this is a queen-like move and needs no special handling.
-    * The ``board`` argument is currently unused by the encoder but is part of
-      the signature for symmetry with ``index_to_move`` and to support future
-      board-dependent encodings (e.g. Chess960). Call sites should still pass
-      it.
-
-    Raises
-    ------
-    ValueError
-        If the move geometry is not representable (null move, off-board,
-        unknown promotion piece, or non-queen/non-knight delta).
+    planes 0..55 are queen-like moves, 56..63 are knight moves, and 64..72
+    are knight/bishop/rook underpromotions. queen promotions use queen-like
+    planes and get restored during decoding.
     """
     del board  # currently unused; kept for API symmetry / future extensions
 
@@ -225,7 +130,7 @@ def move_to_index(move: chess.Move, board: chess.Board) -> int:
     if dr == 0 and df == 0:
         raise ValueError(f"Null move (from == to): {move}")
 
-    # Underpromotion to N / B / R uses dedicated planes.
+    # underpromotions use dedicated planes.
     if move.promotion is not None and move.promotion != chess.QUEEN:
         if move.promotion not in _UNDERPROMOTION_PIECES:
             raise ValueError(f"Unsupported promotion piece: {move.promotion}")
@@ -238,15 +143,13 @@ def move_to_index(move: chess.Move, board: chess.Board) -> int:
         plane = 64 + file_idx * 3 + piece_idx
         return from_sq * NUM_PLANES + plane
 
-    # Knight moves: dedicated planes. Knight deltas (|dr|+|df| == 3 with both
-    # nonzero) never overlap with queen-like deltas, so this check is safe.
+    # knight deltas never overlap with queen-like deltas.
     if (dr, df) in _KNIGHT_DIRS:
         knight_idx = _KNIGHT_DIRS.index((dr, df))
         plane = 56 + knight_idx
         return from_sq * NUM_PLANES + plane
 
-    # Queen-like move (also handles queen promotion and queen-promotion-by-
-    # default for pawn-to-back-rank moves with promotion=None).
+    # queen-like moves also cover queen promotion by convention.
     distance = max(abs(dr), abs(df))
     if dr % distance != 0 or df % distance != 0:
         raise ValueError(
@@ -263,38 +166,10 @@ def move_to_index(move: chess.Move, board: chess.Board) -> int:
 
 
 def index_to_move(idx: int, board: chess.Board) -> chess.Move:
-    """Decode a flat action index back to a ``chess.Move``.
+    """decode an action index back to a move for ``board``.
 
-    Inverse of :func:`move_to_index` for legal moves.
-
-    The ``board`` argument is required for two reasons:
-
-    1. **Implicit queen promotion.** Queen-like planes do not carry a
-       promotion bit. When the index decodes to a pawn move that lands on the
-       back rank, this function attaches ``promotion=chess.QUEEN`` based on
-       the from-square piece.
-    2. **Underpromotion rank delta.** Underpromotion planes (64..72) encode
-       only the file delta and the promotion piece. The rank delta is read
-       from ``board.turn`` (+1 for white, -1 for black).
-
-    Parameters
-    ----------
-    idx : int
-        Action index in ``[0, 4672)``.
-    board : chess.Board
-        Position from which the move is being played. Used as described above.
-
-    Returns
-    -------
-    chess.Move
-        The decoded move, with ``promotion`` set if applicable. The function
-        does not validate that the move is legal; out-of-board geometry will
-        raise.
-
-    Raises
-    ------
-    ValueError
-        If ``idx`` is out of range or decodes to an off-board destination.
+    ``board`` supplies the pawn color for implicit queen promotions and the
+    rank direction for underpromotion planes.
     """
     if not 0 <= idx < ACTION_SIZE:
         raise ValueError(f"Index {idx} out of range [0, {ACTION_SIZE})")
@@ -315,7 +190,7 @@ def index_to_move(idx: int, board: chess.Board) -> chess.Move:
             )
         to_sq = chess.square(to_file, to_rank)
 
-        # Implicit queen promotion when a pawn reaches the back rank.
+        # restore implicit queen promotion when a pawn reaches the back rank.
         promotion: int | None = None
         piece = board.piece_at(from_sq)
         if piece is not None and piece.piece_type == chess.PAWN:
@@ -338,7 +213,7 @@ def index_to_move(idx: int, board: chess.Board) -> chess.Move:
         to_sq = chess.square(to_file, to_rank)
         return chess.Move(from_sq, to_sq)
 
-    # Underpromotion: planes 64..72.
+    # underpromotion planes.
     up_idx = plane - 64
     file_idx, piece_idx = divmod(up_idx, 3)
     df = _UNDERPROMOTION_FILE_DELTAS[file_idx]

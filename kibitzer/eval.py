@@ -1,22 +1,4 @@
-"""Evaluate a Kibitzer checkpoint against a baseline via cutechess-cli.
-
-Thin wrapper around :func:`kibitzer.cutechess_runner.run_match` that picks
-the right A/B engine commands for a checkpoint-vs-Stockfish or
-checkpoint-vs-prev-checkpoint match and returns a flat scorecard.
-
-Both Kibitzer instances are spawned via ``scripts/uci.py``; the checkpoint
-path is passed to each as a UCI ``Checkpoint`` option (lazy-loaded on the
-engine's first ``isready``).
-
-Example
--------
-    from kibitzer.eval import evaluate_checkpoint
-
-    result = evaluate_checkpoint(
-        "runs/best.pt", opponent="stockfish-3", n_games=20
-    )
-    # result["score"], result["elo_diff"], result["pgn_path"], ...
-"""
+"""evaluate a kibitzer checkpoint via cutechess-cli."""
 
 from __future__ import annotations
 
@@ -51,12 +33,7 @@ def evaluate_checkpoint(
     cutechess_path: str = "cutechess-cli",
     on_progress: Callable[[dict], None] | None = None,
 ) -> dict:
-    """Run a cutechess match and return a flat scorecard.
-
-    ``opponent`` selects the B side:
-        ``stockfish-N`` — Stockfish at ``Skill Level=N``.
-        ``self-vs-prev`` — Kibitzer at ``prev_checkpoint`` (required).
-    """
+    """run cutechess and return a flat scorecard."""
     if opponent not in _VALID_OPPONENTS:
         raise ValueError(
             f"unknown opponent: {opponent!r}; "

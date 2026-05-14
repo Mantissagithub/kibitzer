@@ -1,5 +1,3 @@
-"""Tests for kibitzer.masking."""
-
 from __future__ import annotations
 
 import random
@@ -50,15 +48,14 @@ def test_mask_count_matches(random_positions: list[chess.Board]) -> None:
 
 
 def test_checkmate_position() -> None:
-    # Fool's mate after 1.f3 e5 2.g4 Qh4#. White to move, in check, no legal moves.
+    # fool's mate after 1.f3 e5 2.g4 qh4#: white is in check with no moves.
     b = chess.Board("rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3")
     assert b.is_checkmate()
     assert legal_move_mask(b).sum().item() == 0
 
 
 def test_stalemate_position() -> None:
-    # Lone-king stalemate: white Qf7, white Kg6, black Kh8 to move.
-    # Not in check; every king square is covered.
+    # lone-king stalemate: black is not in check, but every square is covered.
     b = chess.Board("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1")
     assert b.is_stalemate()
     assert legal_move_mask(b).sum().item() == 0

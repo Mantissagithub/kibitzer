@@ -1,5 +1,3 @@
-"""Tests for kibitzer.inference.KibitzerEngine."""
-
 from __future__ import annotations
 
 import math
@@ -54,7 +52,7 @@ def test_evaluate_starting_position(engine: KibitzerEngine) -> None:
 
     assert len(out["legal_moves"]) == 20
     assert len(out["move_probs"]) == 20
-    # Sorted desc.
+    # sorted descending.
     ps = [p for _, p in out["move_probs"]]
     assert all(ps[i] >= ps[i + 1] for i in range(len(ps) - 1))
 
@@ -88,7 +86,7 @@ def test_push_move_updates_history(engine: KibitzerEngine) -> None:
     assert len(engine.history) == 1
     engine.push_move(chess.Move.from_uci("e2e4"))
     assert len(engine.history) == 2
-    # Side to move flipped to black.
+    # side to move flipped to black.
     assert engine.history[-1].turn is chess.BLACK
     assert engine.history[0].turn is chess.WHITE  # original snapshot intact
 
@@ -108,16 +106,16 @@ def test_full_game_loop(engine: KibitzerEngine) -> None:
 
 def test_evaluate_at(engine: KibitzerEngine) -> None:
     _fresh(engine)
-    # Build a board with a few moves on its move_stack.
+    # build a board with moves on its move_stack.
     board = chess.Board()
     for uci in ("e2e4", "e7e5", "g1f3"):
         board.push(chess.Move.from_uci(uci))
 
     saved_len = len(engine.history)
     move = engine.evaluate_at(board)
-    # Returned move must be legal in the queried board.
+    # returned move must be legal in the queried board.
     assert move in board.legal_moves
-    # Engine state must be restored.
+    # engine state must be restored.
     assert len(engine.history) == saved_len
 
 
@@ -126,9 +124,9 @@ def test_principal_variation(engine: KibitzerEngine) -> None:
     saved_len = len(engine.history)
     pv = engine.get_principal_variation(depth=5)
     assert len(pv) <= 5
-    # History must be restored exactly.
+    # history must be restored exactly.
     assert len(engine.history) == saved_len
-    # Every PV move must have been legal in the position it was played from.
+    # every pv move must have been legal in its position.
     b = engine.history[-1].copy(stack=False)
     for m in pv:
         assert m in b.legal_moves

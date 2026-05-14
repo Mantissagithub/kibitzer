@@ -1,10 +1,10 @@
-"""Shared rich-based TUI helpers for Kibitzer's user-facing scripts.
+"""shared rich-based tui helpers for kibitzer's user-facing scripts.
 
-Single console, single theme, a handful of renderables. Scripts decide via
-:func:`is_tty` whether to use the TUI path or a plain-print fallback so
+single console, single theme, a handful of renderables. scripts decide via
+:func:`is_tty` whether to use the tui path or a plain-print fallback so
 piped/automated invocations stay clean.
 
-Future training code should plug into the same primitives (live loss panels,
+future training code should plug into the same primitives (live loss panels,
 eval bars during cutechess gauntlets) — that's why this module is in the
 package, not under ``scripts/``.
 """
@@ -56,7 +56,7 @@ _PIECE_GLYPH = {
 
 
 def is_tty() -> bool:
-    """True when stdout is a real terminal (so we can draw a TUI)."""
+    """true when stdout can draw a tui."""
     return sys.stdout.isatty()
 
 
@@ -74,7 +74,7 @@ def board_panel(
     perspective: chess.Color = chess.WHITE,
     title: str | None = None,
 ) -> Panel:
-    """Render a chess board with file/rank labels and last-move highlight."""
+    """render a chess board with file/rank labels and last-move highlight."""
     grid = Table.grid(padding=0, collapse_padding=True)
     for _ in range(9):
         grid.add_column(no_wrap=True)
@@ -127,7 +127,7 @@ def board_panel(
 
 
 def _value_bar(value: float, width: int = 24) -> Text:
-    """Horizontal bar from -1 (black) to +1 (white) with a marker at value."""
+    """horizontal bar from -1 (black) to +1 (white) with a marker at value."""
     value = max(-1.0, min(1.0, value))
     half = width // 2
     text = Text()
@@ -180,7 +180,7 @@ def eval_panel(
 
 
 def move_history(board: chess.Board, max_pairs: int = 12) -> Panel:
-    """Last ``max_pairs`` move-pairs in PGN-like SAN."""
+    """last ``max_pairs`` move pairs in san."""
     moves = list(board.move_stack)
     replay = chess.Board()
     pairs: list[tuple[str, str]] = []
@@ -237,11 +237,8 @@ class MatchState:
         new_total = self.completed
         if new_total <= prev_total:
             return
-        # Append new results in best-effort order: pad with current totals.
+        # append new results in best-effort order from cumulative counts.
         delta = new_total - prev_total
-        # We can't tell *which* result was added here; the runner emits a
-        # cumulative score line, so just push 'W'/'L'/'D' based on which
-        # counter advanced (taking the first that grew).
         for _ in range(delta):
             if w > self.completed_results.count("W"):
                 self.completed_results.append("W")
@@ -252,7 +249,7 @@ class MatchState:
 
 
 def match_progress(state: MatchState) -> RenderableType:
-    """Live-display body for an in-progress cutechess match."""
+    """live body for an in-progress cutechess match."""
     bar = ProgressBar(total=state.n_games, completed=state.completed, width=40)
 
     counts = Table.grid(padding=(0, 2))
@@ -305,7 +302,7 @@ _SPARK_CHARS = "▁▂▃▄▅▆▇█"
 
 
 def _sparkline(values: Sequence[float], width: int = 72) -> Text:
-    """Terminal-native sparkline, stable and cheap enough for live refreshes."""
+    """terminal sparkline, stable enough for live refreshes."""
     if not values:
         return Text("(no data yet)", style="dim")
     vals = list(values[-width:])
@@ -326,7 +323,7 @@ def trend_panel(
     *,
     border_style: str = "muted",
 ) -> Panel:
-    """Compact TensorBoard-style scalar card without bitmap rendering."""
+    """compact scalar card without bitmap rendering."""
     if not xs or not ys:
         return Panel(
             Text("(no data yet)", style="dim"),
@@ -356,7 +353,7 @@ def trend_panel(
 
 
 def scalar_panel(label: str, value: str, *, border_style: str = "muted") -> Panel:
-    """Single-line label/value panel for lr / grad / throughput."""
+    """single-line label/value panel."""
     body = Text()
     body.append(f"{label}\n", style="muted")
     body.append(value, style="accent")
@@ -368,7 +365,7 @@ def policy_overlay_panel(
     top_moves: list[tuple[chess.Move, float]],
     value: float | None = None,
 ) -> Panel:
-    """Board on the left, top-5 SAN moves with prob bars on the right."""
+    """board plus top move bars."""
     board_table = Table.grid(padding=0, collapse_padding=True)
     for _ in range(9):
         board_table.add_column(no_wrap=True)
@@ -477,7 +474,7 @@ def train_layout(state: TrainState) -> Layout:
         Layout(name="lower", ratio=1),
     )
 
-    # Upper row: loss plot | scalars
+    # upper row: loss plot | scalars
     layout["body"]["upper"].split_row(
         Layout(name="loss", ratio=2),
         Layout(name="scalars", ratio=1),
@@ -498,7 +495,7 @@ def train_layout(state: TrainState) -> Layout:
               title_align="left")
     )
 
-    # Lower row: policy overlay | Elo curve
+    # lower row: policy overlay | elo curve
     layout["body"]["lower"].split_row(
         Layout(name="board", ratio=1),
         Layout(name="elo", ratio=1),
@@ -526,7 +523,7 @@ def train_layout(state: TrainState) -> Layout:
 
 
 def result_table(result: dict) -> Panel:
-    """Final scorecard panel for run_match / evaluate_checkpoint."""
+    """final scorecard panel."""
     table = Table.grid(padding=(0, 2))
     table.add_column(style="muted", justify="right")
     table.add_column(style="accent")

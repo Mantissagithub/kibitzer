@@ -1,5 +1,3 @@
-"""Tests for kibitzer.loss.policy_loss / value_loss / combined_loss."""
-
 from __future__ import annotations
 
 import math
@@ -13,7 +11,7 @@ A = 4672  # action space size, matching kibitzer.encoding.ACTION_SIZE
 
 
 def _legal_mask(B: int, T: int, indices_per_pos: list[list[int]]) -> torch.Tensor:
-    """Build a (B, T, A) Bool mask. ``indices_per_pos[b*T + t]`` lists legal idxs."""
+    """build a (b, t, a) bool legal mask."""
     mask = torch.zeros(B, T, A, dtype=torch.bool)
     for b in range(B):
         for t in range(T):
@@ -62,8 +60,7 @@ def test_policy_loss_ignores_illegal() -> None:
 
 
 def test_policy_loss_respects_loss_mask() -> None:
-    # Ply 0: 100 legal moves, uniform → loss = log(100).
-    # Ply 1: 1 legal move (the played one) with high logit → loss ≈ 0.
+    # ply 0 is uniform over 100 moves; ply 1 strongly favors the played move.
     legal_mask = torch.zeros(1, 2, A, dtype=torch.bool)
     for i in range(100):
         legal_mask[0, 0, i] = True
@@ -127,9 +124,7 @@ def test_combined_loss_keys() -> None:
 
 
 def test_policy_accuracy() -> None:
-    # Two plies, both real.
-    # Ply 0: legal {10, 20, 30}, played 20, max logit at 20 → correct.
-    # Ply 1: legal {40, 50, 60}, played 50, max logit at 60 → wrong.
+    # two real plies: first top-1 is correct, second is wrong.
     B, T = 1, 2
     logits = torch.zeros(B, T, A)
     legal_mask = torch.zeros(B, T, A, dtype=torch.bool)

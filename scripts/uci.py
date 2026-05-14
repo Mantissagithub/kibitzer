@@ -1,24 +1,28 @@
-"""UCI adapter for Kibitzer.
+"""uci adapter for kibitzer.
 
-Implements the subset of UCI needed for cutechess-cli tournament play and for
-``chess.engine.SimpleEngine.popen_uci``: ``uci``, ``setoption``, ``isready``,
-``ucinewgame``, ``position``, ``go``, ``stop``, ``quit``. Search is synchronous
+implements the subset of uci needed for cutechess-cli tournament play and for
+``chess.engine.simpleengine.popen_uci``: ``uci``, ``setoption``, ``isready``,
+``ucinewgame``, ``position``, ``go``, ``stop``, ``quit``. search is synchronous
 (one forward pass per ``go``), so ``stop`` is a no-op — by the time the host
-can send it, we've already emitted ``bestmove``. Time-control fields on ``go``
+can send it, we've already emitted ``bestmove``. time-control fields on ``go``
 (wtime/btime/winc/binc/movetime/depth/nodes/infinite) are accepted and ignored.
 
-Options:
-    Checkpoint  (string)         path to a .pt file; reloaded on next isready
-    Temperature (string -> float) sampling temperature; 0.0 = greedy
-    Device      (combo cuda|cpu) reloads the model on next isready
+options:
+    checkpoint  (string)         path to a .pt file; reloaded on next isready
+    temperature (string -> float) sampling temperature; 0.0 = greedy
+    device      (combo cuda|cpu) reloads the model on next isready
 
-Examples:
-    # Plug into cutechess / banksia / lichess-bot:
+examples:
+    # plug into cutechess / banksia / lichess-bot:
     uv run python scripts/uci.py --checkpoint runs/best.pt
 
-    # Manual smoke test:
-    printf 'uci\\nisready\\nposition startpos\\ngo movetime 100\\nquit\\n' \\
-        | uv run python scripts/uci.py
+    # manual smoke test:
+    printf 'uci
+isready
+position startpos
+go movetime 100
+quit
+'         | uv run python scripts/uci.py
 """
 
 from __future__ import annotations
@@ -90,12 +94,12 @@ def build_engine(config: dict) -> KibitzerEngine:
 
 
 def say(line: str) -> None:
-    """Write a UCI line to stdout. UCI hosts read line-by-line; flush always."""
+    """write a uci line to stdout. uci hosts read line-by-line; flush always."""
     print(line, flush=True)
 
 
 def parse_position(tokens: list[str]) -> chess.Board | None:
-    """Parse a `position ...` command. Returns the new board, or None on error."""
+    """parse a `position ...` command. returns the new board, or none on error."""
     if len(tokens) < 2:
         return None
 
@@ -126,7 +130,7 @@ def parse_position(tokens: list[str]) -> chess.Board | None:
 
 
 def parse_setoption(tokens: list[str]) -> tuple[str, str] | None:
-    """Parse `setoption name <Name> value <Value>`. Value may contain spaces."""
+    """parse `setoption name <name> value <value>`. value may contain spaces."""
     if len(tokens) < 5 or tokens[1] != "name":
         return None
     try:
@@ -167,7 +171,7 @@ def handle_setoption(tokens: list[str], config: dict, state: dict) -> None:
 def handle_go(
     engine: KibitzerEngine, board: chess.Board, temperature: float
 ) -> None:
-    """Run one forward pass on ``board``, emit info + bestmove."""
+    """run one forward pass on ``board``, emit info + bestmove."""
     saved = list(engine.history)
     t0 = time.perf_counter()
     try:
@@ -188,8 +192,8 @@ def handle_go(
         engine.history = saved
     elapsed_ms = max(1, int((time.perf_counter() - t0) * 1000))
 
-    # cp is conventionally centipawns; ours is the tanh value × 100 ("centi-tanh"),
-    # clamped to ±2000 to match Stockfish-style non-mate output.
+    # cp is conventionally centipawns; ours is tanh value × 100, clamped to
+    # +/-2000 to match stockfish-style non-mate output.
     cp = max(-2000, min(2000, int(round(value * 100))))
     say(
         f"info depth 1 score cp {cp} nodes 1 nps 1 "
@@ -254,14 +258,13 @@ def main() -> None:
                 else:
                     board = new_board
             elif cmd == "go":
-                # Time-control tokens (wtime/btime/winc/binc/movetime/depth/
-                # nodes/infinite) are accepted and ignored — we're synchronous.
+                # accept time-control tokens but ignore them; go is synchronous.
                 if engine is None or state["dirty"]:
                     engine = build_engine(config)
                     state["dirty"] = False
                 handle_go(engine, board, config["temperature"])
             elif cmd == "stop":
-                # Synchronous; bestmove was already emitted by the prior `go`.
+                # bestmove was already emitted by the prior `go`.
                 pass
             else:
                 print(f"unrecognized: {line}", file=sys.stderr)

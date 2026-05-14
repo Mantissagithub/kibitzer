@@ -1,5 +1,3 @@
-"""Tests for kibitzer.training_utils."""
-
 from __future__ import annotations
 
 import math
@@ -15,11 +13,6 @@ from kibitzer.training_utils import (
     load_checkpoint,
     save_checkpoint,
 )
-
-
-# ---------------------------------------------------------------------------
-# get_lr
-# ---------------------------------------------------------------------------
 
 
 def test_lr_zero_at_step_zero() -> None:
@@ -38,7 +31,7 @@ def test_lr_min_at_total_steps() -> None:
 
 
 def test_lr_warmup_is_linear() -> None:
-    # Halfway through warmup → half of peak_lr.
+    # halfway through warmup is half of peak_lr.
     lr = get_lr(50, 100, 1000, 1e-3, 1e-5)
     assert math.isclose(lr, 5e-4, rel_tol=1e-9)
 
@@ -58,13 +51,8 @@ def test_lr_past_total_steps_pinned() -> None:
 
 
 def test_lr_no_warmup() -> None:
-    # warmup_steps=0 → step 0 starts at peak_lr (cosine progress=0 → factor=1).
+    # warmup_steps=0 starts step 0 at peak_lr.
     assert math.isclose(get_lr(0, 0, 1000, 1e-3, 1e-5), 1e-3, rel_tol=1e-9)
-
-
-# ---------------------------------------------------------------------------
-# EMA
-# ---------------------------------------------------------------------------
 
 
 def test_ema_value_before_update_is_zero() -> None:
@@ -85,16 +73,11 @@ def test_ema_converges_to_constant() -> None:
     assert math.isclose(ema.value, 5.0, abs_tol=1e-6)
 
 
-# ---------------------------------------------------------------------------
-# save / load checkpoint
-# ---------------------------------------------------------------------------
-
-
 def test_save_load_roundtrip(tmp_path: Path) -> None:
     torch.manual_seed(0)
     model_a = nn.Linear(4, 2)
     opt_a = torch.optim.Adam(model_a.parameters(), lr=1e-3)
-    # Take a real step so the optimizer accumulates state.
+    # take a real step so the optimizer accumulates state.
     loss = model_a(torch.randn(3, 4)).sum()
     loss.backward()
     opt_a.step()
@@ -143,17 +126,12 @@ def test_load_without_optimizer(tmp_path: Path) -> None:
     assert ckpt["step"] == 7
 
 
-# ---------------------------------------------------------------------------
-# count_params
-# ---------------------------------------------------------------------------
-
-
 def test_count_params_linear() -> None:
-    # Linear(10, 5): weight 10*5 + bias 5 = 55.
+    # linear(10, 5): weight 10*5 + bias 5 = 55.
     assert count_params(nn.Linear(10, 5)) == 55
 
 
 def test_count_params_sequential() -> None:
-    # Linear(3,4) + Linear(4,2) = (12+4) + (8+2) = 26.
+    # linear(3, 4) + linear(4, 2) = (12+4) + (8+2) = 26.
     seq = nn.Sequential(nn.Linear(3, 4), nn.Linear(4, 2))
     assert count_params(seq) == 26

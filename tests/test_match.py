@@ -1,5 +1,3 @@
-"""Tests for kibitzer.match.play_match."""
-
 from __future__ import annotations
 
 import random
@@ -58,8 +56,8 @@ def test_color_swap() -> None:
         swap_colors=True,
     )
 
-    # Game 1: A=white, B=black. White's first move = lex-min legal = a2a3 (SAN "a3").
-    # Game 2: B=white, A=black. White's first move = lex-max legal = h2h4 (SAN "h4").
+    # game 1: a is white, so the first move is lex-min legal: a2a3.
+    # game 2: b is white, so the first move is lex-max legal: h2h4.
     pgn0 = out["games"][0]["pgn"]
     pgn1 = out["games"][1]["pgn"]
 

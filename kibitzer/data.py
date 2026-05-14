@@ -1,18 +1,11 @@
-"""Streaming Lichess-PGN dataset for supervised pretraining.
+"""streaming lichess-pgn dataset for supervised pretraining.
 
-``LichessGameDataset`` is a ``torch.utils.data.IterableDataset`` that walks
-PGN files game-by-game (no full-file buffering), filters by Elo / time
+``lichessgamedataset`` walks pgn files game-by-game, filters by elo / time
 control / termination, and emits one tensor dict per game. ``collate_games``
-pads a list of those dicts into a (B, T_max, …) batch with a ``loss_mask``.
+pads those dicts into a (b, t_max, …) batch with a ``loss_mask``.
 
-Per-ply encoding is delegated to the existing modules — DO NOT reimplement:
-
-* :func:`kibitzer.encoding.board_to_tensor` → ``piece_idx`` (64,) + ``aux`` (7,)
-* :func:`kibitzer.encoding.move_to_index`   → flat action index in [0, 4672)
-* :func:`kibitzer.masking.legal_move_mask`  → BoolTensor (4672,)
-
-The shuffle is **game-level**, not position-level: the buffer holds parsed
-game dicts and yields a random one when full. Positions inside a game stay
+the shuffle is **game-level**, not position-level: the buffer holds parsed
+game dicts and yields a random one when full. positions inside a game stay
 consecutive, which is what the value-target supervision relies on.
 """
 
@@ -42,16 +35,15 @@ _RESULT_TO_WHITE_SCORE: dict[str, float] = {
     "1/2-1/2": 0.0,
 }
 
-# Lichess Termination headers we drop entirely. "Time forfeit" we keep —
-# min_plies already protects against the very short ones, and a 60-ply game
-# that ended on the clock is still useful supervision.
+# bad termination headers. keep time forfeits; min_plies filters tiny games,
+# and longer clock losses are still useful supervision.
 _BAD_TERMINATIONS = {"Abandoned", "Rules infraction", "Unterminated"}
 
 
 def _partition_paths(
     paths: Sequence[str], worker_info
 ) -> list[str]:
-    """Disjoint slice of ``paths`` for the current DataLoader worker."""
+    """disjoint path slice for this dataloader worker."""
     if worker_info is None:
         return list(paths)
     return list(paths[worker_info.id :: worker_info.num_workers])
@@ -87,7 +79,7 @@ def _encode_game(
     max_plies: int,
     min_plies: int,
 ) -> dict | None:
-    """Encode one game's mainline; return None if it fails the post-slice filter."""
+    """encode one game's mainline; return none if it fails the post-slice filter."""
     moves_all = list(game.mainline_moves())
     moves = moves_all[skip_first_n_plies : skip_first_n_plies + max_plies]
     if len(moves) < min_plies:
@@ -114,9 +106,7 @@ def _encode_game(
             move_idx[t] = move_to_index(mv, board)
         except ValueError:
             return None  # malformed move geometry — drop the game
-        # Value from side-to-move's perspective at this ply. White wins → +1
-        # when it's white's turn, -1 when it's black's turn; flipped for black
-        # wins; 0 throughout for draws.
+        # side-to-move value: white win is +1 on white turns, -1 on black turns.
         value_target[t] = white_score if board.turn == chess.WHITE else -white_score
         board.push(mv)
 
@@ -196,7 +186,7 @@ class LichessGameDataset(IterableDataset):
 
 
 def collate_games(games: list[dict]) -> dict:
-    """Pad a list of game dicts into a (B, T_max, …) batch with a loss_mask."""
+    """pad game dicts into a batch with a loss_mask."""
     if not games:
         raise ValueError("collate_games called with an empty batch")
 

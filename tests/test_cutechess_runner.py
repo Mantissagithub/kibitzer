@@ -1,10 +1,3 @@
-"""Tests for kibitzer.cutechess_runner.
-
-The argv-construction test runs everywhere; the integration test is gated on
-having both ``cutechess-cli`` and ``stockfish`` on PATH and validates the
-wrapper end-to-end without depending on any Kibitzer training.
-"""
-
 from __future__ import annotations
 
 import shutil
@@ -29,7 +22,7 @@ def test_engine_argv_construction() -> None:
     ]
 
     with_options = _engine_argv("stockfish", "B", {"Skill Level": "0"})
-    # The space inside the option name must survive as a single argv token —
+    # the space inside the option name must survive as one argv token;
     # otherwise cutechess will see two args and reject the option.
     assert "option.Skill Level=0" in with_options
 
@@ -55,7 +48,7 @@ def test_higher_skill_wins_more(tmp_path) -> None:
         pgn_output=str(pgn),
     )
 
-    # Stockfish "Skill Level" only differentiates with real thinking time and
+    # stockfish "Skill Level" only differentiates with real thinking time and
     # a wide gap; skill 0 vs 20 at 500ms/move is enough for skill 20 to win
     # both games via -repeat (one with each color).
     assert result["wins"] + result["losses"] + result["draws"] == 2

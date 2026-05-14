@@ -1,11 +1,11 @@
-"""Round-trip verifier for scripts/uci.py.
+"""round-trip verifier for scripts/uci.py.
 
-Spawns the UCI adapter as a subprocess via python-chess's
-``SimpleEngine.popen_uci``, plays 10 moves against it, and confirms every
+spawns the uci adapter as a subprocess via python-chess's
+``simpleengine.popen_uci``, plays 10 moves against it, and confirms every
 response is well-formed (handshake completes, bestmove is legal in the
 position it was played from).
 
-Run:
+run:
     uv run python scripts/uci_test.py
 """
 

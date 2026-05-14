@@ -1,17 +1,14 @@
-"""Run a head-to-head match between Kibitzer and a baseline opponent.
+"""run a head-to-head match between kibitzer and a baseline opponent.
 
-Examples:
-    # Random-init Kibitzer vs random opponent — sanity check the harness:
+examples:
+    # random-init kibitzer vs random opponent — sanity check the harness:
     uv run python scripts/play_match.py --opponent random --n-games 4
 
-    # Trained Kibitzer vs Stockfish skill 0, depth 1, 20 games:
-    uv run python scripts/play_match.py \\
-        --checkpoint runs/best.pt \\
-        --opponent stockfish --skill 0 --depth 1 --n-games 20 --verbose
+    # trained kibitzer vs stockfish skill 0, depth 1, 20 games:
+    uv run python scripts/play_match.py         --checkpoint runs/best.pt         --opponent stockfish --skill 0 --depth 1 --n-games 20 --verbose
 
-    # Stockfish at fixed time per move:
-    uv run python scripts/play_match.py \\
-        --opponent stockfish --time-ms 100 --n-games 10
+    # stockfish at fixed time per move:
+    uv run python scripts/play_match.py         --opponent stockfish --time-ms 100 --n-games 10
 """
 
 from __future__ import annotations

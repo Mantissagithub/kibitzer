@@ -1,18 +1,17 @@
-"""Interactive CLI for playing against Kibitzer or watching it play (rich TUI).
+"""interactive cli for playing against kibitzer or watching it play (rich tui).
 
-Examples:
-    # Human plays white against a random-init engine (sanity check):
+examples:
+    # human plays white against a random-init engine (sanity check):
     uv run python scripts/play_cli.py --mode human
 
-    # Human plays black, with a checkpoint:
+    # human plays black, with a checkpoint:
     uv run python scripts/play_cli.py --mode human --black --checkpoint runs/best.pt
 
-    # Watch Kibitzer play itself:
+    # watch kibitzer play itself:
     uv run python scripts/play_cli.py --mode self --temp 0.5
 
-    # Analyze a position:
-    uv run python scripts/play_cli.py --mode analyze \\
-        --fen 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4'
+    # analyze a position:
+    uv run python scripts/play_cli.py --mode analyze         --fen 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2b1p3/5n2/pppp1ppp/rnbqk2r w kqkq - 4 4'
 """
 
 from __future__ import annotations
@@ -87,11 +86,6 @@ def load_engine(args: argparse.Namespace) -> KibitzerEngine:
     return KibitzerEngine(model, device=device, dtype=dtype)
 
 
-# ---------------------------------------------------------------------------
-# Layout helpers
-# ---------------------------------------------------------------------------
-
-
 def _make_layout(
     board: chess.Board,
     eval_out: dict,
@@ -140,11 +134,6 @@ def _print_outcome(board: chess.Board, plies: int, max_plies: int) -> None:
         f"[{style}]Result: {outcome.result()}[/]  "
         f"[muted]({outcome.termination.name.lower()})[/]"
     )
-
-
-# ---------------------------------------------------------------------------
-# Modes — TUI
-# ---------------------------------------------------------------------------
 
 
 def play_human_tui(engine: KibitzerEngine, args: argparse.Namespace) -> None:
@@ -250,11 +239,6 @@ def analyze_tui(engine: KibitzerEngine, args: argparse.Namespace) -> None:
     tui.console.print(Panel(Text("\n".join(extra)), border_style="muted"))
 
 
-# ---------------------------------------------------------------------------
-# Modes — plain fallback (current pre-TUI behaviour)
-# ---------------------------------------------------------------------------
-
-
 def _print_board_plain(board: chess.Board) -> None:
     print(board.unicode(invert_color=True, borders=True))
     print()
@@ -347,11 +331,6 @@ def analyze_plain(engine: KibitzerEngine, args: argparse.Namespace) -> None:
         sans.append(pv_board.san(m))
         pv_board.push(m)
     print(f"\nPV (depth {len(pv)}): {' '.join(sans) if sans else '(none)'}")
-
-
-# ---------------------------------------------------------------------------
-# Entry
-# ---------------------------------------------------------------------------
 
 
 def main() -> None:

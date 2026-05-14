@@ -1,5 +1,3 @@
-"""Shape tests for kibitzer.transformer."""
-
 from __future__ import annotations
 
 import torch
@@ -57,7 +55,7 @@ def test_causal_self_attention_shape() -> None:
     y = attn(x)
     assert y.shape == (B, S, DIM)
 
-    # Shorter sequence: exercises the freqs_cis[:S] slicing.
+    # shorter sequence exercises freqs_cis[:s] slicing.
     x_short = torch.randn(B, 16, DIM)
     y_short = attn(x_short)
     assert y_short.shape == (B, 16, DIM)

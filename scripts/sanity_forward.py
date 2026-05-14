@@ -1,9 +1,9 @@
-"""End-to-end smoke test: PGN → encoding → mask → forward → softmax.
+"""end-to-end smoke test: pgn → encoding → mask → forward → softmax.
 
-Drives the (untrained) Kibitzer on a known game (Morphy's Opera Game, Paris
-1858). The point is integration: shape/dtype/device agreement and that
+drives the (untrained) kibitzer on a known game (morphy's opera game, paris
+1858). the point is integration: shape/dtype/device agreement and that
 mask + softmax produce a valid distribution supported only on legal moves.
-The actual policy values are garbage by design (untrained weights).
+the actual policy values are garbage by design (untrained weights).
 """
 
 from __future__ import annotations

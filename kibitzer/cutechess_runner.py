@@ -1,28 +1,4 @@
-"""Run cutechess-cli matches between two UCI engines and parse the results.
-
-The in-Python ``kibitzer.match`` runner plays both sides itself; this module
-shells out to ``cutechess-cli`` so we can run real tournament-style matches
-against external binaries (Stockfish, lc0, prior Kibitzer checkpoints, …)
-with cutechess handling time enforcement, crash recovery, color alternation,
-and PGN output.
-
-The single public entry point is :func:`run_match`; everything else is a
-private helper exposed only for testing.
-
-Example
--------
-    from kibitzer.cutechess_runner import run_match
-
-    result = run_match(
-        engine_a_cmd="python scripts/uci.py --checkpoint runs/best.pt",
-        engine_b_cmd="stockfish",
-        engine_b_options={"Skill Level": "0"},
-        n_games=20,
-        time_per_move_ms=200,
-    )
-    # -> {"wins": 3, "losses": 15, "draws": 2,
-    #     "elo_diff": -195.4, "elo_err": 84.2, "pgn_path": "match.pgn"}
-"""
+"""run cutechess-cli matches and parse the results."""
 
 from __future__ import annotations
 
@@ -44,7 +20,7 @@ _ELO_RE = re.compile(r"^Elo difference: (\S+) \+/- (\S+)")
 
 
 def _safe_float(s: str) -> float:
-    """Parse a cutechess number, mapping ``inf``/``-inf``/``nan`` correctly."""
+    """parse a cutechess number, mapping ``inf``/``-inf``/``nan`` correctly."""
     try:
         return float(s.rstrip(","))
     except ValueError:
@@ -54,15 +30,7 @@ def _safe_float(s: str) -> float:
 def _engine_argv(
     cmd: str, name: str, options: Mapping[str, str] | None
 ) -> list[str]:
-    """Build the argv tokens that follow ``-engine`` for one engine.
-
-    ``cmd`` is shlex-split so callers can pass a full command line
-    (``"python /path/to/uci.py --checkpoint x.pt"``); the first token becomes
-    cutechess's ``cmd=`` and the rest are emitted as repeated ``arg=...``.
-    Option names with spaces (``Skill Level``) survive because each
-    ``option.NAME=VALUE`` is a single argv entry — subprocess passes argv
-    directly with no shell parsing.
-    """
+    """build the argv tokens that follow ``-engine``."""
     parts = shlex.split(cmd)
     if not parts:
         raise ValueError("engine command is empty")
@@ -92,11 +60,7 @@ def run_match(
     on_progress: Callable[[dict], None] | None = None,
     on_log: Callable[[str], None] | None = None,
 ) -> dict:
-    """Run a cutechess-cli match between engines A and B.
-
-    Returns a dict with W/L/D counts (from A's perspective), Elo difference
-    and its standard error, and the PGN output path.
-    """
+    """run a cutechess-cli match between engines a and b."""
     cli = cutechess_path or shutil.which("cutechess-cli")
     if cli is None:
         raise RuntimeError(

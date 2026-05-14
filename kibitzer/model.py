@@ -1,9 +1,7 @@
-"""Full Kibitzer model: per-position encoder + causal trunk + policy/value heads.
+"""full kibitzer model: position encoder, causal trunk, policy/value heads.
 
-Composes :class:`kibitzer.position_encoder.PositionEncoder` (over the 64
-squares of one ply) with a stack of causal :class:`kibitzer.transformer.
-TransformerBlock` layers (over the time/move axis of a game) and produces both
-policy logits and a scalar value prediction at every timestep.
+composes a per-position encoder over 64 squares with causal transformer blocks
+over the game timeline.
 """
 
 from __future__ import annotations
@@ -20,7 +18,7 @@ from kibitzer.transformer import RMSNorm, TransformerBlock
 
 @dataclass
 class KibitzerConfig:
-    """Hyperparameters for :class:`Kibitzer`."""
+    """model hyperparameters."""
 
     d_model: int = 384
     n_layers: int = 12
@@ -35,29 +33,7 @@ class KibitzerConfig:
 
 
 class Kibitzer(nn.Module):
-    """Composite chess model.
-
-    Input is a batch of games as fixed-length sequences:
-
-    * ``piece_idx`` (B, T, 64) long — per-ply board piece-token tensor
-    * ``aux``       (B, T,  7) float — per-ply global auxiliary scalars
-    * ``pad_mask``  (B, T)     bool  — ``True`` where the ply is padding
-      (the game ended before this index)
-
-    Forward returns ``(policy_logits, value_pred)``:
-
-    * ``policy_logits`` (B, T, 4672) — **unmasked** logits over the AlphaZero
-      action space. Apply :func:`kibitzer.masking.legal_move_mask` per-ply at
-      loss/inference time.
-    * ``value_pred``   (B, T, 1)     — scalar in ``[-1, 1]`` (tanh).
-
-    ``pad_mask`` is part of the public contract for callers that already track
-    it during batching, but the forward pass does not currently consume it:
-    each ply's PositionEncoder output depends only on its own
-    ``(piece_idx, aux)``, and the causal trunk only attends backwards. The
-    training loop is responsible for excluding padded positions from the
-    policy/value losses.
-    """
+    """position encoder plus causal trunk."""
 
     def __init__(self, config: KibitzerConfig | None = None) -> None:
         super().__init__()
@@ -109,5 +85,5 @@ class Kibitzer(nn.Module):
         return policy_logits, value_pred
 
     def num_params(self) -> int:
-        """Total parameter count (sum over ``self.parameters()``)."""
+        """total parameter count."""
         return sum(p.numel() for p in self.parameters())

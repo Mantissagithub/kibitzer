@@ -1,14 +1,4 @@
-"""Engine-vs-engine match runner.
-
-Each engine is a ``Callable[[chess.Board], chess.Move]`` — accepts a board,
-returns its chosen move. Wrap a Kibitzer instance with
-:meth:`kibitzer.inference.KibitzerEngine.evaluate_at`, or pass any custom
-function (uniform random, Stockfish wrapper, etc.).
-
-Games end on checkmate, stalemate, insufficient material, claimable threefold
-repetition, claimable fifty-move rule, or ``max_plies`` (declared draw).
-Outputs proper PGN with headers per game.
-"""
+"""engine-vs-engine match runner."""
 
 from __future__ import annotations
 
@@ -30,37 +20,7 @@ def play_match(
     swap_colors: bool = True,
     verbose: bool = False,
 ) -> dict:
-    """Play ``n_games`` between two engine callables and return aggregate stats.
-
-    Parameters
-    ----------
-    engine_white, engine_black : EngineFn
-        The two engines. Color assignment in game 0 follows the parameter
-        names; with ``swap_colors=True`` they alternate every game.
-    n_games : int
-        Number of games to play.
-    max_plies : int
-        Hard cap; games still in progress at this length are scored as draws
-        with ``termination="max plies"``.
-    starting_fens : list[str] | None
-        If given, cycles through these FENs as starting positions
-        (game ``i`` uses ``starting_fens[i % len(...)]``). ``None`` means
-        always start from the standard initial position.
-    swap_colors : bool
-        If True, swap engine colors every game so each engine plays each side
-        equally often (assuming an even ``n_games``).
-    verbose : bool
-        If True, print a one-line summary per game to stdout.
-
-    Returns
-    -------
-    dict
-        ``wins_a`` / ``wins_b`` / ``draws`` are tallied against the engine
-        passed *first* / *second*, regardless of which color they played in
-        any given game. ``games`` is a list of per-game records:
-        ``{"pgn": str, "result": "1-0"|"0-1"|"1/2-1/2", "plies": int,
-        "termination": str}``.
-    """
+    """play games between two engine callables and return aggregate stats."""
     wins_a = 0
     wins_b = 0
     draws = 0

@@ -1,5 +1,3 @@
-"""Tests for kibitzer.model.Kibitzer."""
-
 from __future__ import annotations
 
 import torch
@@ -47,7 +45,7 @@ def test_param_count() -> None:
     model = Kibitzer()
     n = model.num_params()
     print(f"Kibitzer params: {n:_}")
-    # Default spec (d_model=384, n_layers=12) lands ~28.5M; user accepted
+    # default spec (d_model=384, n_layers=12) lands ~28.5m; user accepted
     # this and chose a wider sanity bound rather than re-sizing.
     assert 20_000_000 < n < 40_000_000, f"unexpected param count: {n}"
 

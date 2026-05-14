@@ -1,13 +1,8 @@
-"""Stateful inference engine for the Kibitzer model.
+"""stateful inference engine for the kibitzer model.
 
-Wraps :class:`kibitzer.model.Kibitzer` with a game-history buffer and a
-small action-oriented API: ``reset``, ``push_move``, ``evaluate``,
-``select_move``, ``get_principal_variation``.
-
-Every call to :meth:`KibitzerEngine.evaluate` re-runs the full history
-through the model — there is no KV cache yet (see TODO inside ``evaluate``).
-For games up to ``max_seq_len`` plies on a single mid-range GPU with bf16
-this is fast enough; revisit if self-play throughput becomes a bottleneck.
+keeps a board-history buffer and exposes the small play api used by scripts
+and match runners. calls still re-forward the full history; that is fine for
+short games and can be revisited if self-play throughput needs it.
 """
 
 from __future__ import annotations
@@ -23,7 +18,6 @@ from kibitzer.model import Kibitzer
 
 
 class KibitzerEngine:
-    """Stateful interface around a :class:`Kibitzer` for play and analysis."""
 
     def __init__(
         self,
@@ -36,40 +30,21 @@ class KibitzerEngine:
         self.model = model.to(self.device).to(self.dtype).eval()
         self.history: list[chess.Board] = [chess.Board()]
 
-    # ------------------------------------------------------------------
-    # State management
-    # ------------------------------------------------------------------
-
     def reset(self, board: chess.Board | None = None) -> None:
-        """Clear the game history; optionally start from ``board``."""
         start = chess.Board() if board is None else board.copy(stack=False)
         self.history = [start]
 
     def push_move(self, move: chess.Move) -> None:
-        """Apply ``move`` to the current position and append the result."""
         nb = self.history[-1].copy(stack=False)
         nb.push(move)
         self.history.append(nb)
 
-    # ------------------------------------------------------------------
-    # Forward pass
-    # ------------------------------------------------------------------
-
     def _forward_last(
         self,
     ) -> tuple[torch.Tensor, torch.Tensor, float, chess.Board]:
-        """Run the model and return ``(logits, mask, value, current_board)``.
-
-        ``logits`` and ``mask`` are 1-D tensors of length ``ACTION_SIZE``
-        (4672) on ``self.device``; illegal entries in ``logits`` are NOT
-        masked yet (callers do that). ``value`` is a Python float. The
-        ``current_board`` is ``history[-1]`` for downstream lookups.
-        """
-        # TODO(perf): re-forwards the entire history every call. For games up
-        # to ``max_seq_len`` plies on a 4060 with bf16 this is fast enough;
-        # KV-caching is awkward here because the per-position encoder runs
-        # independently per ply while the causal trunk runs over time.
-        # Revisit if self-play throughput becomes a bottleneck.
+        """run the model for the current board history."""
+        # todo(perf): re-forwards the full history. kv-caching is awkward here
+        # because position encoding is per ply while the causal trunk spans time.
         T = len(self.history)
         if T == 0:
             raise RuntimeError("history is empty; call reset() first")
@@ -105,23 +80,18 @@ class KibitzerEngine:
 
         return logits, mask, value, current
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
     @torch.no_grad()
     def evaluate(self) -> dict:
-        """Return policy probs, value, legal moves, and ranked move probs.
+        """return policy probs, value, legal moves, and ranked move probs.
 
-        Returns
+        returns
         -------
         dict
             ``policy`` : ``np.ndarray`` of shape ``(4672,)``, float32, summing
                 to 1.0 over the legal moves only (illegal entries are 0).
             ``value`` : ``float`` in ``[-1, 1]``.
-            ``legal_moves`` : ``list[chess.Move]`` for the current position.
-            ``move_probs`` : ``list[(chess.Move, float)]`` sorted descending
-                by probability.
+            ``legal_moves`` : ``list[chess.move]`` for the current position.
+            ``move_probs`` : ``list[(chess.move, float)]`` sorted descending.
         """
         logits, mask, value, current = self._forward_last()
         masked = logits.masked_fill(~mask, float("-inf"))
@@ -146,10 +116,10 @@ class KibitzerEngine:
     def select_move(
         self, temperature: float = 0.0, top_k: int | None = None
     ) -> chess.Move:
-        """Pick a move from the current position.
+        """pick a move from the current position.
 
         ``temperature == 0.0`` returns the legal-masked argmax (deterministic).
-        ``temperature > 0`` samples from ``softmax(logits / T)`` over the
+        ``temperature > 0`` samples from ``softmax(logits / t)`` over the
         legal moves; ``top_k`` (if given) restricts sampling to the top ``k``
         by logit before softmax.
         """
@@ -167,7 +137,7 @@ class KibitzerEngine:
         if top_k is not None:
             if top_k <= 0:
                 raise ValueError(f"top_k must be > 0, got {top_k}")
-            # Restrict to top-k of the legal entries.
+            # sample only among the top-k legal logits.
             n_legal = int(mask.sum().item())
             k = min(top_k, n_legal)
             topk_vals, topk_idx = torch.topk(scaled, k)
@@ -183,17 +153,11 @@ class KibitzerEngine:
     def evaluate_at(
         self, board: chess.Board, temperature: float = 0.0
     ) -> chess.Move:
-        """Reposition the engine to ``board`` and return a sampled move.
+        """temporarily evaluate ``board`` and return a sampled move.
 
-        Wraps the engine as a ``Callable[[chess.Board], chess.Move]`` for use
-        with :func:`kibitzer.match.play_match`. Restores the engine's previous
-        history before returning.
-
-        If ``board`` has a populated ``move_stack``, the engine replays from
-        the root so the causal trunk sees the full game history. If
-        ``move_stack`` is empty (e.g. the board was built directly from a
-        FEN), the engine treats the board as a single-ply history — fine for
-        position analysis, less ideal for mid-game queries.
+        if the board has a ``move_stack``, replay from the root so the causal
+        trunk sees the game history. otherwise use it as a one-position query.
+        the previous engine history is restored before returning.
         """
         saved = list(self.history)
         try:
@@ -209,10 +173,7 @@ class KibitzerEngine:
 
     @torch.no_grad()
     def get_principal_variation(self, depth: int = 5) -> list[chess.Move]:
-        """Greedy rollout: argmax-push for ``depth`` plies (or until game end).
-
-        Restores the original history before returning.
-        """
+        """greedy rollout for ``depth`` plies, restoring history afterward."""
         saved = list(self.history)
         pv: list[chess.Move] = []
         try:

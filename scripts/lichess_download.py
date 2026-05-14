@@ -1,14 +1,14 @@
-"""Download the Lichess Elite Database (one zip per month) into data/raw.
+"""download the lichess elite database (one zip per month) into data/raw.
 
-Source: https://database.nikonoel.fr/  (curated by nikonoel; rated 2500+ on
-both sides since Dec 2021, 2400+ before that). Files run from June 2020 to
-the present month-or-two. Each zip contains one PGN.
+source: https://database.nikonoel.fr/  (curated by nikonoel; rated 2500+ on
+both sides since dec 2021, 2400+ before that). files run from june 2020 to
+the present month-or-two. each zip contains one pgn.
 
-Examples:
+examples:
     # all of 2024 into ./data/raw (skip months already extracted):
     uv run python scripts/lichess_download.py --year 2024
 
-    # just January and February:
+    # just january and february:
     uv run python scripts/lichess_download.py --year 2024 --months "01,02"
 
     # one most-recent month for fast pipeline iteration:
@@ -75,9 +75,9 @@ def parse_months(s: str) -> list[int] | None:
 
 
 def head_size(url: str) -> int | None:
-    """Return Content-Length; None if the file is absent or the probe fails.
+    """return content-length; none if the file is absent or the probe fails.
 
-    A transient network error (timeout, SSL, refused) is treated like a 404
+    a transient network error (timeout, ssl, refused) is treated like a 404
     for the purposes of this run — we just skip the month rather than abort
     the whole probe loop.
     """
@@ -99,7 +99,7 @@ def head_size(url: str) -> int | None:
 
 
 def discover_year(year: int) -> dict[int, int]:
-    """HEAD-probe each month of `year`; return {month: size_bytes}."""
+    """head-probe each month of `year`; return {month: size_bytes}."""
     found: dict[int, int] = {}
     for m in range(1, 13):
         url = BASE_URL.format(year=year, month=m)
@@ -110,13 +110,13 @@ def discover_year(year: int) -> dict[int, int]:
 
 
 def existing_pgn(output_dir: Path, year: int, month: int) -> Path | None:
-    """Return the already-extracted PGN path if present."""
+    """return the already-extracted pgn path if present."""
     p = output_dir / f"lichess_elite_{year:04d}-{month:02d}.pgn"
     return p if p.exists() else None
 
 
 def download_one(url: str, dest_zip: Path, expected: int, *, ui: bool) -> None:
-    """Stream `url` to `dest_zip` via a `.part` sidecar; verify size; rename."""
+    """stream `url` to `dest_zip` via a `.part` sidecar; verify size; rename."""
     part = dest_zip.with_suffix(dest_zip.suffix + ".part")
     part.parent.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -151,7 +151,7 @@ def download_one(url: str, dest_zip: Path, expected: int, *, ui: bool) -> None:
 
 
 def extract_zip(zip_path: Path, output_dir: Path) -> list[Path]:
-    """Verify and extract; return paths of extracted entries."""
+    """verify and extract; return paths of extracted entries."""
     with zipfile.ZipFile(zip_path) as zf:
         bad = zf.testzip()
         if bad is not None:

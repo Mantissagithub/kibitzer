@@ -1,20 +1,20 @@
-"""Reusable transformer building blocks (modern, llama-style).
+"""reusable llama-style transformer blocks.
 
-Components, in order:
+components, in order:
 
-* :class:`RMSNorm` — root-mean-square layer norm.
+* :class:`rmsnorm` — root-mean-square layer norm.
 * :func:`precompute_freqs_cis` / :func:`apply_rope` — rotary positional
-  embeddings on Q and K.
-* :class:`SwiGLU` — gated MLP with SiLU activation.
-* :class:`CausalSelfAttention` — causal multi-head attention via
+  embeddings on q and k.
+* :class:`swiglu` — gated mlp with silu activation.
+* :class:`causalselfattention` — causal multi-head attention via
   ``torch.nn.functional.scaled_dot_product_attention``; auto-selects
-  FlashAttention on supported GPUs.
-* :class:`TransformerBlock` — pre-norm causal block (used by the autoregressive
+  flashattention on supported gpus.
+* :class:`transformerblock` — pre-norm causal block (used by the autoregressive
   head).
-* :class:`EncoderBlock` — pre-norm bidirectional block (used by the position
+* :class:`encoderblock` — pre-norm bidirectional block (used by the position
   encoder over the 64 chess squares).
 
-All linear layers use ``bias=False``.
+all linear layers use ``bias=false``.
 """
 
 from __future__ import annotations
@@ -24,17 +24,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# ---------------------------------------------------------------------------
-# RMSNorm
-# ---------------------------------------------------------------------------
-
-
 class RMSNorm(nn.Module):
-    """Root-mean-square layer normalization.
-
-    Normalizes the last dimension of the input by its RMS, then scales by a
-    learnable per-channel weight. No bias term.
-    """
+    """root-mean-square layer norm with a learned scale."""
 
     def __init__(self, dim: int, eps: float = 1e-6) -> None:
         super().__init__()
@@ -47,30 +38,10 @@ class RMSNorm(nn.Module):
         return x_normed * self.weight
 
 
-# ---------------------------------------------------------------------------
-# Rotary positional embeddings
-# ---------------------------------------------------------------------------
-
-
 def precompute_freqs_cis(
     dim: int, max_seq_len: int, theta: float = 10000.0
 ) -> torch.Tensor:
-    """Precompute the complex-valued RoPE frequencies.
-
-    Parameters
-    ----------
-    dim : int
-        Per-head embedding size (the head dimension of the attention).
-    max_seq_len : int
-        Maximum sequence length the cache should cover.
-    theta : float
-        Base frequency. ``10000.0`` matches the original RoPE / llama paper.
-
-    Returns
-    -------
-    torch.Tensor
-        Complex tensor of shape ``(max_seq_len, dim // 2)``, dtype ``complex64``.
-    """
+    """precompute complex rope frequencies for ``max_seq_len`` positions."""
     freqs = 1.0 / (
         theta ** (torch.arange(0, dim, 2)[: dim // 2].float() / dim)
     )
@@ -80,25 +51,10 @@ def precompute_freqs_cis(
 
 
 def apply_rope(x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
-    """Apply rotary positional embeddings to a Q or K tensor.
+    """apply rotary positional embeddings to a q or k tensor.
 
-    Uses the adjacent-pair (llama-style) convention: pairs of consecutive
-    features ``(x[..., 2i], x[..., 2i+1])`` are treated as a complex number
-    and multiplied by ``freqs_cis`` to rotate them.
-
-    Parameters
-    ----------
-    x : torch.Tensor
-        Shape ``(B, H, S, head_dim)``. Any floating dtype; output preserves
-        the input dtype.
-    freqs_cis : torch.Tensor
-        Complex tensor of shape ``(S, head_dim // 2)``. Typically a slice of
-        the buffer returned by :func:`precompute_freqs_cis`.
-
-    Returns
-    -------
-    torch.Tensor
-        Same shape and dtype as ``x``.
+    adjacent feature pairs become complex numbers, get multiplied by
+    ``freqs_cis``, and are converted back to the input dtype.
     """
     x_complex = torch.view_as_complex(
         x.float().reshape(*x.shape[:-1], -1, 2)
@@ -108,16 +64,8 @@ def apply_rope(x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
     return x_out.type_as(x)
 
 
-# ---------------------------------------------------------------------------
-# SwiGLU MLP
-# ---------------------------------------------------------------------------
-
-
 class SwiGLU(nn.Module):
-    """Gated MLP with SiLU activation: ``W2(silu(W1 x) * W3 x)``.
-
-    No bias on any projection.
-    """
+    """gated mlp: ``w2(silu(w1 x) * w3 x)``."""
 
     def __init__(self, dim: int, hidden_dim: int) -> None:
         super().__init__()
@@ -130,23 +78,13 @@ class SwiGLU(nn.Module):
 
 
 def _swiglu_hidden(dim: int, multiple_of: int = 64) -> int:
-    """Standard llama sizing: ``round(8/3 * dim)`` rounded up to ``multiple_of``."""
+    """standard llama sizing: ``round(8/3 * dim)`` rounded up to ``multiple_of``."""
     h = int(2 * 4 * dim / 3)
     return ((h + multiple_of - 1) // multiple_of) * multiple_of
 
 
-# ---------------------------------------------------------------------------
-# Attention
-# ---------------------------------------------------------------------------
-
-
 class CausalSelfAttention(nn.Module):
-    """Causal multi-head self-attention with RoPE on Q/K.
-
-    Uses ``torch.nn.functional.scaled_dot_product_attention`` with
-    ``is_causal=True`` so PyTorch can dispatch to the FlashAttention backend
-    on supported GPUs.
-    """
+    """causal multi-head self-attention with rope on q/k."""
 
     def __init__(self, dim: int, n_heads: int, max_seq_len: int) -> None:
         super().__init__()
@@ -160,11 +98,8 @@ class CausalSelfAttention(nn.Module):
         self.qkv = nn.Linear(dim, 3 * dim, bias=False)
         self.proj = nn.Linear(dim, dim, bias=False)
 
-        # freqs_cis must stay complex64. Storing it as a registered buffer makes
-        # `model.to(torch.bfloat16)` silently downcast it to bf16 (warning:
-        # "Casting complex values to real discards the imaginary part") which
-        # zeros out the rotation. Keep it as a plain attribute and lazily
-        # (re)build it on the input device on first forward.
+        # freqs_cis must stay complex64. registered buffers get downcast by
+        # `model.to(torch.bfloat16)`, which strips the imaginary part.
         self._freqs_cis: torch.Tensor | None = None
 
     def _get_freqs_cis(self, device: torch.device) -> torch.Tensor:
@@ -191,13 +126,7 @@ class CausalSelfAttention(nn.Module):
 
 
 class _BidirectionalSelfAttention(nn.Module):
-    """Bidirectional multi-head self-attention, no RoPE, no causal mask.
-
-    Internal sibling of :class:`CausalSelfAttention` used by
-    :class:`EncoderBlock`. Position information is expected to be supplied by
-    a learned embedding outside this module (e.g. a square embedding for the
-    64 chess squares).
-    """
+    """bidirectional multi-head self-attention, no rope or causal mask."""
 
     def __init__(self, dim: int, n_heads: int) -> None:
         super().__init__()
@@ -222,16 +151,8 @@ class _BidirectionalSelfAttention(nn.Module):
         return self.proj(out)
 
 
-# ---------------------------------------------------------------------------
-# Pre-norm blocks
-# ---------------------------------------------------------------------------
-
-
 class TransformerBlock(nn.Module):
-    """Pre-norm causal transformer block.
-
-    ``y = x + attn(rmsnorm(x)); out = y + swiglu(rmsnorm(y))``.
-    """
+    """pre-norm causal transformer block."""
 
     def __init__(self, dim: int, n_heads: int, max_seq_len: int) -> None:
         super().__init__()
@@ -247,11 +168,7 @@ class TransformerBlock(nn.Module):
 
 
 class EncoderBlock(nn.Module):
-    """Pre-norm bidirectional encoder block (no causal mask, no RoPE).
-
-    Used by the chess-position encoder over the 64 squares; positional info
-    comes from a learned square embedding upstream of this block.
-    """
+    """pre-norm bidirectional encoder block."""
 
     def __init__(self, dim: int, n_heads: int) -> None:
         super().__init__()

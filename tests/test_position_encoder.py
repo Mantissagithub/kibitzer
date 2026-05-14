@@ -1,5 +1,3 @@
-"""Tests for kibitzer.position_encoder."""
-
 from __future__ import annotations
 
 import torch
@@ -35,7 +33,5 @@ def test_param_count() -> None:
     enc = PositionEncoder()
     n = sum(p.numel() for p in enc.parameters())
     print(f"PositionEncoder params: {n:_}")
-    # Generous range — catches gross arch mistakes without locking in a tight
-    # number. With d_model=384, n_heads=8, n_layers=3 the actual count is
-    # ~5.3M (12·D²·n_layers + small).
+    # broad range catches architecture mistakes without locking in exact size.
     assert 1_000_000 < n < 10_000_000, f"unexpected param count: {n}"

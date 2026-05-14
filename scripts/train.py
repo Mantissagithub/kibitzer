@@ -1,17 +1,17 @@
-"""Supervised pretraining loop for Kibitzer.
+"""supervised pretraining loop for kibitzer.
 
-Streams Lichess Elite PGNs through ``LichessGameDataset``, trains the model
-with policy + value losses, runs periodic cutechess gauntlets vs Stockfish for
-a real Elo signal, saves checkpoints (the UCI adapter loads them at eval time).
+streams lichess elite pgns through ``lichessgamedataset``, trains the model
+with policy + value losses, runs periodic cutechess gauntlets vs stockfish for
+a real elo signal, saves checkpoints (the uci adapter loads them at eval time).
 
-Use ``--config <path>.yaml`` to pin defaults; any field is also a CLI flag
-(``--peak-lr``, ``--batch-size``, …) that overrides YAML and the dataclass
+use ``--config <path>.yaml`` to pin defaults; any field is also a cli flag
+(``--peak-lr``, ``--batch-size``, …) that overrides yaml and the dataclass
 default.
 
 ``--dry-run`` runs 5 steps and exits — for verifying the loop works without
-committing to a long run. ``--resume PATH`` continues from a saved checkpoint.
+committing to a long run. ``--resume path`` continues from a saved checkpoint.
 ``--no-tui`` swaps the rich layout for plain key=value log lines (auto when
-stdout isn't a TTY).
+stdout isn't a tty).
 """
 
 from __future__ import annotations
@@ -152,7 +152,7 @@ def _list_pgns(data_dir: str) -> list[str]:
 
 
 def _download_missing_data(cfg: TrainConfig, use_tui: bool) -> list[str]:
-    """Download Lichess Elite PGNs when the configured data dir is empty."""
+    """download lichess elite pgns if the data dir is empty."""
     pgn_paths = _list_pgns(cfg.data_dir)
     if pgn_paths or not cfg.auto_download_data:
         return pgn_paths
@@ -284,7 +284,7 @@ def _elo_tag(elo: float | None) -> str:
 
 
 def _hf_repo_id(hf: HFPushConfig, step: int, elo: float | None) -> str:
-    # Example: Pradheep1647/kibitzer-sft-elo-plus-0120-step-002000
+    # example: Pradheep1647/kibitzer-sft-elo-plus-0120-step-002000
     return f"{hf.username}/{hf.repo_prefix}-{_elo_tag(elo)}-step-{step:06d}"
 
 
@@ -350,7 +350,7 @@ def _sample_overlay(
     device: str,
     autocast_dtype: torch.dtype | None,
 ) -> tuple[chess.Board, list[tuple[chess.Move, float]], float]:
-    """Top-5 moves + value at the start position of the first game in `batch`."""
+    """top moves and value for the first position in ``batch``."""
     board = chess.Board()
     if autocast_dtype is not None:
         amp_ctx = torch.autocast(device_type=device, dtype=autocast_dtype)
@@ -685,7 +685,7 @@ def main() -> int:
             if do_ckpt or do_eval:
                 save_and_maybe_eval(step, do_eval)
 
-        # Final save (and a final eval unless dry-run).
+        # final save, with eval unless this is a dry run.
         save_and_maybe_eval(max_steps, do_eval=not args.dry_run)
         return 0
 
