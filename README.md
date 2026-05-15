@@ -20,6 +20,14 @@ A chess policy/value model: board states as tokens, learns from game sequences, 
 
 Standalone architecture page: [`docs/architecture.html`](docs/architecture.html).
 
+## Results
+
+<p align="center">
+  <img src="docs/elo_progress.png" alt="Estimated Elo across SFT checkpoints vs Stockfish baseline" width="780"/>
+</p>
+
+Estimated Elo across SFT checkpoints, evaluated against a rated Stockfish baseline (1320).
+
 ## Run
 
 ```bash
