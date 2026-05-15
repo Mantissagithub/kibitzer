@@ -131,3 +131,34 @@ def test_principal_variation(engine: KibitzerEngine) -> None:
     for m in pv:
         assert m in b.legal_moves
         b.push(m)
+
+
+def test_context_window_trims_long_history() -> None:
+    device, dtype = _device_dtype()
+    engine = KibitzerEngine(Kibitzer(), device=device, dtype=dtype, context_window=4)
+    board = chess.Board()
+    moves = [
+        "e2e4", "e7e5", "g1f3", "b8c6", "f1b5", "a7a6", "b5a4", "g8f6",
+    ]
+    for uci in moves:
+        move = chess.Move.from_uci(uci)
+        board.push(move)
+        engine.push_move(move)
+
+    assert len(engine.history) == len(moves) + 1
+    out = engine.evaluate()
+    assert len(out["legal_moves"]) > 0
+    assert abs(float(out["policy"].sum()) - 1.0) < 1e-5
+
+
+def test_select_moves_batch_legal(engine: KibitzerEngine) -> None:
+    _fresh(engine)
+    board_a = chess.Board()
+    board_b = chess.Board()
+    for uci in ("d2d4", "d7d5", "c2c4"):
+        board_b.push(chess.Move.from_uci(uci))
+
+    moves = engine.select_moves([board_a, board_b], temperature=0.0)
+    assert len(moves) == 2
+    assert moves[0] in board_a.legal_moves
+    assert moves[1] in board_b.legal_moves

@@ -24,11 +24,20 @@ class KibitzerEngine:
         model: Kibitzer,
         device: str = "cuda",
         dtype: torch.dtype = torch.bfloat16,
+        context_window: int | None = None,
     ) -> None:
         self.device = torch.device(device)
         self.dtype = dtype
         self.model = model.to(self.device).to(self.dtype).eval()
         self.history: list[chess.Board] = [chess.Board()]
+        max_ctx = self.model.config.max_seq_len
+        if context_window is None:
+            context_window = max_ctx
+        if context_window <= 0 or context_window > max_ctx:
+            raise ValueError(
+                f"context_window must be in [1, {max_ctx}], got {context_window}"
+            )
+        self.context_window = context_window
 
     def reset(self, board: chess.Board | None = None) -> None:
         start = chess.Board() if board is None else board.copy(stack=False)
@@ -43,26 +52,66 @@ class KibitzerEngine:
         self,
     ) -> tuple[torch.Tensor, torch.Tensor, float, chess.Board]:
         """run the model for the current board history."""
-        # todo(perf): re-forwards the full history. kv-caching is awkward here
-        # because position encoding is per ply while the causal trunk spans time.
-        T = len(self.history)
-        if T == 0:
-            raise RuntimeError("history is empty; call reset() first")
-        max_T = self.model.config.max_seq_len
-        if T > max_T:
-            raise RuntimeError(
-                f"history length {T} exceeds model.max_seq_len={max_T}"
-            )
+        encoded = self._encode_histories([self.history])
+        logits = encoded["policy_logits"][0]
+        mask = encoded["legal_masks"][0]
+        value = float(encoded["values"][0])
+        current = encoded["boards"][0]
+        return logits, mask, value, current
 
-        piece_idxs = []
-        auxes = []
-        for b in self.history:
-            t = board_to_tensor(b)
-            piece_idxs.append(t["piece_idx"])
-            auxes.append(t["aux"])
-        piece_idx = torch.stack(piece_idxs).unsqueeze(0).to(self.device)
-        aux = torch.stack(auxes).unsqueeze(0).to(self.device)
-        pad_mask = torch.zeros(1, T, dtype=torch.bool, device=self.device)
+    def _trim_history(
+        self, history: list[chess.Board]
+    ) -> list[chess.Board]:
+        if not history:
+            raise RuntimeError("history is empty; call reset() first")
+        if len(history) <= self.context_window:
+            return history
+        return history[-self.context_window :]
+
+    def _boards_to_history(self, board: chess.Board) -> list[chess.Board]:
+        if board.move_stack:
+            root = board.root()
+            history = [root.copy(stack=False)]
+            replay = root.copy(stack=False)
+            for move in board.move_stack:
+                replay.push(move)
+                history.append(replay.copy(stack=False))
+            return history
+        return [board.copy(stack=False)]
+
+    def _encode_histories(
+        self, histories: list[list[chess.Board]]
+    ) -> dict[str, list[torch.Tensor] | torch.Tensor]:
+        """batched forward over one or more board histories."""
+        if not histories:
+            raise ValueError("histories must be non-empty")
+
+        trimmed = [self._trim_history(list(history)) for history in histories]
+        lengths = [len(history) for history in trimmed]
+        max_T = max(lengths)
+        if max_T == 0:
+            raise RuntimeError("history is empty; call reset() first")
+        piece_idx = torch.zeros(
+            len(trimmed), max_T, self.model.config.n_squares,
+            dtype=torch.long, device=self.device,
+        )
+        aux = torch.zeros(
+            len(trimmed), max_T, self.model.config.n_aux,
+            dtype=torch.float32, device=self.device,
+        )
+        pad_mask = torch.ones(
+            len(trimmed), max_T, dtype=torch.bool, device=self.device
+        )
+        current_boards: list[chess.Board] = []
+
+        for row, history in enumerate(trimmed):
+            current_boards.append(history[-1])
+            start = max_T - len(history)
+            for offset, board in enumerate(history):
+                tensors = board_to_tensor(board)
+                piece_idx[row, start + offset] = tensors["piece_idx"].to(self.device)
+                aux[row, start + offset] = tensors["aux"].to(self.device)
+            pad_mask[row, start:] = False
 
         amp_enabled = self.dtype in (torch.bfloat16, torch.float16)
         with torch.amp.autocast(
@@ -72,13 +121,20 @@ class KibitzerEngine:
         ):
             policy_logits, value_pred = self.model(piece_idx, aux, pad_mask)
 
-        logits = policy_logits[0, -1].float()           # (4672,)
-        value = float(value_pred[0, -1, 0].float().item())
-
-        current = self.history[-1]
-        mask = legal_move_mask(current).to(self.device)  # (4672,) bool
-
-        return logits, mask, value, current
+        last_idx = torch.tensor(
+            [max_T - 1] * len(trimmed), device=self.device, dtype=torch.long
+        )
+        logits = policy_logits[torch.arange(len(trimmed), device=self.device), last_idx]
+        values = value_pred[torch.arange(len(trimmed), device=self.device), last_idx, 0]
+        legal_masks = [
+            legal_move_mask(board).to(self.device) for board in current_boards
+        ]
+        return {
+            "policy_logits": logits.float(),
+            "values": values.float(),
+            "legal_masks": legal_masks,
+            "boards": current_boards,
+        }
 
     @torch.no_grad()
     def evaluate(self) -> dict:
@@ -111,6 +167,38 @@ class KibitzerEngine:
             "legal_moves": legal_moves,
             "move_probs": move_probs,
         }
+
+    @torch.no_grad()
+    def evaluate_boards(self, boards: list[chess.Board]) -> list[dict]:
+        """evaluate several boards in one forward pass."""
+        if not boards:
+            return []
+        payload = self._encode_histories([self._boards_to_history(b) for b in boards])
+        logits = payload["policy_logits"]
+        values = payload["values"]
+        legal_masks = payload["legal_masks"]
+        current_boards = payload["boards"]
+
+        outputs: list[dict] = []
+        for idx, board in enumerate(current_boards):
+            mask = legal_masks[idx]
+            masked = logits[idx].masked_fill(~mask, float("-inf"))
+            probs = F.softmax(masked, dim=-1)
+            legal_moves = list(board.legal_moves)
+            move_probs: list[tuple[chess.Move, float]] = []
+            for move in legal_moves:
+                move_idx = move_to_index(move, board)
+                move_probs.append((move, float(probs[move_idx].item())))
+            move_probs.sort(key=lambda mp: mp[1], reverse=True)
+            outputs.append(
+                {
+                    "policy": probs.cpu().numpy().astype(np.float32),
+                    "value": float(values[idx].item()),
+                    "legal_moves": legal_moves,
+                    "move_probs": move_probs,
+                }
+            )
+        return outputs
 
     @torch.no_grad()
     def select_move(
@@ -148,6 +236,48 @@ class KibitzerEngine:
         probs = F.softmax(scaled, dim=-1)
         idx = int(torch.multinomial(probs, num_samples=1).item())
         return index_to_move(idx, current)
+
+    @torch.no_grad()
+    def select_moves(
+        self,
+        boards: list[chess.Board],
+        temperature: float = 0.0,
+        top_k: int | None = None,
+    ) -> list[chess.Move]:
+        """select moves for several boards in one forward pass."""
+        if temperature < 0:
+            raise ValueError(f"temperature must be >= 0, got {temperature}")
+        if top_k is not None and top_k <= 0:
+            raise ValueError(f"top_k must be > 0, got {top_k}")
+        if not boards:
+            return []
+
+        payload = self._encode_histories([self._boards_to_history(b) for b in boards])
+        logits = payload["policy_logits"]
+        legal_masks = payload["legal_masks"]
+        current_boards = payload["boards"]
+        moves: list[chess.Move] = []
+
+        for idx, board in enumerate(current_boards):
+            mask = legal_masks[idx]
+            masked = logits[idx].masked_fill(~mask, float("-inf"))
+            if temperature == 0.0:
+                move_idx = int(torch.argmax(masked).item())
+                moves.append(index_to_move(move_idx, board))
+                continue
+
+            scaled = masked / temperature
+            if top_k is not None:
+                n_legal = int(mask.sum().item())
+                k = min(top_k, n_legal)
+                topk_vals, topk_idx = torch.topk(scaled, k)
+                kept = torch.full_like(scaled, float("-inf"))
+                kept[topk_idx] = topk_vals
+                scaled = kept
+            probs = F.softmax(scaled, dim=-1)
+            move_idx = int(torch.multinomial(probs, num_samples=1).item())
+            moves.append(index_to_move(move_idx, board))
+        return moves
 
     @torch.no_grad()
     def evaluate_at(
