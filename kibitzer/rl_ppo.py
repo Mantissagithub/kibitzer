@@ -66,7 +66,10 @@ class PPOOutputs:
     value_loss: Tensor
     entropy: Tensor
     approx_kl: Tensor
+    ref_kl: Tensor
     clipfrac: Tensor
+    search_policy_loss: Tensor
+    search_value_loss: Tensor
 
 
 def ppo_loss(
@@ -86,6 +89,11 @@ def ppo_loss(
     value_coef: float,
     ref_log_probs: Tensor | None = None,
     kl_coef: float = 0.0,
+    search_actions: Tensor | None = None,
+    has_search_target: Tensor | None = None,
+    search_value_targets: Tensor | None = None,
+    search_policy_coef: float = 0.0,
+    search_value_coef: float = 0.0,
 ) -> PPOOutputs:
     """compute clipped PPO losses for a legal-masked categorical policy."""
     log_probs = gather_action_log_probs(logits, actions, legal_mask)
@@ -107,15 +115,48 @@ def ppo_loss(
 
     approx_kl = old_log_probs - log_probs
     clipfrac = (torch.abs(ratio - 1.0) > clip_eps).float()
+    ref_kl = torch.zeros_like(approx_kl)
+    search_policy_loss = torch.zeros_like(policy_loss)
+    search_value_loss = torch.zeros_like(value_loss)
 
     if ref_log_probs is not None and kl_coef > 0.0:
-        approx_kl = approx_kl + kl_coef * (log_probs - ref_log_probs)
+        ref_kl = 0.5 * (log_probs - ref_log_probs) ** 2
+
+    if (
+        search_actions is not None
+        and has_search_target is not None
+        and search_policy_coef > 0.0
+    ):
+        search_mask = valid_mask & has_search_target
+        if search_mask.any():
+            search_policy_loss = -log_all.gather(
+                -1, search_actions.unsqueeze(-1)
+            ).squeeze(-1)
+            search_policy_loss = torch.where(
+                search_mask, search_policy_loss, torch.zeros_like(search_policy_loss)
+            )
+        else:
+            search_policy_loss = torch.zeros_like(policy_loss)
+
+    if (
+        search_value_targets is not None
+        and has_search_target is not None
+        and search_value_coef > 0.0
+    ):
+        search_mask = valid_mask & has_search_target
+        search_value_loss = 0.5 * (value_pred - search_value_targets) ** 2
+        search_value_loss = torch.where(
+            search_mask, search_value_loss, torch.zeros_like(search_value_loss)
+        )
 
     mask = valid_mask.float()
     denom = mask.sum().clamp(min=1.0)
     total = (
         (policy_loss * mask).sum()
         + value_coef * (value_loss * mask).sum()
+        + kl_coef * (ref_kl * mask).sum()
+        + search_policy_coef * (search_policy_loss * mask).sum()
+        + search_value_coef * (search_value_loss * mask).sum()
         - entropy_coef * (entropy * mask).sum()
     ) / denom
     return PPOOutputs(
@@ -124,5 +165,8 @@ def ppo_loss(
         value_loss=(value_loss * mask).sum() / denom,
         entropy=(entropy * mask).sum() / denom,
         approx_kl=(approx_kl * mask).sum() / denom,
+        ref_kl=(ref_kl * mask).sum() / denom,
         clipfrac=(clipfrac * mask).sum() / denom,
+        search_policy_loss=(search_policy_loss * mask).sum() / denom,
+        search_value_loss=(search_value_loss * mask).sum() / denom,
     )

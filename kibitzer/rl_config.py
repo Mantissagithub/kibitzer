@@ -21,6 +21,7 @@ class RLConfig:
     init_checkpoint: str
     output_dir: str = "runs_rl"
     device: str = "cuda"
+    rollout_device: str = "cpu"
     dtype: str = "bfloat16"
     seed: int = 42
 
@@ -61,8 +62,13 @@ class RLConfig:
     search_top_k: int = 8
     search_stockfish_weight: float = 0.7
     search_value_weight: float = 0.3
+    search_policy_coef: float = 0.2
+    search_value_coef: float = 0.1
     prev_pool_size: int = 3
     target_sync_interval: int = 10
+    selfplay_latest_weight: float = 0.5
+    selfplay_best_weight: float = 0.3
+    selfplay_older_weight: float = 0.2
 
     phase1_reward: RewardMix = field(default_factory=RewardMix)
     phase2_reward: RewardMix = field(
@@ -75,3 +81,7 @@ class RLConfig:
 
     log_every: int = 1
     checkpoint_every: int = 20
+    eval_every_updates: int = 20
+    eval_n_games: int = 10
+    eval_time_per_move_ms: int = 200
+    eval_pgn_dir: str = "eval_pgns_rl"

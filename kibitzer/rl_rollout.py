@@ -35,10 +35,18 @@ class RolloutStep:
     reward: float
     done: bool
     color: bool
+    source: TrajectorySource
+    opponent_label: str
     stockfish_before: float
     stockfish_after: float
     value_before: float
     value_after: float
+    terminal_component: float = 0.0
+    stockfish_component: float = 0.0
+    value_component: float = 0.0
+    has_search_target: bool = False
+    search_action: int = 0
+    search_value_target: float = 0.0
 
 
 @dataclass
@@ -52,7 +60,24 @@ class TrajectoryBatch:
     rewards: torch.Tensor
     dones: torch.Tensor
     valid_mask: torch.Tensor
+    has_search_target: torch.Tensor
+    search_actions: torch.Tensor
+    search_value_targets: torch.Tensor
+    stockfish_components: torch.Tensor
+    value_components: torch.Tensor
+    terminal_components: torch.Tensor
     source: str
+    opponent_label: str
+
+
+@dataclass
+class PackedRollout:
+    chunks: list[TrajectoryBatch]
+    total_reward: float
+    stockfish_component: float
+    value_component: float
+    terminal_component: float
+    n_steps: int
 
 
 def _dtype_from_name(name: str) -> torch.dtype:
@@ -169,6 +194,33 @@ def _step_payload(
     }
 
 
+def _search_target(
+    board: chess.Board,
+    engine: KibitzerEngine,
+    target_engine: KibitzerEngine,
+    analyser: StockfishAnalyser,
+    cfg: RLConfig,
+    acting_color: bool,
+) -> tuple[int, float]:
+    evals = engine.evaluate_boards([board])[0]
+    candidates = evals["move_probs"][: cfg.search_top_k]
+    if not candidates:
+        raise RuntimeError("expected at least one legal move for search target")
+
+    best_action = move_to_index(candidates[0][0], board)
+    best_score = float("-inf")
+    for move, _prob in candidates:
+        child = board.copy(stack=False)
+        child.push(move)
+        sf = analyser.evaluate(child, acting_color=acting_color)
+        vm = -float(target_engine.evaluate_boards([child])[0]["value"])
+        score = cfg.search_stockfish_weight * sf + cfg.search_value_weight * vm
+        if score > best_score:
+            best_score = score
+            best_action = move_to_index(move, board)
+    return best_action, best_score
+
+
 def _reward_mix_for_phase(cfg: RLConfig) -> RewardMix:
     return cfg.phase1_reward if cfg.phase == "stockfish" else cfg.phase2_reward
 
@@ -216,10 +268,15 @@ def collect_stockfish_rollout(
                     reward=reward.total,
                     done=done,
                     color=chess.WHITE,
+                    source="stockfish",
+                    opponent_label=f"stockfish-{stockfish_elo}",
                     stockfish_before=sf_before,
                     stockfish_after=-sf_after,
                     value_before=value_before,
                     value_after=-value_after,
+                    terminal_component=outcome,
+                    stockfish_component=reward.stockfish_delta,
+                    value_component=reward.value_delta,
                 )
             )
         else:
@@ -235,19 +292,35 @@ def collect_selfplay_rollout(
     target_engine: KibitzerEngine,
     analyser: StockfishAnalyser,
     cfg: RLConfig,
+    *,
+    actor_color: bool,
+    opponent_label: str,
 ) -> list[RolloutStep]:
     board = chess.Board()
     steps: list[RolloutStep] = []
     reward_mix = _reward_mix_for_phase(cfg)
 
     while not board.is_game_over() and len(steps) < cfg.max_plies:
-        actor = actor_engine if board.turn == chess.WHITE else opponent_engine
+        current_engine = actor_engine if board.turn == actor_color else opponent_engine
         payload = _step_payload(
-            actor, board, temperature=cfg.temperature, top_k=cfg.top_k
+            current_engine, board, temperature=cfg.temperature, top_k=cfg.top_k
         )
         acting_color = board.turn
         sf_before = analyser.evaluate(board, acting_color=acting_color)
         value_before = payload["value_pred"]
+        has_search_target = False
+        search_action = 0
+        search_value_target = 0.0
+        if acting_color == actor_color and random.random() < cfg.search_fraction:
+            has_search_target = True
+            search_action, search_value_target = _search_target(
+                board,
+                actor_engine,
+                target_engine,
+                analyser,
+                cfg,
+                acting_color=acting_color,
+            )
         board.push(payload["move"])
         sf_after = analyser.evaluate(board, acting_color=not acting_color)
         next_eval = target_engine.evaluate_boards([board])[0]["value"]
@@ -261,79 +334,128 @@ def collect_selfplay_rollout(
             value_after=-float(next_eval),
             terminal=terminal,
         )
-        steps.append(
-            RolloutStep(
-                piece_idx=payload["piece_idx"],
-                aux=payload["aux"],
-                action=payload["action"],
-                legal_mask=payload["legal_mask"],
-                old_log_prob=payload["old_log_prob"],
-                value_pred=value_before,
-                reward=reward.total,
-                done=done,
-                color=acting_color,
-                stockfish_before=sf_before,
-                stockfish_after=-sf_after,
-                value_before=value_before,
-                value_after=-float(next_eval),
+        if acting_color == actor_color:
+            steps.append(
+                RolloutStep(
+                    piece_idx=payload["piece_idx"],
+                    aux=payload["aux"],
+                    action=payload["action"],
+                    legal_mask=payload["legal_mask"],
+                    old_log_prob=payload["old_log_prob"],
+                    value_pred=value_before,
+                    reward=reward.total,
+                    done=done,
+                    color=acting_color,
+                    source="selfplay",
+                    opponent_label=opponent_label,
+                    stockfish_before=sf_before,
+                    stockfish_after=-sf_after,
+                    value_before=value_before,
+                    value_after=-float(next_eval),
+                    terminal_component=terminal,
+                    stockfish_component=reward.stockfish_delta,
+                    value_component=reward.value_delta,
+                    has_search_target=has_search_target,
+                    search_action=search_action,
+                    search_value_target=search_value_target,
+                )
             )
-        )
     return steps
 
 
-def pack_rollout_batch(steps: list[RolloutStep], chunk_len: int, source: str) -> TrajectoryBatch:
-    """pad a rollout into one PPO batch tensor bundle."""
+def pack_rollout_batch(
+    steps: list[RolloutStep], chunk_len: int, source: str
+) -> list[TrajectoryBatch]:
+    """split a rollout into padded PPO chunks."""
     if not steps:
         raise ValueError("steps must be non-empty")
-    piece_idx = torch.zeros(1, chunk_len, 64, dtype=torch.long)
-    aux = torch.zeros(1, chunk_len, 7, dtype=torch.float32)
-    actions = torch.zeros(1, chunk_len, dtype=torch.long)
-    legal_mask = torch.zeros(1, chunk_len, 4672, dtype=torch.bool)
-    old_log_probs = torch.zeros(1, chunk_len, dtype=torch.float32)
-    old_values = torch.zeros(1, chunk_len, dtype=torch.float32)
-    rewards = torch.zeros(1, chunk_len, dtype=torch.float32)
-    dones = torch.ones(1, chunk_len, dtype=torch.bool)
-    valid_mask = torch.zeros(1, chunk_len, dtype=torch.bool)
+    chunks: list[TrajectoryBatch] = []
+    opponent_label = steps[0].opponent_label
+    for start in range(0, len(steps), chunk_len):
+        chunk_steps = steps[start : start + chunk_len]
+        piece_idx = torch.zeros(1, chunk_len, 64, dtype=torch.long)
+        aux = torch.zeros(1, chunk_len, 7, dtype=torch.float32)
+        actions = torch.zeros(1, chunk_len, dtype=torch.long)
+        legal_mask = torch.zeros(1, chunk_len, 4672, dtype=torch.bool)
+        old_log_probs = torch.zeros(1, chunk_len, dtype=torch.float32)
+        old_values = torch.zeros(1, chunk_len, dtype=torch.float32)
+        rewards = torch.zeros(1, chunk_len, dtype=torch.float32)
+        dones = torch.ones(1, chunk_len, dtype=torch.bool)
+        valid_mask = torch.zeros(1, chunk_len, dtype=torch.bool)
+        has_search_target = torch.zeros(1, chunk_len, dtype=torch.bool)
+        search_actions = torch.zeros(1, chunk_len, dtype=torch.long)
+        search_value_targets = torch.zeros(1, chunk_len, dtype=torch.float32)
+        stockfish_components = torch.zeros(1, chunk_len, dtype=torch.float32)
+        value_components = torch.zeros(1, chunk_len, dtype=torch.float32)
+        terminal_components = torch.zeros(1, chunk_len, dtype=torch.float32)
 
-    for idx, step in enumerate(steps[:chunk_len]):
-        piece_idx[0, idx] = step.piece_idx
-        aux[0, idx] = step.aux
-        actions[0, idx] = step.action
-        legal_mask[0, idx] = step.legal_mask
-        old_log_probs[0, idx] = step.old_log_prob
-        old_values[0, idx] = step.value_pred
-        rewards[0, idx] = step.reward
-        dones[0, idx] = step.done
-        valid_mask[0, idx] = True
+        for idx, step in enumerate(chunk_steps):
+            piece_idx[0, idx] = step.piece_idx
+            aux[0, idx] = step.aux
+            actions[0, idx] = step.action
+            legal_mask[0, idx] = step.legal_mask
+            old_log_probs[0, idx] = step.old_log_prob
+            old_values[0, idx] = step.value_pred
+            rewards[0, idx] = step.reward
+            dones[0, idx] = step.done if idx == len(chunk_steps) - 1 else False
+            valid_mask[0, idx] = True
+            has_search_target[0, idx] = step.has_search_target
+            search_actions[0, idx] = step.search_action
+            search_value_targets[0, idx] = step.search_value_target
+            stockfish_components[0, idx] = step.stockfish_component
+            value_components[0, idx] = step.value_component
+            terminal_components[0, idx] = step.terminal_component
 
-    return TrajectoryBatch(
-        piece_idx=piece_idx,
-        aux=aux,
-        actions=actions,
-        legal_mask=legal_mask,
-        old_log_probs=old_log_probs,
-        old_values=old_values,
-        rewards=rewards,
-        dones=dones,
-        valid_mask=valid_mask,
-        source=source,
-    )
-
-
-def build_reference_engine(cfg: RLConfig) -> KibitzerEngine:
-    return load_engine_from_checkpoint(
-        cfg.init_checkpoint,
-        device=cfg.device,
-        dtype=_dtype_from_name(cfg.dtype),
-        context_window=cfg.context_window,
-    )
+        chunks.append(
+            TrajectoryBatch(
+                piece_idx=piece_idx,
+                aux=aux,
+                actions=actions,
+                legal_mask=legal_mask,
+                old_log_probs=old_log_probs,
+                old_values=old_values,
+                rewards=rewards,
+                dones=dones,
+                valid_mask=valid_mask,
+                has_search_target=has_search_target,
+                search_actions=search_actions,
+                search_value_targets=search_value_targets,
+                stockfish_components=stockfish_components,
+                value_components=value_components,
+                terminal_components=terminal_components,
+                source=source,
+                opponent_label=opponent_label,
+            )
+        )
+    return chunks
 
 
 def sample_prev_checkpoint(
     prev_pool: list[str],
     rng: random.Random,
     fallback: str,
+    *,
+    latest_checkpoint: str | None = None,
+    best_checkpoint: str | None = None,
+    latest_weight: float = 0.5,
+    best_weight: float = 0.3,
+    older_weight: float = 0.2,
 ) -> str:
     if not prev_pool:
         return fallback
-    return rng.choice(prev_pool)
+    choices: list[str] = []
+    weights: list[float] = []
+    if latest_checkpoint is not None:
+        choices.append(latest_checkpoint)
+        weights.append(latest_weight)
+    if best_checkpoint is not None:
+        choices.append(best_checkpoint)
+        weights.append(best_weight)
+    older = [ckpt for ckpt in prev_pool if ckpt not in set(choices)]
+    if older:
+        for ckpt in older:
+            choices.append(ckpt)
+            weights.append(older_weight / len(older))
+    if not choices:
+        return fallback
+    return rng.choices(choices, weights=weights, k=1)[0]
