@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import os
 import random
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
@@ -14,6 +15,7 @@ import torch
 import yaml
 
 from kibitzer.eval import evaluate_checkpoint
+from kibitzer.hf_utils import prepare_hf_push, push_checkpoint_to_hf
 from kibitzer.model import Kibitzer
 from kibitzer.rl_config import RLConfig, RewardMix
 from kibitzer.rl_ppo import compute_gae, gather_action_log_probs, normalize_advantages, ppo_loss
@@ -302,6 +304,8 @@ def main() -> None:
     trainer_state = _trainer_state_from_checkpoint(cfg, ckpt)
     prev_pool = list(trainer_state["prev_pool"])
     rng = random.Random(cfg.seed)
+    hf_config = prepare_hf_push(cfg)
+    training_stage = "rl-phase1" if cfg.phase == "stockfish" else "rl-phase2"
 
     for update in range(cfg.total_updates):
         lr = get_lr(
@@ -495,8 +499,20 @@ def main() -> None:
                     "avg_terminal_component": rollout_metrics["avg_terminal_component"],
                     "curriculum_level": current_elo,
                     "eval": eval_metrics,
-                },
+},
             )
+            if hf_config:
+                repo_id = push_checkpoint_to_hf(
+                    hf_config, out_path, update + 1, cfg,
+                    final_metrics, elo=None,
+                    training_stage=training_stage,
+                    eval_opponent=None,
+                )
+                if repo_id and "/" in repo_id:
+                    print(f"[hf] pushed {repo_id}")
+                    os.remove(out_path)
+                elif repo_id:
+                    print(f"[hf] push failed: {repo_id}")
         elif best_eval_improved:
             best_path = Path(cfg.output_dir) / "best_rl.pt"
             save_checkpoint(

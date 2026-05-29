@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-import getpass
 import math
 import os
 import random
@@ -39,6 +38,7 @@ from kibitzer import tui
 from kibitzer.data import LichessGameDataset, collate_games
 from kibitzer.encoding import index_to_move
 from kibitzer.eval import evaluate_checkpoint
+from kibitzer.hf_utils import HFPushConfig, prepare_hf_push, push_checkpoint_to_hf
 from kibitzer.loss import combined_loss
 from kibitzer.model import Kibitzer, KibitzerConfig
 from kibitzer.training_utils import (
@@ -48,7 +48,6 @@ from kibitzer.training_utils import (
     load_checkpoint,
     save_checkpoint,
 )
-from scripts.hf_readme import render_hf_readme
 
 
 @dataclass
@@ -208,151 +207,7 @@ def _download_missing_data(cfg: TrainConfig, use_tui: bool) -> list[str]:
     return _list_pgns(cfg.data_dir)
 
 
-def _read_env_file(path: Path) -> dict[str, str]:
-    if not path.exists():
-        return {}
-    env: dict[str, str] = {}
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        k, v = line.split("=", 1)
-        env[k.strip()] = v.strip().strip('"').strip("'")
-    return env
 
-
-def _write_env_values(path: Path, updates: dict[str, str]) -> None:
-    existing = _read_env_file(path)
-    existing.update({k: v for k, v in updates.items() if v})
-    lines = [f"{k}={v}" for k, v in sorted(existing.items())]
-    path.write_text("\n".join(lines) + "\n")
-
-
-def _env_value(file_env: dict[str, str], key: str) -> str:
-    return os.environ.get(key) or file_env.get(key, "")
-
-
-@dataclass
-class HFPushConfig:
-    username: str
-    token: str
-    repo_prefix: str
-    private: bool
-
-
-def _prepare_hf_push(cfg: TrainConfig, use_tui: bool) -> HFPushConfig | None:
-    if not cfg.hf_push:
-        return None
-
-    env_path = Path(".env")
-    file_env = _read_env_file(env_path)
-    username = _env_value(file_env, "HF_USERNAME")
-    token = _env_value(file_env, "HF_TOKEN")
-
-    if use_tui and (not username or not token):
-        tui.console.print("[header]Hugging Face checkpoint push[/]")
-        tui.console.print("[muted]credentials are saved to .env for this project[/]")
-        if not username:
-            username = tui.console.input("HF username: ").strip()
-        if not token:
-            token = getpass.getpass("HF token: ").strip()
-        _write_env_values(env_path, {"HF_USERNAME": username, "HF_TOKEN": token})
-        try:
-            env_path.chmod(0o600)
-        except OSError:
-            pass
-
-    if not username or not token:
-        tui.console.print(
-            "[warning]HF push enabled but HF_USERNAME/HF_TOKEN are missing; "
-            "checkpoint uploads disabled[/]"
-        )
-        return None
-
-    return HFPushConfig(
-        username=username,
-        token=token,
-        repo_prefix=cfg.hf_repo_prefix,
-        private=cfg.hf_private,
-    )
-
-
-def _elo_tag(elo: float | None) -> str:
-    if elo is None or not math.isfinite(elo):
-        return "elo-pending"
-    sign = "plus" if elo >= 0 else "minus"
-    return f"elo-{sign}-{abs(int(round(elo))):04d}"
-
-
-def _hf_repo_id(hf: HFPushConfig, step: int, elo: float | None) -> str:
-    # example: Pradheep1647/kibitzer-sft-elo-plus-0120-step-002000
-    return f"{hf.username}/{hf.repo_prefix}-{_elo_tag(elo)}-step-{step:06d}"
-
-
-def _push_checkpoint_to_hf(
-    hf: HFPushConfig | None,
-    ckpt_path: Path,
-    step: int,
-    cfg: TrainConfig,
-    metrics: dict,
-    elo: float | None,
-) -> str | None:
-    if hf is None:
-        return None
-    try:
-        from huggingface_hub import HfApi
-    except ImportError:
-        return "huggingface_hub is not installed"
-
-    repo_id = _hf_repo_id(hf, step, elo)
-    metadata_path = ckpt_path.with_suffix(".yaml")
-    metadata = {
-        "model": "kibitzer",
-        "training_stage": "sft",
-        "step": step,
-        "elo_diff": elo,
-        "checkpoint": ckpt_path.name,
-        "config": asdict(cfg),
-        "metrics": metrics,
-    }
-    metadata_path.write_text(yaml.safe_dump(metadata, sort_keys=True))
-    readme_path = ckpt_path.with_suffix(".README.md")
-    readme_path.write_text(render_hf_readme(
-        repo_id=repo_id,
-        checkpoint_name=ckpt_path.name,
-        step=step,
-        config=metadata["config"],
-        metrics=metrics,
-        elo=elo,
-        opponent=cfg.eval_opponent,
-    ))
-    try:
-        api = HfApi(token=hf.token)
-        api.create_repo(repo_id=repo_id, repo_type="model", private=hf.private, exist_ok=True)
-        api.upload_file(
-            path_or_fileobj=str(ckpt_path),
-            path_in_repo=ckpt_path.name,
-            repo_id=repo_id,
-            repo_type="model",
-            token=hf.token,
-        )
-        api.upload_file(
-            path_or_fileobj=str(metadata_path),
-            path_in_repo="training_metadata.yaml",
-            repo_id=repo_id,
-            repo_type="model",
-            token=hf.token,
-        )
-        api.upload_file(
-            path_or_fileobj=str(readme_path),
-            path_in_repo="README.md",
-            repo_id=repo_id,
-            repo_type="model",
-            token=hf.token,
-        )
-    except Exception as e:  # noqa: BLE001
-        return f"{type(e).__name__}: {e}"
-    return repo_id
 
 
 def _value_mae(pred: torch.Tensor, target: torch.Tensor, mask: torch.Tensor) -> float:
@@ -454,7 +309,7 @@ def main() -> int:
             project="kibitzer", name=cfg.run_name, config=asdict(cfg)
         )
 
-    hf_push = _prepare_hf_push(cfg, use_tui)
+    hf_push = prepare_hf_push(cfg, use_tui)
 
     pgn_paths = _download_missing_data(cfg, use_tui)
     if not pgn_paths:
@@ -571,8 +426,9 @@ def main() -> int:
 
         if last_eval_elo is not None:
             metrics["last_eval_elo_diff"] = last_eval_elo
-        pushed = _push_checkpoint_to_hf(
-            hf_push, ckpt_path, step, cfg, metrics, last_eval_elo
+        pushed = push_checkpoint_to_hf(
+            hf_push, ckpt_path, step, cfg, metrics, last_eval_elo,
+            eval_opponent=cfg.eval_opponent,
         )
         if pushed is not None:
             if "/" in pushed and not pushed.startswith(("ImportError", "RuntimeError")):

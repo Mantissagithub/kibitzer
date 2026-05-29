@@ -85,3 +85,7 @@ class RLConfig:
     eval_n_games: int = 10
     eval_time_per_move_ms: int = 200
     eval_pgn_dir: str = "eval_pgns_rl"
+
+    hf_push: bool = False
+    hf_private: bool = False
+    hf_repo_prefix: str = "kibitzer-rl"
