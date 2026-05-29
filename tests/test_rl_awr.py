@@ -54,6 +54,7 @@ def test_awr_loss_outputs_scalars() -> None:
     assert out.policy_loss.dim() == 0
     assert out.value_loss.dim() == 0
     assert out.entropy.dim() == 0
+    assert torch.isfinite(out.entropy)
     assert out.ref_kl.dim() == 0
     assert out.mean_weight.dim() == 0
     assert out.max_weight.dim() == 0

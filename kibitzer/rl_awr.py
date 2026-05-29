@@ -80,7 +80,8 @@ def awr_loss(
 
     log_all = masked_log_probs(logits, legal_mask)
     probs = log_all.exp()
-    entropy = -(probs * log_all).sum(dim=-1)
+    safe_log_all = torch.where(legal_mask, log_all, torch.zeros_like(log_all))
+    entropy = -(probs * safe_log_all).sum(dim=-1)
 
     ref_kl = torch.zeros_like(policy_loss)
     if ref_log_probs is not None and kl_coef > 0.0:

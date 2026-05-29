@@ -430,34 +430,47 @@ def main() -> None:
 
         optimizer.zero_grad(set_to_none=True)
         final_metrics = None
-        valid_positions = batch["valid_mask"].reshape(-1).nonzero(as_tuple=False).squeeze(-1)
+        total_positions = int(batch["valid_mask"].sum().item())
+        chunk_width = int(batch["valid_mask"].shape[1])
+        chunks_per_minibatch = max(1, cfg.minibatch_size // max(1, chunk_width))
         _log(
-            f"update {update + 1}: optimizing {valid_positions.numel()} positions "
-            f"for {cfg.ppo_epochs} epochs"
+            f"update {update + 1}: optimizing {total_positions} positions "
+            f"for {cfg.ppo_epochs} epochs "
+            f"({chunks_per_minibatch} chunks/forward)"
         )
         for _ in range(cfg.ppo_epochs):
-            with torch.no_grad():
-                ref_logits, _ = _forward_batch(reference_model, batch, device, dtype)
-            perm = valid_positions[torch.randperm(valid_positions.numel())]
+            perm = torch.randperm(batch["valid_mask"].shape[0])
             stop_early = False
             accum = 0
-            for start in range(0, perm.numel(), cfg.minibatch_size):
-                idx = perm[start : start + cfg.minibatch_size]
-                if idx.numel() == 0:
+            for start in range(0, perm.numel(), chunks_per_minibatch):
+                rows = perm[start : start + chunks_per_minibatch]
+                if rows.numel() == 0:
                     continue
-                logits, values = _forward_batch(model, batch, device, dtype)
+                mb = {name: value[rows] for name, value in batch.items()}
+                mb_advantages = advantages[rows]
+                mb_returns = returns[rows]
+
+                with torch.no_grad():
+                    ref_logits, _ = _forward_batch(reference_model, mb, device, dtype)
+                logits, values = _forward_batch(model, mb, device, dtype)
                 flat_logits_all = logits.reshape(-1, logits.shape[-1])
                 flat_values_all = values.reshape(-1)
                 flat_ref_logits_all = ref_logits.reshape(-1, ref_logits.shape[-1])
-                flat_legal_all = batch["legal_mask"].to(device).reshape(-1, logits.shape[-1])
-                flat_actions_all = batch["actions"].to(device).reshape(-1)
-                flat_old_log_probs_all = batch["old_log_probs"].to(device).reshape(-1)
-                flat_adv_all = advantages.to(device).reshape(-1)
-                flat_returns_all = returns.to(device).reshape(-1)
-                flat_old_values_all = batch["old_values"].to(device).reshape(-1)
-                flat_has_search_all = batch["has_search_target"].to(device).reshape(-1)
-                flat_search_actions_all = batch["search_actions"].to(device).reshape(-1)
-                flat_search_value_targets_all = batch["search_value_targets"].to(device).reshape(-1)
+                flat_legal_all = mb["legal_mask"].to(device).reshape(-1, logits.shape[-1])
+                flat_actions_all = mb["actions"].to(device).reshape(-1)
+                flat_old_log_probs_all = mb["old_log_probs"].to(device).reshape(-1)
+                flat_adv_all = mb_advantages.to(device).reshape(-1)
+                flat_returns_all = mb_returns.to(device).reshape(-1)
+                flat_old_values_all = mb["old_values"].to(device).reshape(-1)
+                flat_has_search_all = mb["has_search_target"].to(device).reshape(-1)
+                flat_search_actions_all = mb["search_actions"].to(device).reshape(-1)
+                flat_search_value_targets_all = (
+                    mb["search_value_targets"].to(device).reshape(-1)
+                )
+                flat_valid_all = mb["valid_mask"].to(device).reshape(-1)
+                idx = flat_valid_all.nonzero(as_tuple=False).squeeze(-1)
+                if idx.numel() == 0:
+                    continue
 
                 flat_logits = flat_logits_all[idx]
                 flat_ref_logits = flat_ref_logits_all[idx]
@@ -523,7 +536,10 @@ def main() -> None:
                 (metrics.loss / cfg.grad_accum_steps).backward()
                 accum += 1
                 final_metrics = metrics
-                if accum % cfg.grad_accum_steps == 0 or start + cfg.minibatch_size >= perm.numel():
+                if (
+                    accum % cfg.grad_accum_steps == 0
+                    or start + chunks_per_minibatch >= perm.numel()
+                ):
                     torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.max_grad_norm)
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)

@@ -111,7 +111,8 @@ def ppo_loss(
 
     log_all = masked_log_probs(logits, legal_mask)
     probs = log_all.exp()
-    entropy = -(probs * log_all).sum(dim=-1)
+    safe_log_all = torch.where(legal_mask, log_all, torch.zeros_like(log_all))
+    entropy = -(probs * safe_log_all).sum(dim=-1)
 
     approx_kl = old_log_probs - log_probs
     clipfrac = (torch.abs(ratio - 1.0) > clip_eps).float()
