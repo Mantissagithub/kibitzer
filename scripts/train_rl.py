@@ -308,7 +308,8 @@ def main() -> None:
     prev_pool = list(trainer_state["prev_pool"])
     rng = random.Random(cfg.seed)
     hf_config = prepare_hf_push(cfg)
-    training_stage = "rl-phase1" if cfg.phase == "stockfish" else "rl-phase2"
+    phase_label = "phase1" if cfg.phase == "stockfish" else "phase2"
+    training_stage = f"rl-{phase_label}-{cfg.algorithm}"
 
     for update in range(cfg.total_updates):
         lr = get_lr(

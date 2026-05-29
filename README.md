@@ -49,6 +49,9 @@ legal-move cross-entropy plus value regression.
 uv run python scripts/train_rl.py --algorithm awr --init-checkpoint runs/best.pt
 ```
 
+With `--hf-push`, uploaded metadata marks AWR runs as `rl-phase1-awr` or
+`rl-phase2-awr`.
+
 Paper references:
 
 - [Advantage-Weighted Regression](https://arxiv.org/abs/1910.00177)
