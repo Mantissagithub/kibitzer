@@ -6,7 +6,7 @@ import argparse
 import copy
 import os
 import random
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
 from pathlib import Path
 
@@ -385,21 +385,30 @@ def main() -> None:
                         older_weight=cfg.selfplay_older_weight,
                     )
                     opponent_label = Path(opponent_checkpoint).stem
-                rollout_futures.append(
-                    executor.submit(
-                        _collect_one_rollout,
-                        cfg,
-                        str(learner_checkpoint),
-                        target_state_dict,
-                        current_elo=current_elo,
-                        actor_color=actor_color,
-                        opponent_checkpoint=opponent_checkpoint,
-                        opponent_label=opponent_label,
-                    )
+                future = executor.submit(
+                    _collect_one_rollout,
+                    cfg,
+                    str(learner_checkpoint),
+                    target_state_dict,
+                    current_elo=current_elo,
+                    actor_color=actor_color,
+                    opponent_checkpoint=opponent_checkpoint,
+                    opponent_label=opponent_label,
                 )
+                rollout_futures.append((rollout_idx, future))
         packed_batches = []
-        for future in rollout_futures:
-            packed_batches.extend(future.result())
+        future_to_idx = {future: idx for idx, future in rollout_futures}
+        for done_count, future in enumerate(as_completed(future_to_idx), start=1):
+            rollout_idx = future_to_idx[future]
+            chunks = future.result()
+            positions = sum(int(chunk.valid_mask.sum().item()) for chunk in chunks)
+            packed_batches.extend(chunks)
+            _log(
+                f"update {update + 1}: rollout {rollout_idx + 1}/"
+                f"{cfg.rollouts_per_batch} finished "
+                f"({done_count}/{cfg.rollouts_per_batch}); "
+                f"chunks={len(chunks)} positions={positions}"
+            )
         batch = _concat_batches(packed_batches)
         rollout_metrics = _rollout_summary([batch])
         n_positions = int(batch["valid_mask"].sum().item())
