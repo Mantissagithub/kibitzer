@@ -141,6 +141,10 @@ def _rollout_summary(chunks: list[dict]) -> dict[str, float]:
     }
 
 
+def _log(message: str) -> None:
+    print(f"[train_rl] {message}", flush=True)
+
+
 def _concat_batches(batches: list) -> dict:
     return {
         "piece_idx": torch.cat([x.piece_idx for x in batches], dim=0),
@@ -287,20 +291,30 @@ def main() -> None:
     if args.dry_run:
         cfg.total_updates = min(cfg.total_updates, 1)
         cfg.rollouts_per_batch = min(cfg.rollouts_per_batch, 1)
+        _log("dry run enabled: capped total_updates=1 and rollouts_per_batch=1")
 
     random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
+    _log(f"seed set to {cfg.seed}")
 
     device = torch.device(cfg.device if torch.cuda.is_available() else "cpu")
     dtype = _dtype(cfg.dtype if device.type == "cuda" else "float32")
+    _log(
+        "starting training "
+        f"algorithm={cfg.algorithm} phase={cfg.phase} device={device} "
+        f"dtype={dtype} rollout_device={cfg.rollout_device}"
+    )
+    _log(f"loading init checkpoint: {cfg.init_checkpoint}")
     model = Kibitzer()
     ckpt = load_checkpoint(cfg.init_checkpoint, model, map_location="cpu")
     if args.resume:
+        _log(f"resuming trainer state from: {args.resume}")
         ckpt = load_checkpoint(args.resume, model, map_location="cpu")
     model = model.to(device).to(dtype)
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.peak_lr)
     if args.resume and ckpt.get("optimizer") is not None:
         optimizer.load_state_dict(ckpt["optimizer"])
+        _log("loaded optimizer state from resume checkpoint")
 
     reference_model = copy.deepcopy(model).eval()
     target_model = copy.deepcopy(model).eval()
@@ -310,8 +324,22 @@ def main() -> None:
     hf_config = prepare_hf_push(cfg)
     phase_label = "phase1" if cfg.phase == "stockfish" else "phase2"
     training_stage = f"rl-{phase_label}-{cfg.algorithm}"
+    if hf_config is None:
+        _log("hf push disabled")
+    else:
+        _log(
+            f"hf push enabled repo_prefix={hf_config.repo_prefix} "
+            f"training_stage={training_stage}"
+        )
+    _log(
+        "run config "
+        f"updates={cfg.total_updates} rollouts_per_batch={cfg.rollouts_per_batch} "
+        f"rollout_workers={cfg.rollout_workers} chunk_len={cfg.chunk_len} "
+        f"minibatch_size={cfg.minibatch_size} update_epochs={cfg.ppo_epochs}"
+    )
 
     for update in range(cfg.total_updates):
+        _log(f"update {update + 1}/{cfg.total_updates}: starting")
         lr = get_lr(
             update, cfg.warmup_steps, cfg.total_updates, cfg.peak_lr, cfg.min_lr
         )
@@ -328,6 +356,14 @@ def main() -> None:
             config=asdict(cfg),
         )
         current_elo = cfg.stockfish_levels[trainer_state["current_stockfish_level_idx"]]
+        _log(
+            f"update {update + 1}: saved rollout actor to {learner_checkpoint} "
+            f"curriculum_stockfish_elo={current_elo}"
+        )
+        _log(
+            f"update {update + 1}: collecting {cfg.rollouts_per_batch} rollouts "
+            f"with {max(1, cfg.rollout_workers)} workers"
+        )
         rollout_futures = []
         target_state_dict = {
             k: v.detach().cpu() for k, v in target_model.state_dict().items()
@@ -366,6 +402,12 @@ def main() -> None:
             packed_batches.extend(future.result())
         batch = _concat_batches(packed_batches)
         rollout_metrics = _rollout_summary([batch])
+        n_positions = int(batch["valid_mask"].sum().item())
+        _log(
+            f"update {update + 1}: collected {len(packed_batches)} chunks "
+            f"and {n_positions} train positions "
+            f"avg_reward={rollout_metrics['avg_reward']:.4f}"
+        )
 
         advantages, returns = compute_gae(
             batch["rewards"],
@@ -375,10 +417,15 @@ def main() -> None:
             gae_lambda=cfg.gae_lambda,
         )
         advantages = normalize_advantages(advantages, batch["valid_mask"])
+        _log(f"update {update + 1}: computed normalized advantages and returns")
 
         optimizer.zero_grad(set_to_none=True)
         final_metrics = None
         valid_positions = batch["valid_mask"].reshape(-1).nonzero(as_tuple=False).squeeze(-1)
+        _log(
+            f"update {update + 1}: optimizing {valid_positions.numel()} positions "
+            f"for {cfg.ppo_epochs} epochs"
+        )
         for _ in range(cfg.ppo_epochs):
             with torch.no_grad():
                 ref_logits, _ = _forward_batch(reference_model, batch, device, dtype)
@@ -476,6 +523,7 @@ def main() -> None:
                     stop_early = True
                     break
             if stop_early:
+                _log(f"update {update + 1}: stopped early on target KL")
                 break
 
         if final_metrics is None:
@@ -483,9 +531,11 @@ def main() -> None:
 
         if (update + 1) % cfg.target_sync_interval == 0:
             target_model.load_state_dict(model.state_dict())
+            _log(f"update {update + 1}: synced target model")
         best_eval_improved = False
         eval_metrics = None
         if (update + 1) % cfg.eval_every_updates == 0:
+            _log(f"update {update + 1}: starting eval")
             eval_metrics = _evaluate_policy(cfg, str(learner_checkpoint), trainer_state)
             if cfg.phase == "stockfish":
                 _advance_curriculum(cfg, trainer_state, eval_metrics)
@@ -497,8 +547,10 @@ def main() -> None:
                 if sf_score > trainer_state["best_eval_score"]:
                     trainer_state["best_eval_score"] = sf_score
                     best_eval_improved = True
+            _log(f"update {update + 1}: eval complete")
         if (update + 1) % cfg.checkpoint_every == 0:
             out_path = Path(cfg.output_dir) / f"rl_step_{update + 1}.pt"
+            _log(f"update {update + 1}: saving checkpoint to {out_path}")
             trainer_state["latest_checkpoint"] = str(out_path)
             if best_eval_improved:
                 trainer_state["best_checkpoint"] = str(out_path)
@@ -553,6 +605,7 @@ def main() -> None:
 },
             )
             if hf_config:
+                _log(f"update {update + 1}: pushing checkpoint to hf")
                 repo_id = push_checkpoint_to_hf(
                     hf_config, out_path, update + 1, cfg,
                     final_metrics, elo=None,
@@ -560,12 +613,14 @@ def main() -> None:
                     eval_opponent=None,
                 )
                 if repo_id and "/" in repo_id:
-                    print(f"[hf] pushed {repo_id}")
+                    _log(f"hf pushed {repo_id}")
                     os.remove(out_path)
+                    _log(f"removed local checkpoint after hf push: {out_path}")
                 elif repo_id:
-                    print(f"[hf] push failed: {repo_id}")
+                    _log(f"hf push failed: {repo_id}")
         elif best_eval_improved:
             best_path = Path(cfg.output_dir) / "best_rl.pt"
+            _log(f"update {update + 1}: saving new best checkpoint to {best_path}")
             save_checkpoint(
                 best_path,
                 model,
