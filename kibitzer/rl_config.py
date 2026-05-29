@@ -1,4 +1,4 @@
-"""configuration for PPO-based reinforcement learning."""
+"""configuration for reinforcement learning."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ class RewardMix:
 
 @dataclass
 class RLConfig:
-    """single-node PPO configuration for chess RL."""
+    """single-node chess RL configuration."""
 
     init_checkpoint: str
     output_dir: str = "runs_rl"
@@ -25,6 +25,7 @@ class RLConfig:
     dtype: str = "bfloat16"
     seed: int = 42
 
+    algorithm: str = "ppo"
     phase: str = "stockfish"
     context_window: int = 128
     chunk_len: int = 96
@@ -50,6 +51,9 @@ class RLConfig:
     value_coef: float = 0.5
     kl_coef: float = 0.02
     max_grad_norm: float = 1.0
+    awr_beta: float = 0.5
+    awr_max_weight: float = 20.0
+    awr_normalize_weights: bool = True
 
     stockfish_path: str = "stockfish"
     stockfish_depth: int = 1

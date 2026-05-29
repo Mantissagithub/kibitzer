@@ -1,4 +1,4 @@
-"""PPO-based RL fine-tuning for kibitzer."""
+"""PPO/AWR RL fine-tuning for kibitzer."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ import yaml
 from kibitzer.eval import evaluate_checkpoint
 from kibitzer.hf_utils import prepare_hf_push, push_checkpoint_to_hf
 from kibitzer.model import Kibitzer
+from kibitzer.rl_awr import awr_loss
 from kibitzer.rl_config import RLConfig, RewardMix
 from kibitzer.rl_ppo import compute_gae, gather_action_log_probs, normalize_advantages, ppo_loss
 from kibitzer.rl_rollout import (
@@ -86,6 +87,8 @@ def load_config(args: argparse.Namespace) -> RLConfig:
             setattr(cfg, name, _coerce_value(getattr(cfg, name), value))
     if not cfg.init_checkpoint:
         raise ValueError("--init-checkpoint is required")
+    if cfg.algorithm not in {"ppo", "awr"}:
+        raise ValueError("--algorithm must be one of: ppo, awr")
     return cfg
 
 
@@ -415,28 +418,51 @@ def main() -> None:
                 ref_action_log_probs = gather_action_log_probs(
                     flat_ref_logits, flat_actions, flat_legal
                 )
-                metrics = ppo_loss(
-                    logits=flat_logits,
-                    old_log_probs=flat_old_log_probs,
-                    actions=flat_actions,
-                    legal_mask=flat_legal,
-                    advantages=flat_adv,
-                    returns=flat_returns,
-                    value_pred=flat_values,
-                    old_values=flat_old_values,
-                    valid_mask=torch.ones_like(flat_adv, dtype=torch.bool),
-                    clip_eps=cfg.clip_eps,
-                    value_clip_eps=cfg.value_clip_eps,
-                    entropy_coef=cfg.entropy_coef,
-                    value_coef=cfg.value_coef,
-                    ref_log_probs=ref_action_log_probs,
-                    kl_coef=cfg.kl_coef,
-                    search_actions=flat_search_actions,
-                    has_search_target=flat_has_search,
-                    search_value_targets=flat_search_value_targets,
-                    search_policy_coef=cfg.search_policy_coef if cfg.phase == "selfplay" else 0.0,
-                    search_value_coef=cfg.search_value_coef if cfg.phase == "selfplay" else 0.0,
-                )
+                if cfg.algorithm == "awr":
+                    metrics = awr_loss(
+                        logits=flat_logits,
+                        actions=flat_actions,
+                        legal_mask=flat_legal,
+                        advantages=flat_adv,
+                        returns=flat_returns,
+                        value_pred=flat_values,
+                        valid_mask=torch.ones_like(flat_adv, dtype=torch.bool),
+                        beta=cfg.awr_beta,
+                        max_weight=cfg.awr_max_weight,
+                        normalize_weights=cfg.awr_normalize_weights,
+                        entropy_coef=cfg.entropy_coef,
+                        value_coef=cfg.value_coef,
+                        ref_log_probs=ref_action_log_probs,
+                        kl_coef=cfg.kl_coef,
+                        search_actions=flat_search_actions,
+                        has_search_target=flat_has_search,
+                        search_value_targets=flat_search_value_targets,
+                        search_policy_coef=cfg.search_policy_coef if cfg.phase == "selfplay" else 0.0,
+                        search_value_coef=cfg.search_value_coef if cfg.phase == "selfplay" else 0.0,
+                    )
+                else:
+                    metrics = ppo_loss(
+                        logits=flat_logits,
+                        old_log_probs=flat_old_log_probs,
+                        actions=flat_actions,
+                        legal_mask=flat_legal,
+                        advantages=flat_adv,
+                        returns=flat_returns,
+                        value_pred=flat_values,
+                        old_values=flat_old_values,
+                        valid_mask=torch.ones_like(flat_adv, dtype=torch.bool),
+                        clip_eps=cfg.clip_eps,
+                        value_clip_eps=cfg.value_clip_eps,
+                        entropy_coef=cfg.entropy_coef,
+                        value_coef=cfg.value_coef,
+                        ref_log_probs=ref_action_log_probs,
+                        kl_coef=cfg.kl_coef,
+                        search_actions=flat_search_actions,
+                        has_search_target=flat_has_search,
+                        search_value_targets=flat_search_value_targets,
+                        search_policy_coef=cfg.search_policy_coef if cfg.phase == "selfplay" else 0.0,
+                        search_value_coef=cfg.search_value_coef if cfg.phase == "selfplay" else 0.0,
+                    )
                 (metrics.loss / cfg.grad_accum_steps).backward()
                 accum += 1
                 final_metrics = metrics
@@ -444,7 +470,8 @@ def main() -> None:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.max_grad_norm)
                     optimizer.step()
                     optimizer.zero_grad(set_to_none=True)
-                if float(metrics.approx_kl.item()) > cfg.target_kl:
+                approx_kl = getattr(metrics, "approx_kl", metrics.ref_kl)
+                if float(approx_kl.item()) > cfg.target_kl:
                     stop_early = True
                     break
             if stop_early:
@@ -488,9 +515,32 @@ def main() -> None:
                     "policy_loss": float(final_metrics.policy_loss.item()),
                     "value_loss": float(final_metrics.value_loss.item()),
                     "entropy": float(final_metrics.entropy.item()),
-                    "approx_kl": float(final_metrics.approx_kl.item()),
+                    "algorithm": cfg.algorithm,
+                    "approx_kl": float(
+                        getattr(final_metrics, "approx_kl", final_metrics.ref_kl).item()
+                    ),
                     "ref_kl": float(final_metrics.ref_kl.item()),
-                    "clipfrac": float(final_metrics.clipfrac.item()),
+                    "clipfrac": float(
+                        getattr(
+                            final_metrics,
+                            "clipfrac",
+                            final_metrics.loss.new_tensor(0.0),
+                        ).item()
+                    ),
+                    "awr_mean_weight": float(
+                        getattr(
+                            final_metrics,
+                            "mean_weight",
+                            final_metrics.loss.new_tensor(0.0),
+                        ).item()
+                    ),
+                    "awr_max_weight": float(
+                        getattr(
+                            final_metrics,
+                            "max_weight",
+                            final_metrics.loss.new_tensor(0.0),
+                        ).item()
+                    ),
                     "search_policy_loss": float(final_metrics.search_policy_loss.item()),
                     "search_value_loss": float(final_metrics.search_value_loss.item()),
                     "avg_reward": rollout_metrics["avg_reward"],
@@ -538,11 +588,12 @@ def main() -> None:
                     )
             print(
                 "update="
-                f"{update + 1} phase={cfg.phase} loss={final_metrics.loss.item():.4f} "
+                f"{update + 1} algo={cfg.algorithm} phase={cfg.phase} "
+                f"loss={final_metrics.loss.item():.4f} "
                 f"policy={final_metrics.policy_loss.item():.4f} "
                 f"value={final_metrics.value_loss.item():.4f} "
                 f"entropy={final_metrics.entropy.item():.4f} "
-                f"kl={final_metrics.approx_kl.item():.4f} "
+                f"kl={getattr(final_metrics, 'approx_kl', final_metrics.ref_kl).item():.4f} "
                 f"ref_kl={final_metrics.ref_kl.item():.4f} "
                 f"reward={rollout_metrics['avg_reward']:.4f} "
                 f"sf={rollout_metrics['avg_stockfish_component']:.4f} "

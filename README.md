@@ -37,3 +37,19 @@ uv run pytest                                           # tests
 ```
 
 Set `HF_USERNAME` and `HF_TOKEN` via environment or a local `.env`.
+
+## RL fine-tuning
+
+The RL path supports PPO and an AWR/AWAC-style update. AWR keeps the update close
+to supervised learning: collect Stockfish/self-play rollouts, estimate
+advantages from shaped rewards, and train the policy with advantage-weighted
+legal-move cross-entropy plus value regression.
+
+```bash
+uv run python scripts/train_rl.py --algorithm awr --init-checkpoint runs/best.pt
+```
+
+Paper references:
+
+- [Advantage-Weighted Regression](https://arxiv.org/abs/1910.00177)
+- [AWAC: Accelerating Online Reinforcement Learning with Offline Datasets](https://arxiv.org/abs/2006.09359)
