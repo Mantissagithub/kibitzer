@@ -62,3 +62,4 @@ data/
 # Claude / Codex 
 .claude/
 .codex/
+CLAUDE.local.md
