@@ -517,3 +517,63 @@ grad-accum 4, **4 epochs**, prefetch 6 workers -> `runs_av`, ~1.3h), then the pa
 SFT (`eval_pgns_prime/av_gate.json`, `av_search_gate.json`). Phased ScheduleWakeup loop drives it; will
 NOT push to HF without asking. 500k chosen for a fast first read on whether action-values transfer; scale
 to 1-2M only if it beats SFT.
+
+### D23 — Action-value run scored 3% (flat); root-caused to a soft-target bug (av_temp), NOT the approach
+Ran the 500k action-value pipeline. Intermediate gameplay gates (the D-eval the user asked for) showed a
+**flat trajectory: step2000 = 3%, step5000 = 3%** vs SF-1350 (SFT 27.5%, failed policy-base 7.5%). User
+chose **stop + analyze** rather than grind. The analysis found the real cause:
+
+- The trained model plays **near-randomly**: greedy top-move prob ~0.10-0.16 (vs SFT 0.44-0.71), doesn't
+  match ChessBot's value-best move, even plays junk (h7h5 in a QGD). Training entropy stayed ~2.79 (≈ uniform
+  over ~16 legal moves).
+- **Root cause = target construction.** ChessBot's per-move action-values cluster tightly (good moves all
+  near the top value; only blunders far below), so `softmax(values / av_temp=0.1)` gave a **near-uniform
+  target — best move only 0.14-0.21 prob.** We trained on mush; the model learned mush. ChessBot's 2500
+  strength is its *decisive argmax*; av_temp=0.1 softened it away. Temp sweep confirmed: best-move target
+  prob 0.14-0.21 @0.1 → 0.34-0.65 @0.03 → 0.65-0.93 @0.01.
+- **Confound also noted:** 500k AV vs 12M policy is 24x less data, so the 3% is not a clean
+  signal-quality comparison regardless.
+
+**Conclusion:** action-value distillation is NOT disproven — the av_temp=0.1 default neutered the signal.
+**Fix:** sharpen the target — one-hot on the value-best move (pure behavioral cloning of ChessBot's argmax
+play) or a small temp (~0.01-0.02). Better still, store the **raw per-move values** in the shards so the
+temperature becomes a free train-time knob (no re-label to retune). Either fix needs one re-label (~3.2h for
+500k; the shards stored the softmaxed distribution, not raw values). Stopped training at step 7000; latest
+ckpt `runs_av/base_step_0007000.pt`. Diagnostic method (greedy-move vs teacher-argmax + target-sharpness
+sweep) is the reusable tool that caught this — gameplay/entropy, not loss, is the signal (loss "converged"
+at 2.8 while play was random).
+
+### D24 — Drop history-dependence: rebuild single-position from scratch, Maia-style human-move cloning
+After a brutal-honesty review of the whole project: **nothing has ever beaten the SFT ~1320 baseline** across
+23 decisions. Root insight — we kept changing the *signal* (policy/value/self-play/distill) but never the
+real handicap: **kibitzer is history-dependent** (causal trunk over a sequence of past boards), which is wrong
+for chess.
+
+Why history is a liability here, not an asset:
+- **Chess is fully observable + Markovian.** The current FEN (board + side-to-move + castling + en-passant +
+  halfmove clock) is a *complete sufficient statistic* for the best move. The path to a position does not
+  change which move is best. History carries ~zero extra signal for move quality (only threefold-repetition /
+  50-move depend on history, and those need just the FEN clock / a tiny fixed window — AlphaZero's 8-position
+  stack is for repetition, not better moves).
+- **With limited data, history actively hurts:** the model overfits to game-path/style correlations instead of
+  position→move. That IS the recurring failure — D10 ("overfit to unrealistic histories → 0% real games"),
+  the off-book fragility (opening-random-plies wrecking from-scratch models), the ctx-8-vs-128 mismatch. A
+  position-only model *cannot* make that mistake.
+- Best case a history model only *ties* position-only (no extra signal to win with) and needs far more data to
+  learn to ignore the history. Every strong engine (Stockfish, Leela, AlphaZero, searchless-chess) is
+  position-based.
+
+**Decision (user):** drop history; train single-position from scratch. Architecturally this is NOT a new model
+family (not an RNN — that's *more* history) — it is the existing transformer with the **history half removed**:
+keep the position encoder (transformer over the 64 squares), feed **one board** (context_window=1; the causal
+trunk over a length-1 sequence is a no-op for history). Reuse the whole pipeline (labeler shard format,
+shard_trainer, paired gate) at context_window=1.
+
+**Phase-1 signal = behavioral cloning of elite human moves (Maia-style), NO teacher:** target = one-hot of the
+move the 2300/2500+ player actually played + side-to-move game result as value. This removes every signal bug
+we've hit (no unrealistic histories, no weak teacher policy head, no near-uniform action-value targets) and the
+target is unambiguous/trivially validated. Labeling needs no GPU/teacher (just PGN parsing) so it is fast and
+CPU-parallel → "more games": label the **full elite set** (272k games) at single-position scale. Realistic
+ceiling for BC-of-humans is ~1800-2000 (can't exceed the humans it learns from); exceeding that later needs
+value+search. Methodology fix from the review: **validate small first** (overfit a tiny batch / check target
+sharpness) before any long run.
