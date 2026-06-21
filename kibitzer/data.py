@@ -1,219 +1,104 @@
-"""streaming lichess-pgn dataset for supervised pretraining.
-
-``lichessgamedataset`` walks pgn files game-by-game, filters by elo / time
-control / termination, and emits one tensor dict per game. ``collate_games``
-pads those dicts into a (b, t_max, …) batch with a ``loss_mask``.
-
-the shuffle is **game-level**, not position-level: the buffer holds parsed
-game dicts and yields a random one when full. positions inside a game stay
-consecutive, which is what the value-target supervision relies on.
-"""
+"""Data helpers for phase-1 cloning and phase-2 distillation."""
 
 from __future__ import annotations
 
-import random
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, Sequence
+from typing import Iterator
 
 import chess
 import chess.pgn
 import torch
-from torch.utils.data import IterableDataset, get_worker_info
+from torch.utils.data import Dataset
 
-from kibitzer.encoding import (
-    ACTION_SIZE,
-    AUX_SIZE,
-    board_to_tensor,
-    move_to_index,
-)
-from kibitzer.masking import legal_move_mask
+from kibitzer.encoding import ACTION_SIZE, board_to_tensor, legal_move_mask, move_to_index
 
 
-_RESULT_TO_WHITE_SCORE: dict[str, float] = {
-    "1-0": 1.0,
-    "0-1": -1.0,
-    "1/2-1/2": 0.0,
-}
-
-# bad termination headers. keep time forfeits; min_plies filters tiny games,
-# and longer clock losses are still useful supervision.
-_BAD_TERMINATIONS = {"Abandoned", "Rules infraction", "Unterminated"}
+@dataclass(frozen=True)
+class PositionSample:
+    fen: str
+    move_uci: str
+    value: float
 
 
-def _partition_paths(
-    paths: Sequence[str], worker_info
-) -> list[str]:
-    """disjoint path slice for this dataloader worker."""
-    if worker_info is None:
-        return list(paths)
-    return list(paths[worker_info.id :: worker_info.num_workers])
+def result_to_value(result: str, turn: bool) -> float:
+    if result == "1/2-1/2":
+        return 0.0
+    if result == "1-0":
+        return 1.0 if turn == chess.WHITE else -1.0
+    if result == "0-1":
+        return 1.0 if turn == chess.BLACK else -1.0
+    return 0.0
 
 
-def _passes_filters(
-    game: chess.pgn.Game,
-    min_elo: int,
-    time_controls: list[str] | None,
-) -> bool:
-    h = game.headers
-    if h.get("Result") not in _RESULT_TO_WHITE_SCORE:
-        return False
-    if h.get("Termination") in _BAD_TERMINATIONS:
-        return False
-    try:
-        we = int(h.get("WhiteElo", "0"))
-        be = int(h.get("BlackElo", "0"))
-    except ValueError:
-        return False
-    if we < min_elo or be < min_elo:
-        return False
-    if time_controls is not None:
-        event = (h.get("Event") or "").lower()
-        if not any(tc.lower() in event for tc in time_controls):
-            return False
-    return True
+def iter_pgn_samples(
+    paths: list[Path],
+    *,
+    max_games: int | None = None,
+    max_positions: int | None = None,
+) -> Iterator[PositionSample]:
+    games_seen = 0
+    positions_seen = 0
+    for path in paths:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            while True:
+                game = chess.pgn.read_game(handle)
+                if game is None:
+                    break
+                games_seen += 1
+                result = game.headers.get("Result", "*")
+                board = game.board()
+                for move in game.mainline_moves():
+                    yield PositionSample(
+                        fen=board.fen(),
+                        move_uci=move.uci(),
+                        value=result_to_value(result, board.turn),
+                    )
+                    positions_seen += 1
+                    if max_positions is not None and positions_seen >= max_positions:
+                        return
+                    board.push(move)
+                if max_games is not None and games_seen >= max_games:
+                    return
 
 
-def _encode_game(
-    game: chess.pgn.Game,
-    skip_first_n_plies: int,
-    max_plies: int,
-    min_plies: int,
-) -> dict | None:
-    """encode one game's mainline; return none if it fails the post-slice filter."""
-    moves_all = list(game.mainline_moves())
-    moves = moves_all[skip_first_n_plies : skip_first_n_plies + max_plies]
-    if len(moves) < min_plies:
-        return None
+class PositionDataset(Dataset[dict[str, torch.Tensor]]):
+    def __init__(self, samples: list[PositionSample]) -> None:
+        self.samples = samples
 
-    white_score = _RESULT_TO_WHITE_SCORE[game.headers["Result"]]
-    board = game.board()
-    for i in range(skip_first_n_plies):
-        board.push(moves_all[i])
+    def __len__(self) -> int:
+        return len(self.samples)
 
-    T = len(moves)
-    piece_idx = torch.zeros(T, 64, dtype=torch.long)
-    aux = torch.zeros(T, AUX_SIZE, dtype=torch.float32)
-    move_idx = torch.zeros(T, dtype=torch.long)
-    legal_mask = torch.zeros(T, ACTION_SIZE, dtype=torch.bool)
-    value_target = torch.zeros(T, dtype=torch.float32)
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
+        sample = self.samples[idx]
+        board = chess.Board(sample.fen)
+        move = chess.Move.from_uci(sample.move_uci)
+        encoded = board_to_tensor(board)
+        return {
+            "piece_idx": encoded["piece_idx"],
+            "aux": encoded["aux"],
+            "policy_target": torch.tensor(move_to_index(move, board), dtype=torch.long),
+            "value_target": torch.tensor(sample.value, dtype=torch.float32),
+            "legal_mask": legal_move_mask(board),
+        }
 
-    for t, mv in enumerate(moves):
-        enc = board_to_tensor(board)
-        piece_idx[t] = enc["piece_idx"]
-        aux[t] = enc["aux"]
-        legal_mask[t] = legal_move_mask(board)
-        try:
-            move_idx[t] = move_to_index(mv, board)
-        except ValueError:
-            return None  # malformed move geometry — drop the game
-        # side-to-move value: white win is +1 on white turns, -1 on black turns.
-        value_target[t] = white_score if board.turn == chess.WHITE else -white_score
-        board.push(mv)
 
+def collate_positions(batch: list[dict[str, torch.Tensor]]) -> dict[str, torch.Tensor]:
     return {
-        "piece_idx": piece_idx,
-        "aux": aux,
-        "move_idx": move_idx,
-        "legal_mask": legal_mask,
-        "value_target": value_target,
-        "ply_count": T,
+        "piece_idx": torch.stack([item["piece_idx"] for item in batch]).unsqueeze(1),
+        "aux": torch.stack([item["aux"] for item in batch]).unsqueeze(1),
+        "policy_target": torch.stack([item["policy_target"] for item in batch]).unsqueeze(1),
+        "value_target": torch.stack([item["value_target"] for item in batch]).unsqueeze(1),
+        "legal_mask": torch.stack([item["legal_mask"] for item in batch]).unsqueeze(1),
     }
 
 
-def _iter_games_from_path(path: str) -> Iterator[chess.pgn.Game]:
-    with open(path, encoding="utf-8", errors="replace") as f:
-        while True:
-            game = chess.pgn.read_game(f)
-            if game is None:
-                return
-            yield game
-
-
-class LichessGameDataset(IterableDataset):
-    def __init__(
-        self,
-        pgn_paths: list[str] | list[Path],
-        min_elo: int = 2400,
-        min_plies: int = 10,
-        max_plies: int = 256,
-        skip_first_n_plies: int = 0,
-        shuffle_buffer_size: int = 4096,
-        time_controls: list[str] | None = None,
-        seed: int | None = None,
-    ) -> None:
-        super().__init__()
-        self.pgn_paths = [str(p) for p in pgn_paths]
-        self.min_elo = min_elo
-        self.min_plies = min_plies
-        self.max_plies = max_plies
-        self.skip_first_n_plies = skip_first_n_plies
-        self.shuffle_buffer_size = max(1, shuffle_buffer_size)
-        self.time_controls = list(time_controls) if time_controls else None
-        self.seed = seed
-
-    def _iter_raw(self) -> Iterator[dict]:
-        worker_info = get_worker_info()
-        my_paths = _partition_paths(self.pgn_paths, worker_info)
-        for path in my_paths:
-            for game in _iter_games_from_path(path):
-                if not _passes_filters(game, self.min_elo, self.time_controls):
-                    continue
-                encoded = _encode_game(
-                    game,
-                    self.skip_first_n_plies,
-                    self.max_plies,
-                    self.min_plies,
-                )
-                if encoded is not None:
-                    yield encoded
-
-    def __iter__(self) -> Iterator[dict]:
-        rng = random.Random(self.seed) if self.seed is not None else random.Random()
-        if self.shuffle_buffer_size <= 1:
-            yield from self._iter_raw()
-            return
-
-        buffer: list[dict] = []
-        for item in self._iter_raw():
-            if len(buffer) < self.shuffle_buffer_size:
-                buffer.append(item)
-            else:
-                pos = rng.randrange(len(buffer))
-                yield buffer[pos]
-                buffer[pos] = item
-        rng.shuffle(buffer)
-        yield from buffer
-
-
-def collate_games(games: list[dict]) -> dict:
-    """pad game dicts into a batch with a loss_mask."""
-    if not games:
-        raise ValueError("collate_games called with an empty batch")
-
-    B = len(games)
-    T_max = max(g["ply_count"] for g in games)
-
-    piece_idx = torch.zeros(B, T_max, 64, dtype=torch.long)
-    aux = torch.zeros(B, T_max, AUX_SIZE, dtype=torch.float32)
-    move_idx = torch.zeros(B, T_max, dtype=torch.long)
-    legal_mask = torch.zeros(B, T_max, ACTION_SIZE, dtype=torch.bool)
-    value_target = torch.zeros(B, T_max, dtype=torch.float32)
-    loss_mask = torch.zeros(B, T_max, dtype=torch.bool)
-
-    for b, g in enumerate(games):
-        T = g["ply_count"]
-        piece_idx[b, :T] = g["piece_idx"]
-        aux[b, :T] = g["aux"]
-        move_idx[b, :T] = g["move_idx"]
-        legal_mask[b, :T] = g["legal_mask"]
-        value_target[b, :T] = g["value_target"]
-        loss_mask[b, :T] = True
-
-    return {
-        "piece_idx": piece_idx,
-        "aux": aux,
-        "move_idx": move_idx,
-        "legal_mask": legal_mask,
-        "value_target": value_target,
-        "loss_mask": loss_mask,
-    }
+def dense_policy_from_scores(scores: dict[int, float], temperature: float) -> torch.Tensor:
+    target = torch.zeros(ACTION_SIZE, dtype=torch.float32)
+    if not scores:
+        return target
+    indices = torch.tensor(list(scores.keys()), dtype=torch.long)
+    values = torch.tensor(list(scores.values()), dtype=torch.float32)
+    probs = torch.softmax(values / temperature, dim=-1)
+    target[indices] = probs
+    return target

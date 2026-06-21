@@ -12,6 +12,7 @@ dependencies = [
     "tqdm>=4.66",
     "pyyaml>=6.0",
     "huggingface-hub>=0.24",
+    "tensorboard>=2.16",
 ]
 
 [project.optional-dependencies]
