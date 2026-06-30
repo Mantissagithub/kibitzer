@@ -51,29 +51,12 @@ The clean-rebuild model has **32,129,153 trainable parameters**. It combines a
 square-level transformer position encoder with a lightweight transformer/SSM
 hybrid trunk and separate policy and value heads.
 
-```text
-current chess position
-        │
-        ├── 64 square piece tokens
-        └── 7 auxiliary state features
-                │
-                ▼
-       square-level position encoder
-       3 bidirectional transformer blocks
-                │
-                ▼
-          one position vector
-             d_model=320
-                │
-                ▼
-      10-block transformer/SSM trunk
-      4 causal-attention + 6 SSM blocks
-                │
-        ┌───────┴────────┐
-        ▼                ▼
-  policy head        value head
-  4,672 logits       scalar in [-1, 1]
-```
+![Kibitzer architecture](docs/kibitzer-architecture.png)
+
+*Figure 1. Current position-only Kibitzer architecture. A square-level
+transformer encodes the board, a ten-block attention/SSM trunk processes the
+position vector, and separate heads predict the legal-move policy and
+side-to-move value.*
 
 ### Parameter breakdown
 
