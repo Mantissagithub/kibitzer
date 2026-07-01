@@ -577,3 +577,71 @@ CPU-parallel → "more games": label the **full elite set** (272k games) at sing
 ceiling for BC-of-humans is ~1800-2000 (can't exceed the humans it learns from); exceeding that later needs
 value+search. Methodology fix from the review: **validate small first** (overfit a tiny batch / check target
 sharpness) before any long run.
+
+### D25 — Completed the clean-rebuild policy/value run; search reduces some errors but the model is still below SF-1320
+Executed the new position-only training pipeline locally on the RTX 4060 Laptop GPU. The launcher downloaded
+and cached six Lichess Elite months (`2025-06` through `2025-11`), then trained policy and value in separate
+stages with mandatory Hugging Face uploads.
+
+**Policy stage:** elite-human move cloning, 5M positions/epoch, batch 128, 3 epochs. Each epoch had 39,064
+batches and took about 56 minutes; the full policy stage took about 2h50m. The final checkpoint was uploaded to
+`Pradheep1647/kibitzer-clean-policy`. This stage trains the shared representation and policy head; the value
+head stays frozen.
+
+**Value stage:** 250k positions labeled by Stockfish at depth 14. The first implementation labeled positions
+sequentially; a live benchmark exposed that bottleneck, so labeling was changed to eight independent Stockfish
+workers. The real run labeled all positions in **45m10s at 92.23 positions/s**. Games were split before training
+to prevent position leakage: **224,990 train / 25,010 held-out evaluation**. Only the value head was trainable.
+
+| epoch | MSE ↓ | MAE ↓ | Pearson ↑ | sign accuracy ↑ | R² ↑ |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 0.0654 | 0.1671 | 0.5065 | 65.08% | 0.2552 |
+| 2 | 0.0645 | 0.1653 | 0.5153 | 64.93% | 0.2647 |
+| 3 | 0.0638 | 0.1639 | 0.5225 | 65.60% | 0.2730 |
+| 4 | **0.0637** | 0.1639 | **0.5235** | 66.28% | **0.2736** |
+| 5 | 0.0640 | **0.1638** | 0.5207 | **66.58%** | 0.2709 |
+
+Epoch 5 was a plateau, not a reason to keep training the small head: MSE/Pearson/R² peaked at epoch 4 while
+MAE/sign accuracy improved only marginally at epoch 5. The final checkpoint was uploaded to
+`Pradheep1647/kibitzer-clean-value`.
+
+**PUCT gate:** added legal policy/value inference, side-to-move-correct PUCT backup, paired openings, color
+alternation, PGN output, and a limited-strength Stockfish gate. The value-sign path was tested independently:
+a synthetic favorable root branch received 123 visits versus 5 for the unfavorable branch, ruling out the
+common negamax sign bug.
+
+| gate vs SF-1320 | W-D-L | score | capped ACPL ↓ | major blunders ↓ |
+|---|---:|---:|---:|---:|
+| 64 simulations | 0-2-8 | 10% | 126.7 cp | 51 |
+| 256 simulations | 0-1-9 | 5% | **118.7 cp** | **42** |
+
+The 10-game match scores are too noisy to interpret as a precise Elo comparison. The independent move analysis
+is clearer: 256 simulations modestly reduced average loss and major errors, but all decisive games were still
+losses by checkmate. More search is therefore not the current lever. The policy is still human imitation and
+the Stockfish-trained value head sits on a frozen human-policy representation; deeper PUCT can only partially
+repair that mismatch.
+
+### D26 — Next phase is cached joint Stockfish distillation, not more search
+Built `scripts/train_joint_distill.sh` for the next run. It starts from `runs/value/value_final.pt` and teaches
+the policy and value jointly from Stockfish depth-14, MultiPV-8 targets. To avoid destroying the useful base,
+the default trainable scope is both heads, final norm, and only the last three trunk blocks; the position encoder
+and early trunk stay frozen.
+
+**Default run:** 250k positions, eight Stockfish workers, MultiPV 8, five epochs, batch 128, LR `1e-4`, value
+weight `1.0`, and a 10% game-disjoint evaluation split. Teacher labels are written atomically to
+`data/stockfish/joint_d14_mpv8_250000.pt`; a matching rerun loads the cache and skips Stockfish entirely, while
+mismatched label settings fail explicitly instead of silently reusing stale targets.
+
+The trainer now reports averaged epoch losses rather than the last batch, plus held-out policy cross-entropy,
+teacher top-1 agreement, teacher-set coverage, value MSE/MAE/Pearson/sign accuracy/R², stage durations,
+trainable parameter count, and whether a new best checkpoint was saved. The checkpoint chosen by held-out joint
+score is saved to `runs/joint_distill/joint_best.pt` and HF push is fixed on to
+`Pradheep1647/kibitzer-clean-joint-distill`. The known `pynvml` package warning is suppressed narrowly in all
+launchers; unrelated warnings remain visible.
+
+Both cache-miss and cache-hit smoke runs passed, including real Stockfish MultiPV labels and checkpoint reload.
+The suite is at **40 passing tests**. The full joint run has **not** been executed yet. Command:
+
+```bash
+bash scripts/train_joint_distill.sh
+```

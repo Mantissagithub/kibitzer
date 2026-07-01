@@ -10,6 +10,8 @@ from scripts.distill_stockfish import (
     calculate_value_metrics,
     collect_balanced_samples,
     configure_trainable_parameters,
+    label_cache_signature,
+    load_or_create_labels,
     split_train_eval_by_game,
     training_loss,
     validate_args,
@@ -75,6 +77,22 @@ def test_value_only_loss_updates_only_value_head() -> None:
             assert parameter.grad is None
 
 
+def test_partial_joint_training_unfreezes_only_requested_scope() -> None:
+    model = _tiny_model()
+    trainable = configure_trainable_parameters(
+        model,
+        value_only=False,
+        unfreeze_last_trunk_blocks=1,
+    )
+
+    trainable_ids = {id(parameter) for parameter in trainable}
+    assert trainable_ids
+    for name, parameter in model.named_parameters():
+        expected = name.startswith(("trunk.0.", "norm.", "policy_head.", "value_head."))
+        assert parameter.requires_grad == expected
+        assert (id(parameter) in trainable_ids) == expected
+
+
 def test_eval_split_keeps_games_disjoint() -> None:
     samples = [
         PositionSample("fen", "e2e4", 0.0, game_id=game_id)
@@ -129,3 +147,44 @@ def test_balanced_collection_uses_each_pgn(tmp_path) -> None:
 
     assert len(samples) == 8
     assert len({sample.game_id for sample in samples}) == 2
+
+
+def test_label_cache_reuses_matching_teacher_labels(tmp_path) -> None:
+    pgn = tmp_path / "games.pgn"
+    pgn.write_text(
+        """
+[Event "cache"]
+[Result "1-0"]
+
+1. e4 e5 1-0
+""".strip(),
+        encoding="utf-8",
+    )
+    samples = [PositionSample("fen", "e2e4", 1.0, game_id=1)]
+    labels = [({1: 0.4, 2: 0.2}, 0.4)]
+    signature = label_cache_signature(
+        [pgn],
+        depth=14,
+        multipv=8,
+        max_games=None,
+        max_positions=1,
+        seed=42,
+    )
+    cache = tmp_path / "labels.pt"
+    torch.save({"signature": signature, "samples": samples, "labels": labels}, cache)
+
+    loaded_samples, loaded_labels, cache_hit = load_or_create_labels(
+        [pgn],
+        cache_path=cache,
+        stockfish_path="unused",
+        workers=1,
+        depth=14,
+        multipv=8,
+        max_games=None,
+        max_positions=1,
+        seed=42,
+    )
+
+    assert cache_hit
+    assert loaded_samples == samples
+    assert loaded_labels == labels

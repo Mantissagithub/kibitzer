@@ -63,3 +63,5 @@ data/
 .claude/
 .codex/
 CLAUDE.local.md
+/AGENTS.md
+/CLAUDE.md

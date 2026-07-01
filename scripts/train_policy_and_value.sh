@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PYTHONWARNINGS="${PYTHONWARNINGS:-ignore:The pynvml package is deprecated:FutureWarning}"
+
 TRAIN_STAGE="${TRAIN_STAGE:-value}"
 if [[ "$TRAIN_STAGE" != "all" && "$TRAIN_STAGE" != "policy" && "$TRAIN_STAGE" != "value" ]]; then
   echo "error: TRAIN_STAGE must be all, policy, or value" >&2
