@@ -11,6 +11,7 @@ CHECKPOINT="${CHECKPOINT:-runs/value/value_final.pt}"
 STOCKFISH_PATH="${STOCKFISH_PATH:-$(command -v stockfish || true)}"
 GAMES="${GAMES:-10}"
 SIMULATIONS="${SIMULATIONS:-64}"
+VALUE_SCALE="${VALUE_SCALE:-1.0}"
 STOCKFISH_ELO="${STOCKFISH_ELO:-1320}"
 STOCKFISH_TIME="${STOCKFISH_TIME:-0.05}"
 MAX_PLIES="${MAX_PLIES:-200}"
@@ -42,6 +43,7 @@ PY
   --out "$EVAL_OUT" \
   --games "$GAMES" \
   --simulations "$SIMULATIONS" \
+  --value-scale "$VALUE_SCALE" \
   --stockfish-path "$STOCKFISH_PATH" \
   --stockfish-elo "$STOCKFISH_ELO" \
   --stockfish-time "$STOCKFISH_TIME" \

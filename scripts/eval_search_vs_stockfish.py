@@ -30,6 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--games", type=int, default=10)
     parser.add_argument("--simulations", type=int, default=64)
     parser.add_argument("--c-puct", type=float, default=1.5)
+    parser.add_argument("--value-scale", type=float, default=1.0)
     parser.add_argument("--stockfish-path", default="stockfish")
     parser.add_argument("--stockfish-elo", type=int, default=1320)
     parser.add_argument("--stockfish-time", type=float, default=0.05)
@@ -45,6 +46,8 @@ def validate_args(args: argparse.Namespace) -> None:
         raise SystemExit("--games must be at least 1")
     if args.simulations < 1:
         raise SystemExit("--simulations must be at least 1")
+    if args.value_scale < 0.0:
+        raise SystemExit("--value-scale must be non-negative")
     if args.stockfish_time <= 0.0:
         raise SystemExit("--stockfish-time must be positive")
     if args.max_plies < 1:
@@ -65,6 +68,7 @@ def play_game(
     engine: chess.engine.SimpleEngine,
     simulations: int,
     c_puct: float,
+    value_scale: float,
     stockfish_time: float,
     max_plies: int,
 ) -> tuple[chess.pgn.Game, str]:
@@ -85,6 +89,7 @@ def play_game(
                 evaluator,
                 simulations=simulations,
                 c_puct=c_puct,
+                value_scale=value_scale,
             ).move
         else:
             result = engine.play(board, chess.engine.Limit(time=stockfish_time))
@@ -128,6 +133,7 @@ def main() -> None:
                     engine=engine,
                     simulations=args.simulations,
                     c_puct=args.c_puct,
+                    value_scale=args.value_scale,
                     stockfish_time=args.stockfish_time,
                     max_plies=args.max_plies,
                 )
@@ -142,6 +148,7 @@ def main() -> None:
         "checkpoint": str(args.checkpoint),
         "games": args.games,
         "simulations": args.simulations,
+        "value_scale": args.value_scale,
         "stockfish_elo": args.stockfish_elo,
         "wins": counts["win"],
         "draws": counts["draw"],

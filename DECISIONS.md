@@ -645,3 +645,119 @@ The suite is at **40 passing tests**. The full joint run has **not** been execut
 ```bash
 bash scripts/train_joint_distill.sh
 ```
+
+### D27 — Joint distillation finished; 256-sim search regressed again, so diagnose value/search before any new training
+Executed D26 end-to-end. Eight Stockfish workers labeled 250k depth-14 MultiPV-8 positions in **6h34m40s
+(10.56 positions/s)** and saved the reusable cache at
+`data/stockfish/joint_d14_mpv8_250000.pt`. The game-disjoint split stayed 224,990 train / 25,010 eval.
+Training both heads, final norm, and the last three trunk blocks exposed 9,549,633 trainable parameters
+(29.7%); each GPU epoch took about two minutes.
+
+| epoch | policy CE ↓ | teacher top-1 ↑ | teacher coverage ↑ | value MSE ↓ | value sign ↑ | value R² ↑ |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 2.6014 | 30.71% | 73.66% | **0.0717** | **66.74%** | **0.2872** |
+| 2 | 2.5829 | **30.75%** | **73.77%** | 0.0721 | 66.12% | 0.2833 |
+| 3 | **2.5801** | 30.72% | 73.65% | 0.0732 | 65.60% | 0.2731 |
+| 4 | 2.5881 | 30.49% | 73.37% | 0.0744 | 65.26% | 0.2606 |
+| 5 | 2.6015 | 30.41% | 73.01% | 0.0752 | 65.29% | 0.2530 |
+
+Training overfit after epoch 3, but the more important discovery is a **checkpoint-selection scale bug**:
+the selector minimized `policy_CE + value_MSE`. CE changes were about 10-20x larger than MSE changes, so it
+selected epoch 3 for a negligible policy gain while value quality had already fallen from epoch 1. Only the
+epoch-3 `joint_best.pt` survived because each new composite best overwrote the previous file. Future multi-head
+training must save every epoch and use constrained/lexicographic selection, not add unlike metrics directly.
+The selected checkpoint was uploaded to `Pradheep1647/kibitzer-clean-joint-distill`.
+
+**Search gate:** joint at 64 simulations scored 2-0-8 (20%) versus nominal SF-1320; the same checkpoint at
+256 simulations scored 0-1-9 (5%). This repeats the pre-joint `10% -> 5%` pattern. Ten games over five opening
+pairs are too noisy for Elo or small model comparisons, but repeated deeper-search regression plus only
+~65-67% value-sign accuracy makes value amplification the prime suspect. Stop increasing simulations and stop
+using `UCI_LimitStrength + time` WDL as the primary development signal.
+
+### D28 — Opus-reviewed next step: locked common-oracle diagnostics with explicit stop/go gates
+Ran four direct `claude -p --model claude-opus-4-8` critique/revision cycles. The final plan was approved only
+after fixing three experimental-design errors: Phase-2 (MultiPV 1) and joint (MultiPV 8) logged value metrics
+are not directly comparable; checkpoint selection and final gating cannot reuse one dataset; and a 25-Elo SPRT
+is not laptop-bounded. The accepted decision is **diagnose before training**.
+
+**Common oracle contract:** sample only real games from entirely unseen PGN months (default Jan-May 2025).
+A depth-10 prescan oversamples candidates, then Stockfish depth-20 MultiPV-1 re-bins them by absolute score:
+`<0.5`, `0.5-2`, `2-5`, `>5` pawns. Lock at least 200 positions/bin in each of two game-disjoint splits:
+validation for checkpoint/config selection and an untouched test split that can be consumed only once. Add
+months rather than relaxing bin counts if decisive positions are scarce. All models use the identical target
+transform `clip(cp / 1000, -1, 1)`; arbitrary selected moves get independent depth-20 evaluations cached by
+FEN+move.
+
+**Metrics/gates:** raw policy and PUCT report exact-best/within-50cp accuracy, mean/p90/p95 capped regret, and
+paired bootstrap confidence intervals. Values report MAE/sign accuracy per oracle bin plus natural-distribution
+reweighting. Test gates are: 2-5-pawn sign >=90%, >5-pawn sign >=95%; paired regret and near-best confidence
+intervals above zero; p90 regret reduced by both >=15cp and >=10%; and no regression versus the baseline on a
+fixed tactical sanity suite. Tune `value_scale={0,0.5,1}` at 64 simulations first; only spend on simulation or
+`c_puct` sweeps if nonzero value passes.
+
+**Diagnostic routing:** if policy coverage fails while value passes, try cached MultiPV-8 policy-head-only
+distillation with trunk/value frozen; allow at most one trunk block plus policy-retention KL only if the cheap
+head probe improves validation. If value fails (expected), train the value head plus at most one or two upper
+trunk blocks with policy logits anchored to the current policy champion. Save every epoch; reject checkpoints
+below baseline value floors, then rank decisive sign, decisive MAE, global MSE, policy CE. No large relabeling
+until one cached-label branch passes validation and the untouched test.
+
+**Implemented now:** `kibitzer/diagnostics.py`, `scripts/diagnose_search.py`, and
+`scripts/run_search_diagnostics.sh`; PUCT and the match launcher now accept `value_scale`. The launcher has
+three explicit actions: `build` creates the locked oracle, `validate` compares Phase-2/joint and value scales,
+and `test` requires an explicitly selected checkpoint/scale and writes a permanent consumption lock. A fixed
+30-position mate-in-one EPD suite provides baseline-relative legality/sign sanity (not an Elo benchmark).
+Oracle and selected-move caches are atomic/reusable. Mocked oracle-build tests and a real CUDA + Stockfish
+evaluation/cache smoke passed. The full unseen-month depth-20 oracle has **not** been built yet.
+
+Run order:
+
+```bash
+ACTION=build bash scripts/run_search_diagnostics.sh
+ACTION=validate bash scripts/run_search_diagnostics.sh
+# ACTION=test only after validation selects one checkpoint/value scale.
+```
+
+### D29 — Common-oracle validation rejects joint and deeper search; audit the depth-14 label ceiling next
+Built the full locked oracle from five unseen real-game months (`2025-01` through `2025-05`). Stockfish
+depth-20 MultiPV-1 produced 800 validation and 800 untouched test positions, game-disjoint and exactly balanced
+at 200 positions in each absolute-value bin. The natural unseen-game distribution estimated during prescan was
+33.46% quiet, 32.29% edge, 24.47% decisive, and 9.78% won. Only validation has been consumed; the test split
+remains locked.
+
+**Value verdict:** both checkpoints fail on the positions that search most needs them to recognize.
+
+| checkpoint | natural MAE ↓ | decisive sign ↑ | won sign ↑ | won MAE ↓ |
+|---|---:|---:|---:|---:|
+| Phase-2 | **0.16527** | **66.5%** | **74.5%** | 0.6625 |
+| joint epoch 3 | 0.16544 | 66.0% | 71.5% | **0.6536** |
+
+Joint did slightly improve raw policy (mean regret 235.9cp -> 229.7cp; near-best 56.0% -> 57.88%; exact
+best 32.25% -> 33.25%) but damaged decisive/won value sign. This explains why its match score did not survive
+deeper search.
+
+**Search verdict:** Phase-2 at 64 simulations with `value_scale=0.5` is the only configuration whose mean
+regret and near-best bootstrap intervals are both strictly positive. It reduced mean regret by 22.05cp
+(95% CI 4.15..40.16), improved near-best by 1.625 points (CI 0.375..2.875), and reduced p90 by 61.4cp.
+However p90 improved **9.21%**, narrowly below the predeclared 10% gate, and the absolute value-sign gates
+failed badly. `value_scale=1.0` met the p90 threshold but its mean-regret CI crossed zero. No joint search
+configuration passed. The fixed mate-in-one sanity solve rate was only 30% for Phase-2 scale 0.5 and 23.3%
+for joint scale 0.5. Therefore do **not** consume the test split and do not increase simulations.
+
+An additional Opus 4.8 review challenged the planned repair training on one unmeasured assumption: the model
+was trained on depth-14 targets but graded by depth 20. If depth-14/depth-20 target disagreement already
+accounts for most of the 0.165 validation MAE or flips decisive signs, balanced sampling/sign loss would train
+the model harder on teacher errors. The mandatory next process is therefore a **label-ceiling audit**, not a
+repair run: deterministically sample 3,000 cached training positions, re-evaluate them at depth-20 MultiPV-1,
+and report bounded-value MAE/sign disagreement overall and per value bin plus the cached-label bin census.
+
+Decision after the audit:
+- disagreement >= `0.1653 - 0.02`: depth-14 is label-limited; do not repair on it. Relabel only a balanced
+  30-50k subset at depth 20.
+- disagreement < `0.10` and won-bin sign disagreement <=8%: cached labels have headroom; run staged value
+  repair (head only -> norm -> last block + policy KL).
+- otherwise: borderline; permit only a head-only probe, no trunk unfreeze or test consumption.
+
+The earlier 90/95% sign thresholds remain long-term strength targets, not plausible one-step development
+gates from a 66% baseline. Before any training and while test is still untouched, the next candidate gate will
+be defined as bootstrap-separated improvement over Phase-2 plus the existing regret/calibration floors.

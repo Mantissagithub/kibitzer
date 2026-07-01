@@ -51,12 +51,16 @@ def _expand(node: SearchNode, evaluation: PositionEvaluation) -> None:
     }
 
 
-def _select_child(node: SearchNode, c_puct: float) -> tuple[chess.Move, SearchNode]:
+def _select_child(
+    node: SearchNode,
+    c_puct: float,
+    value_scale: float,
+) -> tuple[chess.Move, SearchNode]:
     parent_scale = math.sqrt(max(1, node.visit_count))
 
     def score(item: tuple[chess.Move, SearchNode]) -> float:
         _, child = item
-        exploitation = -child.mean_value
+        exploitation = -value_scale * child.mean_value
         exploration = c_puct * child.prior * parent_scale / (1 + child.visit_count)
         return exploitation + exploration
 
@@ -69,9 +73,12 @@ def puct_search(
     *,
     simulations: int,
     c_puct: float = 1.5,
+    value_scale: float = 1.0,
 ) -> SearchResult:
     if simulations < 1:
         raise ValueError("simulations must be at least 1")
+    if value_scale < 0.0:
+        raise ValueError("value_scale must be non-negative")
     if board.is_game_over(claim_draw=True):
         raise ValueError("cannot search a terminal board")
 
@@ -84,7 +91,7 @@ def puct_search(
         path = [node]
 
         while node.children:
-            move, node = _select_child(node, c_puct)
+            move, node = _select_child(node, c_puct, value_scale)
             simulation_board.push(move)
             path.append(node)
             if simulation_board.is_game_over(claim_draw=True):
