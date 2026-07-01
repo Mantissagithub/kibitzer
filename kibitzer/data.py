@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
@@ -9,7 +11,7 @@ from typing import Iterator
 import chess
 import chess.pgn
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, IterableDataset, get_worker_info
 
 from kibitzer.encoding import ACTION_SIZE, board_to_tensor, legal_move_mask, move_to_index
 
@@ -19,6 +21,7 @@ class PositionSample:
     fen: str
     move_uci: str
     value: float
+    game_id: int = 0
 
 
 def result_to_value(result: str, turn: bool) -> float:
@@ -53,6 +56,7 @@ def iter_pgn_samples(
                         fen=board.fen(),
                         move_uci=move.uci(),
                         value=result_to_value(result, board.turn),
+                        game_id=games_seen,
                     )
                     positions_seen += 1
                     if max_positions is not None and positions_seen >= max_positions:
@@ -60,6 +64,19 @@ def iter_pgn_samples(
                     board.push(move)
                 if max_games is not None and games_seen >= max_games:
                     return
+
+
+def encode_position_sample(sample: PositionSample) -> dict[str, torch.Tensor]:
+    board = chess.Board(sample.fen)
+    move = chess.Move.from_uci(sample.move_uci)
+    encoded = board_to_tensor(board)
+    return {
+        "piece_idx": encoded["piece_idx"],
+        "aux": encoded["aux"],
+        "policy_target": torch.tensor(move_to_index(move, board), dtype=torch.long),
+        "value_target": torch.tensor(sample.value, dtype=torch.float32),
+        "legal_mask": legal_move_mask(board),
+    }
 
 
 class PositionDataset(Dataset[dict[str, torch.Tensor]]):
@@ -70,17 +87,49 @@ class PositionDataset(Dataset[dict[str, torch.Tensor]]):
         return len(self.samples)
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
-        sample = self.samples[idx]
-        board = chess.Board(sample.fen)
-        move = chess.Move.from_uci(sample.move_uci)
-        encoded = board_to_tensor(board)
-        return {
-            "piece_idx": encoded["piece_idx"],
-            "aux": encoded["aux"],
-            "policy_target": torch.tensor(move_to_index(move, board), dtype=torch.long),
-            "value_target": torch.tensor(sample.value, dtype=torch.float32),
-            "legal_mask": legal_move_mask(board),
-        }
+        return encode_position_sample(self.samples[idx])
+
+
+class StreamingPositionDataset(IterableDataset[dict[str, torch.Tensor]]):
+    def __init__(
+        self,
+        paths: list[Path],
+        *,
+        max_positions: int | None,
+        shuffle_buffer_size: int,
+        seed: int,
+    ) -> None:
+        self.paths = paths
+        self.max_positions = max_positions
+        self.shuffle_buffer_size = shuffle_buffer_size
+        self.seed = seed
+        self.epoch = 0
+
+    def __iter__(self) -> Iterator[dict[str, torch.Tensor]]:
+        worker = get_worker_info()
+        worker_id = 0 if worker is None else worker.id
+        num_workers = 1 if worker is None else worker.num_workers
+        paths = self.paths[worker_id::num_workers]
+        rng = random.Random(self.seed + self.epoch * 10_000 + worker_id)
+        paths = list(paths)
+        rng.shuffle(paths)
+
+        max_positions = self.max_positions
+        if max_positions is not None and worker is not None:
+            max_positions = math.ceil(max_positions / num_workers)
+        source = iter_pgn_samples(paths, max_positions=max_positions)
+        buffer: list[PositionSample] = []
+        for sample in source:
+            if len(buffer) < self.shuffle_buffer_size:
+                buffer.append(sample)
+                continue
+            index = rng.randrange(len(buffer))
+            yield encode_position_sample(buffer[index])
+            buffer[index] = sample
+
+        rng.shuffle(buffer)
+        for sample in buffer:
+            yield encode_position_sample(sample)
 
 
 def collate_positions(batch: list[dict[str, torch.Tensor]]) -> dict[str, torch.Tensor]:
