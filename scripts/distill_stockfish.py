@@ -6,13 +6,13 @@ import random
 import time
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import chess
 import chess.engine
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 from tqdm import tqdm
 
 from kibitzer.data import (
@@ -24,6 +24,7 @@ from kibitzer.data import (
 from kibitzer.encoding import board_to_tensor, legal_move_mask
 from kibitzer.hf_utils import parse_bool, push_checkpoint_to_hf, validate_hf_push
 from kibitzer.model import Kibitzer, KibitzerConfig
+from kibitzer.diagnostics import VALUE_BINS, value_bin
 from kibitzer.stockfish import analyze_actions
 
 
@@ -125,6 +126,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--depth", type=int, default=10)
     parser.add_argument("--multipv", type=int, default=8)
+    parser.add_argument(
+        "--value-cache-multipv",
+        type=int,
+        help="For value-only training, reuse a cache created with this MultiPV setting.",
+    )
     parser.add_argument("--temperature", type=float, default=0.02)
     parser.add_argument("--label-cache", type=Path)
     parser.add_argument("--max-games", type=int)
@@ -140,6 +146,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--value-weight", type=float, default=0.25)
+    parser.add_argument(
+        "--unfreeze-final-norm",
+        action="store_true",
+        help="With --value-only, also train the shared final norm.",
+    )
+    parser.add_argument("--norm-lr", type=float)
+    parser.add_argument("--trunk-lr", type=float)
+    parser.add_argument("--policy-anchor-checkpoint", type=Path)
+    parser.add_argument("--policy-kl-weight", type=float, default=0.0)
+    parser.add_argument("--max-policy-kl", type=float)
+    parser.add_argument("--min-policy-top1-agreement", type=float, default=0.0)
+    parser.add_argument(
+        "--value-bin-sampling-alpha",
+        type=float,
+        default=0.0,
+        help="Inverse-frequency exponent for value-bin sampling; zero disables it.",
+    )
+    parser.add_argument("--max-sampling-weight", type=float, default=4.0)
+    parser.add_argument("--save-every-epoch", action="store_true")
+    parser.add_argument(
+        "--value-repair-selection",
+        action="store_true",
+        help="Select value-only checkpoints by decisive/won sign, then MAE and global MSE.",
+    )
     parser.add_argument(
         "--unfreeze-last-trunk-blocks",
         type=int,
@@ -162,9 +192,41 @@ def validate_args(args: argparse.Namespace) -> None:
         raise SystemExit("--epochs must be at least 1")
     if getattr(args, "value_weight", 0.25) < 0.0:
         raise SystemExit("--value-weight must be non-negative")
+    if getattr(args, "value_bin_sampling_alpha", 0.0) < 0.0:
+        raise SystemExit("--value-bin-sampling-alpha must be non-negative")
+    if getattr(args, "max_sampling_weight", 4.0) < 1.0:
+        raise SystemExit("--max-sampling-weight must be at least 1")
+    if getattr(args, "value_cache_multipv", None) is not None:
+        if not args.value_only:
+            raise SystemExit("--value-cache-multipv is only valid with --value-only")
+        if args.value_cache_multipv < 1:
+            raise SystemExit("--value-cache-multipv must be at least 1")
+    if getattr(args, "value_repair_selection", False) and not args.value_only:
+        raise SystemExit("--value-repair-selection requires --value-only")
+    if getattr(args, "unfreeze_final_norm", False) and not args.value_only:
+        raise SystemExit("--unfreeze-final-norm requires --value-only")
+    if getattr(args, "norm_lr", None) is not None:
+        if not getattr(args, "unfreeze_final_norm", False):
+            raise SystemExit("--norm-lr requires --unfreeze-final-norm")
+        if args.norm_lr <= 0.0:
+            raise SystemExit("--norm-lr must be positive")
     unfreeze_last_trunk_blocks = getattr(args, "unfreeze_last_trunk_blocks", None)
-    if args.value_only and unfreeze_last_trunk_blocks is not None:
-        raise SystemExit("--unfreeze-last-trunk-blocks cannot be used with --value-only")
+    if getattr(args, "trunk_lr", None) is not None:
+        if unfreeze_last_trunk_blocks is None:
+            raise SystemExit("--trunk-lr requires --unfreeze-last-trunk-blocks")
+        if args.trunk_lr <= 0.0:
+            raise SystemExit("--trunk-lr must be positive")
+    if getattr(args, "policy_kl_weight", 0.0) < 0.0:
+        raise SystemExit("--policy-kl-weight must be non-negative")
+    if getattr(args, "policy_kl_weight", 0.0) > 0.0 and getattr(
+        args, "policy_anchor_checkpoint", None
+    ) is None:
+        raise SystemExit("positive --policy-kl-weight requires --policy-anchor-checkpoint")
+    if getattr(args, "max_policy_kl", None) is not None and args.max_policy_kl < 0.0:
+        raise SystemExit("--max-policy-kl must be non-negative")
+    min_policy_agreement = getattr(args, "min_policy_top1_agreement", 0.0)
+    if not 0.0 <= min_policy_agreement <= 1.0:
+        raise SystemExit("--min-policy-top1-agreement must be between 0 and 1")
     if unfreeze_last_trunk_blocks is not None and unfreeze_last_trunk_blocks < 1:
         raise SystemExit("--unfreeze-last-trunk-blocks must be at least 1")
 
@@ -319,6 +381,7 @@ def configure_trainable_parameters(
     *,
     value_only: bool,
     unfreeze_last_trunk_blocks: int | None = None,
+    unfreeze_final_norm: bool = False,
 ) -> list[torch.nn.Parameter]:
     if not value_only and unfreeze_last_trunk_blocks is None:
         return list(model.parameters())
@@ -326,7 +389,17 @@ def configure_trainable_parameters(
     for parameter in model.parameters():
         parameter.requires_grad_(False)
     modules: list[torch.nn.Module] = [model.value_head]
-    if not value_only:
+    if value_only:
+        if unfreeze_final_norm:
+            modules.append(model.norm)
+        if unfreeze_last_trunk_blocks is not None:
+            if unfreeze_last_trunk_blocks > len(model.trunk):
+                raise SystemExit(
+                    f"cannot unfreeze {unfreeze_last_trunk_blocks} trunk blocks; "
+                    f"model has {len(model.trunk)}"
+                )
+            modules.extend(model.trunk[-unfreeze_last_trunk_blocks:])
+    else:
         if unfreeze_last_trunk_blocks is None:
             raise ValueError("joint partial fine-tuning requires a trunk block count")
         if unfreeze_last_trunk_blocks > len(model.trunk):
@@ -348,16 +421,36 @@ def training_loss(
     *,
     value_only: bool,
     value_weight: float = 0.25,
+    policy_reference: Kibitzer | None = None,
+    policy_kl_weight: float = 0.0,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
     if not value_only:
         return model.loss(**batch, value_weight=value_weight)
 
-    _, value = model(batch["piece_idx"], batch["aux"])
+    logits, value = model(batch["piece_idx"], batch["aux"])
     value_loss = F.mse_loss(value.squeeze(-1), batch["value_target"])
-    return value_loss, {
-        "loss": value_loss.detach(),
+    policy_kl = torch.zeros((), device=value_loss.device)
+    if policy_reference is not None and policy_kl_weight > 0.0:
+        with torch.no_grad():
+            reference_logits, _ = policy_reference(batch["piece_idx"], batch["aux"])
+        legal_mask = batch["legal_mask"]
+        logits = logits.masked_fill(~legal_mask, -1e9)
+        reference_logits = reference_logits.masked_fill(~legal_mask, -1e9)
+        student_log_probabilities = F.log_softmax(logits, dim=-1)
+        reference_probabilities = F.softmax(reference_logits, dim=-1)
+        policy_kl = F.kl_div(
+            student_log_probabilities,
+            reference_probabilities,
+            reduction="none",
+        ).sum(dim=-1).mean()
+    loss = value_loss + policy_kl_weight * policy_kl
+    metrics = {
+        "loss": loss.detach(),
         "value_loss": value_loss.detach(),
     }
+    if policy_reference is not None:
+        metrics["policy_kl"] = policy_kl.detach()
+    return loss, metrics
 
 
 def calculate_value_metrics(
@@ -392,22 +485,98 @@ def calculate_value_metrics(
     }
 
 
+def calculate_binned_value_metrics(
+    predictions: torch.Tensor,
+    targets: torch.Tensor,
+) -> dict[str, float]:
+    predictions = predictions.float().flatten()
+    targets = targets.float().flatten()
+    metrics: dict[str, float] = {}
+    for name in VALUE_BINS:
+        mask = torch.tensor(
+            [value_bin(round(float(target) * 1000.0)) == name for target in targets],
+            dtype=torch.bool,
+        )
+        metrics[f"{name}_count"] = int(mask.sum().item())
+        if mask.any():
+            bin_metrics = calculate_value_metrics(predictions[mask], targets[mask])
+            metrics[f"{name}_mae"] = bin_metrics["mae"]
+            metrics[f"{name}_sign_accuracy"] = bin_metrics["sign_accuracy"]
+        else:
+            metrics[f"{name}_mae"] = float("nan")
+            metrics[f"{name}_sign_accuracy"] = float("nan")
+    return metrics
+
+
+def value_sampling_weights(
+    labels: Sequence[tuple[dict[int, float], float]],
+    *,
+    alpha: float,
+    max_weight: float,
+) -> tuple[torch.Tensor, dict[str, int]]:
+    names = [value_bin(round(float(value) * 1000.0)) for _, value in labels]
+    counts = {name: names.count(name) for name in VALUE_BINS}
+    largest = max(counts.values())
+    weights = [
+        min(max_weight, (largest / counts[name]) ** alpha)
+        for name in names
+    ]
+    return torch.tensor(weights, dtype=torch.double), counts
+
+
+def value_repair_rank(metrics: dict[str, float]) -> tuple[float, float, float]:
+    sign_score = (
+        metrics["decisive_sign_accuracy"] + metrics["won_sign_accuracy"]
+    ) / 2.0
+    decisive_mae = (metrics["decisive_mae"] + metrics["won_mae"]) / 2.0
+    return sign_score, -decisive_mae, -metrics["mse"]
+
+
 @torch.no_grad()
 def evaluate_value_head(
     model: Kibitzer,
     loader: DataLoader,
     *,
     device: str,
+    policy_reference: Kibitzer | None = None,
 ) -> dict[str, float]:
     model.eval()
     predictions = []
     targets = []
+    policy_kl_sum = 0.0
+    policy_top1_matches = 0
+    policy_positions = 0
     for batch in loader:
         batch = {key: value.to(device) for key, value in batch.items()}
-        _, value = model(batch["piece_idx"], batch["aux"])
+        logits, value = model(batch["piece_idx"], batch["aux"])
+        if policy_reference is not None:
+            reference_logits, _ = policy_reference(batch["piece_idx"], batch["aux"])
+            legal_mask = batch["legal_mask"]
+            logits = logits.masked_fill(~legal_mask, -1e9)
+            reference_logits = reference_logits.masked_fill(~legal_mask, -1e9)
+            student_log_probabilities = F.log_softmax(logits, dim=-1)
+            reference_probabilities = F.softmax(reference_logits, dim=-1)
+            policy_kl_sum += float(
+                F.kl_div(
+                    student_log_probabilities,
+                    reference_probabilities,
+                    reduction="none",
+                ).sum(dim=-1).sum().item()
+            )
+            policy_top1_matches += int(
+                (logits.argmax(dim=-1) == reference_logits.argmax(dim=-1)).sum().item()
+            )
+            policy_positions += logits.shape[0] * logits.shape[1]
         predictions.append(value.squeeze(-1).cpu())
         targets.append(batch["value_target"].cpu())
-    return calculate_value_metrics(torch.cat(predictions), torch.cat(targets))
+    predictions_tensor = torch.cat(predictions)
+    targets_tensor = torch.cat(targets)
+    metrics = calculate_value_metrics(predictions_tensor, targets_tensor)
+    metrics.update(calculate_binned_value_metrics(predictions_tensor, targets_tensor))
+    if policy_reference is not None:
+        metrics["policy_kl"] = policy_kl_sum / policy_positions
+        metrics["policy_top1_agreement"] = policy_top1_matches / policy_positions
+    return metrics
 
 
 @torch.no_grad()
@@ -496,7 +665,11 @@ def main() -> None:
     if missing:
         raise SystemExit(f"missing PGN files: {missing}")
 
-    effective_multipv = 1 if args.value_only else args.multipv
+    effective_multipv = (
+        args.value_cache_multipv
+        if args.value_only and args.value_cache_multipv is not None
+        else (1 if args.value_only else args.multipv)
+    )
     print("\n[1/5] DISTILLATION CONFIGURATION", flush=True)
     print(f"  objective:       {'value head only' if args.value_only else 'joint policy + value'}")
     print(f"  source files:    {len(paths)}")
@@ -505,6 +678,14 @@ def main() -> None:
     print(f"  label workers:   {args.stockfish_workers}")
     print(f"  epochs:          {args.epochs}")
     print(f"  device:          {args.device}")
+    if args.value_only:
+        print(f"  bin sampling:    alpha={args.value_bin_sampling_alpha:g}, cap={args.max_sampling_weight:g}x")
+        if args.unfreeze_final_norm:
+            print(f"  norm LR:         {args.norm_lr or args.lr:g}")
+        if args.unfreeze_last_trunk_blocks is not None:
+            print(f"  trunk LR:        {args.trunk_lr or args.lr:g}")
+        if args.policy_anchor_checkpoint is not None:
+            print(f"  policy anchor:   {args.policy_anchor_checkpoint} (KL weight={args.policy_kl_weight:g})")
 
     print("\n[2/5] STOCKFISH TEACHER LABELS", flush=True)
     label_started = time.perf_counter()
@@ -537,10 +718,26 @@ def main() -> None:
     )
     train_dataset = DistillDataset(train_samples, train_labels, args.temperature)
     eval_dataset = DistillDataset(eval_samples, eval_labels, args.temperature)
+    train_sampler = None
+    train_bin_counts: dict[str, int] | None = None
+    if args.value_only and args.value_bin_sampling_alpha > 0.0:
+        sampling_weights, train_bin_counts = value_sampling_weights(
+            train_labels,
+            alpha=args.value_bin_sampling_alpha,
+            max_weight=args.max_sampling_weight,
+        )
+        generator = torch.Generator().manual_seed(args.seed)
+        train_sampler = WeightedRandomSampler(
+            sampling_weights,
+            num_samples=len(train_dataset),
+            replacement=True,
+            generator=generator,
+        )
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
-        shuffle=True,
+        shuffle=train_sampler is None,
+        sampler=train_sampler,
         collate_fn=collate_positions,
         num_workers=0,
     )
@@ -554,6 +751,12 @@ def main() -> None:
     print(f"  training:        {len(train_dataset):,} positions")
     print(f"  held-out eval:   {len(eval_dataset):,} positions")
     print("  leakage guard:   complete games stay in exactly one split")
+    if train_bin_counts is not None:
+        print(
+            "  train bin census:"
+            + ", ".join(f" {name}={train_bin_counts[name]:,}" for name in VALUE_BINS)
+        )
+        print("  sampler:          inverse-frequency with replacement; epoch size unchanged")
 
     print("\n[4/5] MODEL INITIALIZATION", flush=True)
     model = Kibitzer(KibitzerConfig()).to(args.device)
@@ -568,6 +771,7 @@ def main() -> None:
         model,
         value_only=args.value_only,
         unfreeze_last_trunk_blocks=args.unfreeze_last_trunk_blocks,
+        unfreeze_final_norm=args.unfreeze_final_norm,
     )
     trainable_count = sum(parameter.numel() for parameter in trainable_parameters)
     print(f"  total params:     {model.num_params():,}")
@@ -575,12 +779,64 @@ def main() -> None:
         f"  trainable params: {trainable_count:,} "
         f"({100 * trainable_count / model.num_params():.1f}%)"
     )
-    if args.unfreeze_last_trunk_blocks is not None:
+    if args.value_only and args.unfreeze_last_trunk_blocks is not None:
+        norm_scope = " + final norm" if args.unfreeze_final_norm else ""
+        print(
+            f"  trainable scope:  value head{norm_scope} + last "
+            f"{args.unfreeze_last_trunk_blocks} trunk blocks"
+        )
+    elif args.value_only and args.unfreeze_final_norm:
+        print("  trainable scope:  value head + final norm")
+    elif args.value_only:
+        print("  trainable scope:  value head only")
+    elif args.unfreeze_last_trunk_blocks is not None:
         print(
             "  trainable scope:  policy head, value head, final norm, "
             f"last {args.unfreeze_last_trunk_blocks} trunk blocks"
         )
-    opt = torch.optim.AdamW(trainable_parameters, lr=args.lr, weight_decay=0.01)
+    policy_reference = None
+    if args.policy_anchor_checkpoint is not None:
+        if not args.policy_anchor_checkpoint.is_file():
+            raise SystemExit(
+                f"policy anchor checkpoint does not exist: {args.policy_anchor_checkpoint}"
+            )
+        reference_payload = torch.load(
+            args.policy_anchor_checkpoint,
+            map_location=args.device,
+            weights_only=False,
+        )
+        reference_state = (
+            reference_payload["model"]
+            if isinstance(reference_payload, dict) and "model" in reference_payload
+            else reference_payload
+        )
+        policy_reference = Kibitzer(KibitzerConfig()).to(args.device)
+        policy_reference.load_state_dict(reference_state)
+        policy_reference.eval()
+        policy_reference.requires_grad_(False)
+
+    if args.value_only and (
+        args.unfreeze_final_norm or args.unfreeze_last_trunk_blocks is not None
+    ):
+        parameter_groups: list[dict[str, object]] = [
+            {"params": model.value_head.parameters(), "lr": args.lr}
+        ]
+        if args.unfreeze_final_norm:
+            parameter_groups.append(
+                {"params": model.norm.parameters(), "lr": args.norm_lr or args.lr}
+            )
+        if args.unfreeze_last_trunk_blocks is not None:
+            trunk_parameters = [
+                parameter
+                for module in model.trunk[-args.unfreeze_last_trunk_blocks :]
+                for parameter in module.parameters()
+            ]
+            parameter_groups.append(
+                {"params": trunk_parameters, "lr": args.trunk_lr or args.lr}
+            )
+        opt = torch.optim.AdamW(parameter_groups, weight_decay=0.01)
+    else:
+        opt = torch.optim.AdamW(trainable_parameters, lr=args.lr, weight_decay=0.01)
 
     print("\n[5/5] TRAINING AND HELD-OUT EVALUATION", flush=True)
     out = Path(args.out)
@@ -588,7 +844,30 @@ def main() -> None:
     training_objective = "value_only" if args.value_only else "joint_policy_value"
     eval_metrics: dict[str, float] = {}
     best_eval_score = float("inf")
+    best_eval_rank: tuple[float, float, float] | None = None
     best_epoch = 0
+    baseline_metrics: dict[str, float] | None = None
+    if args.value_repair_selection:
+        baseline_metrics = evaluate_value_head(
+            model,
+            eval_loader,
+            device=args.device,
+            policy_reference=policy_reference,
+        )
+        best_eval_rank = value_repair_rank(baseline_metrics)
+        save_checkpoint(
+            out,
+            model=model,
+            eval_metrics=baseline_metrics,
+            training_objective="value_repair_baseline",
+            best_epoch=0,
+        )
+        print("  baseline before repair:")
+        print(f"    overall MSE:           {baseline_metrics['mse']:.4f}")
+        print(f"    decisive sign / MAE:   {100 * baseline_metrics['decisive_sign_accuracy']:.2f}% / {baseline_metrics['decisive_mae']:.4f}")
+        print(f"    won sign / MAE:        {100 * baseline_metrics['won_sign_accuracy']:.2f}% / {baseline_metrics['won_mae']:.4f}")
+        if policy_reference is not None:
+            print(f"    policy KL / agreement: {baseline_metrics['policy_kl']:.6f} / {100 * baseline_metrics['policy_top1_agreement']:.2f}%")
     for epoch in range(args.epochs):
         epoch_started = time.perf_counter()
         model.train()
@@ -606,6 +885,8 @@ def main() -> None:
                 batch,
                 value_only=args.value_only,
                 value_weight=args.value_weight,
+                policy_reference=policy_reference,
+                policy_kl_weight=args.policy_kl_weight,
             )
             opt.zero_grad(set_to_none=True)
             loss.backward()
@@ -615,16 +896,22 @@ def main() -> None:
             for name, value in metrics.items():
                 metric_sums[name] = metric_sums.get(name, 0.0) + float(value.item())
             if args.value_only:
-                progress.set_postfix(
-                    avg_value=f"{metric_sums['value_loss'] / batches:.4f}"
-                )
+                postfix = {"avg_value": f"{metric_sums['value_loss'] / batches:.4f}"}
+                if "policy_kl" in metric_sums:
+                    postfix["avg_kl"] = f"{metric_sums['policy_kl'] / batches:.5f}"
+                progress.set_postfix(**postfix)
             else:
                 progress.set_postfix(
                     avg_policy=f"{metric_sums['policy_loss'] / batches:.4f}",
                     avg_value=f"{metric_sums['value_loss'] / batches:.4f}",
                 )
         if args.value_only:
-            eval_metrics = evaluate_value_head(model, eval_loader, device=args.device)
+            eval_metrics = evaluate_value_head(
+                model,
+                eval_loader,
+                device=args.device,
+                policy_reference=policy_reference,
+            )
             eval_score = eval_metrics["mse"]
         else:
             eval_metrics = evaluate_joint_model(model, eval_loader, device=args.device)
@@ -638,6 +925,8 @@ def main() -> None:
         if not args.value_only:
             print(f"    train policy loss:     {metric_sums['policy_loss'] / batches:.4f}")
         print(f"    train value MSE:       {metric_sums['value_loss'] / batches:.4f}")
+        if "policy_kl" in metric_sums:
+            print(f"    train policy KL:       {metric_sums['policy_kl'] / batches:.6f}")
         if not args.value_only:
             print(f"    eval policy CE:        {eval_metrics['policy_cross_entropy']:.4f} (lower is better)")
             print(f"    eval teacher top-1:    {100 * eval_metrics['policy_top1_accuracy']:.2f}%")
@@ -647,8 +936,46 @@ def main() -> None:
         print(f"    eval value Pearson:    {eval_metrics['pearson']:.4f} (higher is better)")
         print(f"    eval value sign:       {100 * eval_metrics['sign_accuracy']:.2f}%")
         print(f"    eval value R2:         {eval_metrics['r2']:.4f} (higher is better)")
-        if eval_score < best_eval_score:
+        if args.value_only:
+            print(f"    eval decisive:         sign={100 * eval_metrics['decisive_sign_accuracy']:.2f}% mae={eval_metrics['decisive_mae']:.4f} n={int(eval_metrics['decisive_count'])}")
+            print(f"    eval won:              sign={100 * eval_metrics['won_sign_accuracy']:.2f}% mae={eval_metrics['won_mae']:.4f} n={int(eval_metrics['won_count'])}")
+        if policy_reference is not None:
+            print(f"    eval policy KL:        {eval_metrics['policy_kl']:.6f}")
+            print(f"    eval policy agreement: {100 * eval_metrics['policy_top1_agreement']:.2f}%")
+        if baseline_metrics is not None:
+            print(f"    vs baseline decisive:  sign={100 * (eval_metrics['decisive_sign_accuracy'] - baseline_metrics['decisive_sign_accuracy']):+.2f}pp mae={eval_metrics['decisive_mae'] - baseline_metrics['decisive_mae']:+.4f}")
+            print(f"    vs baseline won:       sign={100 * (eval_metrics['won_sign_accuracy'] - baseline_metrics['won_sign_accuracy']):+.2f}pp mae={eval_metrics['won_mae'] - baseline_metrics['won_mae']:+.4f}")
+        if args.save_every_epoch:
+            epoch_path = out.with_name(f"{out.stem}_epoch_{epoch + 1}{out.suffix}")
+            save_checkpoint(
+                epoch_path,
+                model=model,
+                eval_metrics=eval_metrics,
+                training_objective=training_objective,
+                best_epoch=epoch + 1,
+            )
+            print(f"    epoch checkpoint:      {epoch_path}")
+
+        repair_rank = value_repair_rank(eval_metrics) if args.value_repair_selection else None
+        policy_floor_pass = (
+            (
+                args.max_policy_kl is None
+                or eval_metrics.get("policy_kl", 0.0) <= args.max_policy_kl
+            )
+            and eval_metrics.get("policy_top1_agreement", 1.0)
+            >= args.min_policy_top1_agreement
+        )
+        if policy_reference is not None:
+            print(f"    policy drift floor:    {'pass' if policy_floor_pass else 'FAIL'}")
+        is_new_best = policy_floor_pass and (
+            repair_rank > best_eval_rank
+            if repair_rank is not None and best_eval_rank is not None
+            else eval_score < best_eval_score
+        )
+        if is_new_best:
             best_eval_score = eval_score
+            if repair_rank is not None:
+                best_eval_rank = repair_rank
             best_epoch = epoch + 1
             save_checkpoint(
                 out,
@@ -683,6 +1010,20 @@ def main() -> None:
                 "max_games": args.max_games,
                 "max_positions": args.max_positions,
                 "multipv": effective_multipv,
+                "value_bin_sampling_alpha": args.value_bin_sampling_alpha,
+                "max_sampling_weight": args.max_sampling_weight,
+                "value_repair_selection": args.value_repair_selection,
+                "unfreeze_final_norm": args.unfreeze_final_norm,
+                "norm_lr": args.norm_lr,
+                "trunk_lr": args.trunk_lr,
+                "policy_anchor_checkpoint": (
+                    str(args.policy_anchor_checkpoint)
+                    if args.policy_anchor_checkpoint is not None
+                    else None
+                ),
+                "policy_kl_weight": args.policy_kl_weight,
+                "max_policy_kl": args.max_policy_kl,
+                "min_policy_top1_agreement": args.min_policy_top1_agreement,
                 "temperature": args.temperature,
                 "unfreeze_last_trunk_blocks": args.unfreeze_last_trunk_blocks,
                 "value_weight": args.value_weight,

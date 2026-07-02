@@ -16,6 +16,9 @@ ORACLE_CACHE="${ORACLE_CACHE:-data/diagnostics/unseen_${DATA_YEAR}_d20.pt}"
 CHOSEN_MOVE_CACHE="${CHOSEN_MOVE_CACHE:-data/diagnostics/chosen_moves_d20.pt}"
 PHASE2_CHECKPOINT="${PHASE2_CHECKPOINT:-runs/value/value_final.pt}"
 JOINT_CHECKPOINT="${JOINT_CHECKPOINT:-runs/joint_distill/joint_best.pt}"
+CANDIDATE_NAME="${CANDIDATE_NAME:-joint}"
+CANDIDATE_CHECKPOINT="${CANDIDATE_CHECKPOINT:-$JOINT_CHECKPOINT}"
+VALIDATION_OUTPUT="${VALIDATION_OUTPUT:-runs/diagnostics/validation.json}"
 SIMULATIONS="${SIMULATIONS:-64}"
 VALUE_SCALES="${VALUE_SCALES:-0,0.5,1}"
 TACTICS_EPD="${TACTICS_EPD:-resources/mate_in_one_sanity.epd}"
@@ -71,12 +74,17 @@ case "$ACTION" in
     echo "============================================================"
     echo " SEARCH DIAGNOSTICS — VALIDATION / CONFIG SELECTION"
     echo "============================================================"
+    echo "Baseline:          phase2=$PHASE2_CHECKPOINT"
+    echo "Candidate:         $CANDIDATE_NAME=$CANDIDATE_CHECKPOINT"
+    echo "Value scales:      $VALUE_SCALES"
+    echo "Output:            $VALIDATION_OUTPUT"
+    echo
     "$PYTHON" scripts/diagnose_search.py evaluate \
       --oracle "$ORACLE_CACHE" \
       --split validation \
       --checkpoint "phase2=$PHASE2_CHECKPOINT" \
-      --checkpoint "joint=$JOINT_CHECKPOINT" \
-      --output runs/diagnostics/validation.json \
+      --checkpoint "$CANDIDATE_NAME=$CANDIDATE_CHECKPOINT" \
+      --output "$VALIDATION_OUTPUT" \
       --chosen-move-cache "$CHOSEN_MOVE_CACHE" \
       --stockfish-path "$STOCKFISH_PATH" \
       --stockfish-workers "$STOCKFISH_WORKERS" \

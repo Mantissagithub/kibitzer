@@ -17,6 +17,7 @@ from tqdm import tqdm
 from kibitzer.diagnostics import (
     VALUE_BINS,
     paired_bootstrap_interval,
+    percentile,
     summarize_move_regret,
     summarize_value_predictions,
     value_bin,
@@ -322,6 +323,53 @@ def load_tactics(path: Path | None) -> list[tuple[chess.Board, set[chess.Move]]]
     return tactics
 
 
+def compare_regrets(
+    reference: list[float],
+    candidate: list[float],
+    *,
+    seed: int,
+) -> dict[str, object]:
+    regret_improvements = [
+        baseline - repaired
+        for baseline, repaired in zip(reference, candidate, strict=True)
+    ]
+    near_best_improvements = [
+        float(repaired <= 50) - float(baseline <= 50)
+        for baseline, repaired in zip(reference, candidate, strict=True)
+    ]
+    reference_p90 = percentile(reference, 0.90)
+    candidate_p90 = percentile(candidate, 0.90)
+    return {
+        "mean_regret_improvement_cp": sum(regret_improvements) / len(regret_improvements),
+        "mean_regret_improvement_ci95": paired_bootstrap_interval(
+            regret_improvements,
+            seed=seed,
+        ),
+        "near_best_improvement": sum(near_best_improvements) / len(near_best_improvements),
+        "near_best_improvement_ci95": paired_bootstrap_interval(
+            near_best_improvements,
+            seed=seed + 1,
+        ),
+        "p90_reduction_cp": reference_p90 - candidate_p90,
+        "p90_reduction_fraction": (
+            (reference_p90 - candidate_p90) / reference_p90
+            if reference_p90
+            else 0.0
+        ),
+    }
+
+
+def comparison_gates(comparison: dict[str, object]) -> dict[str, bool]:
+    regret_ci = comparison["mean_regret_improvement_ci95"]
+    near_best_ci = comparison["near_best_improvement_ci95"]
+    return {
+        "paired_regret_ci_above_zero": regret_ci[0] > 0.0,
+        "paired_near_best_ci_above_zero": near_best_ci[0] > 0.0,
+        "p90_reduction_at_least_15cp": comparison["p90_reduction_cp"] >= 15.0,
+        "p90_reduction_at_least_10pct": comparison["p90_reduction_fraction"] >= 0.10,
+    }
+
+
 def evaluate(args: argparse.Namespace) -> None:
     test_lock = args.oracle.with_suffix(args.oracle.suffix + ".test.lock")
     if args.split == "test" and test_lock.exists():
@@ -474,36 +522,34 @@ def evaluate(args: argparse.Namespace) -> None:
         if label == raw_label:
             continue
         raw_regrets = strategy_regrets[raw_label]
-        regret_improvements = [
-            raw - candidate for raw, candidate in zip(raw_regrets, regrets, strict=True)
-        ]
-        near_best_improvements = [
-            float(candidate <= 50) - float(raw <= 50)
-            for raw, candidate in zip(raw_regrets, regrets, strict=True)
-        ]
-        regret_ci = paired_bootstrap_interval(regret_improvements, seed=args.seed)
-        near_best_ci = paired_bootstrap_interval(near_best_improvements, seed=args.seed + 1)
-        raw_p90 = float(report["strategies"][raw_label]["p90_cp"])
-        candidate_p90 = float(report["strategies"][label]["p90_cp"])
-        comparisons[label] = {
-            "mean_regret_improvement_cp": sum(regret_improvements) / len(regret_improvements),
-            "mean_regret_improvement_ci95": regret_ci,
-            "near_best_improvement": sum(near_best_improvements) / len(near_best_improvements),
-            "near_best_improvement_ci95": near_best_ci,
-            "p90_reduction_cp": raw_p90 - candidate_p90,
-            "p90_reduction_fraction": (
-                (raw_p90 - candidate_p90) / raw_p90 if raw_p90 else 0.0
-            ),
-        }
-        report["gates"]["search"][label] = {
-            "paired_regret_ci_above_zero": regret_ci[0] > 0.0,
-            "paired_near_best_ci_above_zero": near_best_ci[0] > 0.0,
-            "p90_reduction_at_least_15cp": raw_p90 - candidate_p90 >= 15.0,
-            "p90_reduction_at_least_10pct": (
-                (raw_p90 - candidate_p90) / raw_p90 >= 0.10 if raw_p90 else False
-            ),
-        }
+        comparisons[label] = compare_regrets(
+            raw_regrets,
+            regrets,
+            seed=args.seed,
+        )
+        report["gates"]["search"][label] = comparison_gates(comparisons[label])
     report["comparisons_to_raw"] = comparisons
+
+    comparisons_to_phase2 = {}
+    phase2_prefix = "phase2:"
+    if any(label.startswith(phase2_prefix) for label in strategy_regrets):
+        for label, regrets in strategy_regrets.items():
+            checkpoint_name, strategy = label.split(":", 1)
+            if checkpoint_name == "phase2":
+                continue
+            phase2_label = f"phase2:{strategy}"
+            if phase2_label not in strategy_regrets:
+                continue
+            comparisons_to_phase2[label] = compare_regrets(
+                strategy_regrets[phase2_label],
+                regrets,
+                seed=args.seed + 100,
+            )
+    report["comparisons_to_phase2"] = comparisons_to_phase2
+    report["gates"]["candidate_vs_phase2"] = {
+        label: comparison_gates(comparison)
+        for label, comparison in comparisons_to_phase2.items()
+    }
 
     baseline_tactics = tactical_results.get("phase2", {})
     for checkpoint_name, scores in tactical_results.items():

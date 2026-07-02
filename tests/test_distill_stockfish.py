@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from argparse import Namespace
 
 import pytest
@@ -7,6 +8,7 @@ import torch
 
 from kibitzer.model import Kibitzer, KibitzerConfig
 from scripts.distill_stockfish import (
+    calculate_binned_value_metrics,
     calculate_value_metrics,
     collect_balanced_samples,
     configure_trainable_parameters,
@@ -15,6 +17,8 @@ from scripts.distill_stockfish import (
     split_train_eval_by_game,
     training_loss,
     validate_args,
+    value_repair_rank,
+    value_sampling_weights,
 )
 from kibitzer.data import PositionSample
 
@@ -77,6 +81,73 @@ def test_value_only_loss_updates_only_value_head() -> None:
             assert parameter.grad is None
 
 
+def test_norm_repair_unfreezes_only_value_head_and_final_norm() -> None:
+    model = _tiny_model()
+    trainable = configure_trainable_parameters(
+        model,
+        value_only=True,
+        unfreeze_final_norm=True,
+    )
+
+    trainable_ids = {id(parameter) for parameter in trainable}
+    for name, parameter in model.named_parameters():
+        expected = name.startswith(("value_head.", "norm."))
+        assert parameter.requires_grad == expected
+        assert (id(parameter) in trainable_ids) == expected
+
+
+def test_last_block_value_repair_keeps_policy_head_and_early_trunk_frozen() -> None:
+    model = Kibitzer(
+        KibitzerConfig(
+            d_model=32,
+            n_heads=4,
+            max_seq_len=2,
+            encoder_layers=1,
+            encoder_heads=4,
+            trunk_layers=2,
+            attention_every=1,
+            ssm_state_dim=4,
+        )
+    )
+    trainable = configure_trainable_parameters(
+        model,
+        value_only=True,
+        unfreeze_final_norm=True,
+        unfreeze_last_trunk_blocks=1,
+    )
+
+    trainable_ids = {id(parameter) for parameter in trainable}
+    for name, parameter in model.named_parameters():
+        expected = name.startswith(("value_head.", "norm.", "trunk.1."))
+        assert parameter.requires_grad == expected
+        assert (id(parameter) in trainable_ids) == expected
+
+
+def test_policy_anchor_kl_detects_shared_norm_drift() -> None:
+    model = _tiny_model()
+    reference = copy.deepcopy(model).eval().requires_grad_(False)
+    with torch.no_grad():
+        model.norm.weight[0] = 2.0
+    batch = {
+        "piece_idx": torch.randint(0, 13, (2, 1, 64)),
+        "aux": torch.randn(2, 1, 7),
+        "policy_target": torch.randint(0, 4672, (2, 1)),
+        "value_target": torch.tensor([[0.5], [-0.5]]),
+        "legal_mask": torch.ones(2, 1, 4672, dtype=torch.bool),
+    }
+
+    loss, metrics = training_loss(
+        model,
+        batch,
+        value_only=True,
+        policy_reference=reference,
+        policy_kl_weight=1.0,
+    )
+
+    assert metrics["policy_kl"] > 0.0
+    assert loss > metrics["value_loss"]
+
+
 def test_partial_joint_training_unfreezes_only_requested_scope() -> None:
     model = _tiny_model()
     trainable = configure_trainable_parameters(
@@ -123,6 +194,29 @@ def test_value_metrics_for_perfect_predictions() -> None:
     assert metrics["pearson"] == pytest.approx(1.0)
     assert metrics["sign_accuracy"] == 1.0
     assert metrics["r2"] == 1.0
+
+
+def test_value_repair_metrics_and_rank_prioritize_decisive_sign() -> None:
+    targets = torch.tensor([0.02, 0.10, 0.30, -0.80])
+    predictions = torch.tensor([0.01, 0.08, -0.10, -0.70])
+    metrics = calculate_value_metrics(predictions, targets)
+    metrics.update(calculate_binned_value_metrics(predictions, targets))
+    improved = dict(metrics)
+    improved["decisive_sign_accuracy"] = 1.0
+
+    assert metrics["decisive_count"] == 1
+    assert metrics["won_sign_accuracy"] == 1.0
+    assert value_repair_rank(improved) > value_repair_rank(metrics)
+
+
+def test_inverse_frequency_sampling_is_capped() -> None:
+    labels = [({}, 0.0)] * 16 + [({}, 0.1)] * 4 + [({}, 0.3)] * 2 + [({}, 0.8)]
+    weights, counts = value_sampling_weights(labels, alpha=1.0, max_weight=4.0)
+
+    assert counts == {"quiet": 16, "edge": 4, "decisive": 2, "won": 1}
+    assert weights[0] == 1.0
+    assert weights[-1] == 4.0
+    assert float(weights.max()) == 4.0
 
 
 def test_balanced_collection_uses_each_pgn(tmp_path) -> None:

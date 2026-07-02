@@ -761,3 +761,109 @@ Decision after the audit:
 The earlier 90/95% sign thresholds remain long-term strength targets, not plausible one-step development
 gates from a 66% baseline. Before any training and while test is still untouched, the next candidate gate will
 be defined as bootstrap-separated improvement over Phase-2 plus the existing regret/calibration floors.
+
+### D30 — Depth-14 labels pass the ceiling audit; run a balanced value-head-only repair
+The deterministic 3,000-position audit compared the cached depth-14 MultiPV-8 value targets with fresh
+depth-20 MultiPV-1 evaluations. Overall bounded-value MAE was **0.0217**, sign disagreement was **2.90%**, and
+strict direction flips were 1.93%. The depth-20 bins contained 1,335 quiet, 740 edge, 541 decisive, and 384 won
+positions. Decisive and won sign disagreement were both **0%**; won-bin MAE was 0.0683. This is far below the
+Phase-2 model's 0.1653 validation MAE, so teacher depth is not the current bottleneck. Do not spend another
+large labeling run at depth 20.
+
+Proceed with only Stage A of the reviewed repair plan. Initialize from `runs/value/value_final.pt`, freeze the
+entire encoder, trunk, norm, and policy head, and train only the value head on the existing 250k audited cache.
+Use inverse-frequency value-bin sampling with alpha 0.5 and a 4x cap, while keeping the epoch length unchanged.
+The actual train split has 97,681 quiet, 59,836 edge, 40,250 decisive, and 27,223 won positions; the resulting
+weights span only 1.000x to 1.894x. Run three epochs at LR `1e-4`, retain every epoch, and compare decisive/won
+sign and MAE against an epoch-0 baseline. Checkpoint selection is lexicographic: decisive/won sign first,
+decisive/won MAE second, then global MSE. The best checkpoint is uploaded to
+`Pradheep1647/kibitzer-clean-value-repair`.
+
+This stage does not use the locked common-oracle test split. After training, evaluate the selected repair on
+the already-used validation split before deciding whether to unfreeze norm or one trunk block. Command:
+
+```bash
+bash scripts/train_value_repair.sh
+```
+
+The run selected epoch 1. It improved cached-label decisive sign by 0.36 percentage points and won sign by
+0.73 points; decisive MAE fell 0.0057 and won MAE fell 0.0538. Epochs 2 and 3 regressed decisive sign and
+global metrics, so no additional head-only epochs are justified. Validate epoch 1 against Phase-2 on the
+locked common-oracle validation split at value scales 0, 0.5, and 1 before considering Stage B:
+
+```bash
+bash scripts/run_value_repair_validation.sh
+```
+
+### D31 — Repair scale 1 passes raw-search gates; require a direct paired Phase-2 comparison
+On the common-oracle validation split, value repair reduced natural-weighted MAE from 0.16527 to 0.16341.
+Decisive sign improved from 66.5% to 68.5% and decisive MAE fell by 0.0121. Won MAE fell by 0.0245 while won
+sign moved from 74.5% to 74.0%, a one-position regression. Quiet and edge sign improved, though their MAE rose
+slightly. These are useful but still far from the long-term absolute sign targets.
+
+At 64 simulations, `value_scale=1` is the first candidate to pass every search-versus-raw gate: mean regret
+improved 28.22cp (95% CI 7.88..49.63), near-best accuracy improved 2.5 points (CI 0.875..4.25), and p90 regret
+fell 86.2cp or 12.92%. Tactical solve rate was unchanged. Relative to Phase-2 at the same scale, point estimates
+also favor repair: mean regret -8.52cp, p90 -18.3cp, p95 -50cp, near-best +0.5 points, and exact-best +0.375
+points.
+
+The original report only bootstrapped each searched model against its own raw policy. It did not bootstrap the
+paired repair-versus-Phase-2 difference required by D29. Do not consume the test split from point estimates.
+Rerun only scale 1 after adding direct paired comparisons; chosen-move Stockfish scores are already cached:
+
+```bash
+VALUE_SCALES=1 \
+VALIDATION_OUTPUT=runs/diagnostics/value_repair_head_to_head.json \
+bash scripts/run_value_repair_validation.sh
+```
+
+### D32 — Stage A is directionally useful but not a new champion; proceed to norm-only capacity with a policy anchor
+The direct paired comparison did not separate Stage A from Phase-2. At 64 simulations and `value_scale=1`,
+repair improved mean regret by 8.52cp, but its 95% CI was -2.38..20.68. Near-best improved 0.5 percentage
+points with CI -0.5..1.5. P90 fell 18.3cp but only 3.05%, below the 10% relative gate. Therefore Phase-2
+remains the champion and the locked test split remains untouched.
+
+Proceed with Stage B from the Stage-A epoch-1 checkpoint. Train only the value head and shared final RMSNorm;
+the encoder, all trunk blocks, and policy head remain frozen. Because changing the shared norm also changes
+policy logits, anchor them to the frozen Phase-2 checkpoint with KL loss. Use head LR `1e-4`, norm LR `2e-5`,
+KL weight 1.0, and the same alpha-0.5 balanced sampling for two epochs. Reject any epoch with validation policy
+KL above 0.01 or policy top-1 agreement below 98%; retain every epoch and keep the epoch-0 checkpoint if no
+candidate improves the decisive/won lexicographic value rank within those floors. HF upload remains mandatory.
+
+```bash
+bash scripts/train_value_repair_norm.sh
+```
+
+### D33 — Sonnet 5 generated a reproducible run-analysis figure suite
+Invoked Sonnet 5 directly through `claude -p` to implement the requested graph package. The deterministic
+generator lives at `scripts/plot_run_analysis.py`, evidence parsing at `kibitzer/run_analysis.py`, and outputs
+under `reports/run_analysis/`. Five research-style PNGs separate epoch value metrics, epoch policy metrics,
+common-oracle value bins, search regret/accuracy, and noisy 10-game WDL results. Each figure names its local
+source; missing Phase-1 epoch history is shown explicitly rather than invented, and diagnostics inputs must
+declare `split=validation` so the locked test cannot be presented as consumed.
+
+Matplotlib is now a declared dependency. During verification, `uv sync` exposed the recurring D20 environment
+pitfall by selecting `huggingface-hub==1.14.0`, incompatible with the repo's manually installed Transformers
+4.44.2. The project and lockfile now enforce `huggingface-hub>=0.24,<1.0`; the environment was restored to
+Transformers 4.44.2, TRL 0.11.4, and HF Hub 0.36.2. Full verification passed with 79 tests.
+
+```bash
+uv run python scripts/plot_run_analysis.py
+```
+
+### D34 — Norm-only repair failed; allow one final last-block experiment with a hard stop
+Extended Stage B to five epochs. Training MSE continued falling to 0.0852, but held-out MSE rose to 0.0752,
+MAE to 0.1792, Pearson fell to 0.5216, and R² to 0.2532. Decisive sign fell 0.98 percentage points from the
+Stage-A baseline and won sign fell 0.76 points. Policy KL remained only 0.000009 with 99.84% top-1 agreement,
+so the failure is value generalization rather than policy drift. Epoch 0 remained best; the HF client correctly
+skipped a duplicate upload because that baseline checkpoint was already present.
+
+Permit one final bounded supervised experiment: start again from Stage-A epoch 1 and train the value head,
+final RMSNorm, and only the last trunk block. Keep the policy head, encoder, and first nine trunk blocks frozen.
+Use head LR `1e-4`, norm LR `2e-5`, trunk LR `5e-6`, Phase-2 policy KL weight 1.0, the existing policy-drift
+floors, balanced alpha-0.5 sampling, and three epochs with every epoch retained. If no epoch beats epoch 0,
+stop this checkpoint lineage rather than unfreezing more layers or extending epochs.
+
+```bash
+bash scripts/train_value_repair_trunk.sh
+```

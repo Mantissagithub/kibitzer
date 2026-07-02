@@ -7,7 +7,15 @@ import pytest
 import torch
 
 import scripts.diagnose_search as diagnostics
-from scripts.diagnose_search import Candidate, build_oracle, evaluate, game_split, load_tactics
+from scripts.diagnose_search import (
+    Candidate,
+    build_oracle,
+    compare_regrets,
+    comparison_gates,
+    evaluate,
+    game_split,
+    load_tactics,
+)
 
 
 def test_game_split_is_deterministic() -> None:
@@ -35,6 +43,20 @@ def test_consumed_test_split_is_locked(tmp_path: Path) -> None:
                 output=tmp_path / "test.json",
             )
         )
+
+
+def test_direct_strategy_comparison_uses_paired_differences() -> None:
+    comparison = compare_regrets(
+        [100.0, 100.0, 100.0, 100.0],
+        [60.0, 60.0, 60.0, 60.0],
+        seed=42,
+    )
+    gates = comparison_gates(comparison)
+
+    assert comparison["mean_regret_improvement_cp"] == 40.0
+    assert comparison["p90_reduction_cp"] == 40.0
+    assert gates["paired_regret_ci_above_zero"]
+    assert gates["p90_reduction_at_least_10pct"]
 
 
 def test_build_oracle_locks_every_split_and_bin(tmp_path: Path, monkeypatch) -> None:
