@@ -1,0 +1,42 @@
+{
+  "description": "Search-strength record: kibitzer MCTS+value vs Stockfish (UCI_LimitStrength, Elo 1320 floor; STOCKFISH_TIME=0.05s). Score = (W + 0.5*D)/games from kibitzer's perspective. Standard error of a 20-game score is ~0.09, so points within ~0.1 of each other are NOT distinguishable.",
+  "opponent": {
+    "engine": "stockfish",
+    "uci_limitstrength_elo": 1320,
+    "note": "1320 is the FLOOR of Stockfish UCI_LimitStrength; a weaker limited opponent cannot be requested."
+  },
+  "primary_runs_n20": [
+    {"checkpoint": "value_final", "target": "stockfish_cp", "sims": 64,  "games": 20, "w": 0, "d": 4, "l": 16, "score": 0.100},
+    {"checkpoint": "value_final", "target": "stockfish_cp", "sims": 256, "games": 20, "w": 2, "d": 5, "l": 13, "score": 0.225},
+    {"checkpoint": "value_final", "target": "stockfish_cp", "sims": 512, "games": 20, "w": 2, "d": 4, "l": 14, "score": 0.200},
+    {"checkpoint": "joint_scratch", "target": "game_result_pm1", "sims": 64,  "games": 20, "w": 1, "d": 2, "l": 17, "score": 0.100},
+    {"checkpoint": "joint_scratch", "target": "game_result_pm1", "sims": 256, "games": 20, "w": 2, "d": 3, "l": 15, "score": 0.175}
+  ],
+  "prior_runs_n10_flagged": [
+    {"checkpoint": "joint_distill", "sims": 64,  "games": 10, "w": 2, "d": 0, "l": 8, "score": 0.200, "note": "earlier dead-end checkpoint, N=10, not comparable"},
+    {"checkpoint": "joint_distill", "sims": 256, "games": 10, "w": 0, "d": 1, "l": 9, "score": 0.050, "note": "earlier dead-end checkpoint, N=10, not comparable"},
+    {"checkpoint": "value_final",   "sims": 256, "games": 10, "w": 0, "d": 1, "l": 9, "score": 0.050, "note": "N=10 pilot, superseded by the N=20 primary run at 256 sims"}
+  ],
+  "value_gate_offline": {
+    "held_out_split": "Stockfish depth-14, 25010 positions",
+    "note": "Pearson and sign accuracy are scale-invariant (comparable); R2/MSE/MAE are NOT comparable across cp vs pm1 targets.",
+    "baseline_value_final": {"pearson": 0.5226, "r2": 0.2724, "sign_acc": 0.6658, "decisive_sign": 0.6595, "decisive_n": 4405, "won_sign": 0.8132, "won_n": 3030, "mse": 0.0732, "mae": 0.1730},
+    "joint_scratch":        {"pearson": 0.4796, "r2": -1.3357, "sign_acc": 0.6350, "decisive_sign": 0.7262, "decisive_n": 4405, "won_sign": 0.8673, "won_n": 3030, "mse": 0.2351, "mae": 0.3770}
+  },
+  "joint_scratch_training_loss": {
+    "positions_per_epoch": 5000000,
+    "batch_size": 128,
+    "value_weight": 0.25,
+    "by_epoch": {
+      "1": {"total": 2.114, "policy": 1.977, "value": 0.550},
+      "2": {"total": 1.832, "policy": 1.736, "value": 0.382},
+      "3": {"total": 2.229, "policy": 2.108, "value": 0.485}
+    }
+  },
+  "headline_findings": [
+    "Offline value metrics do NOT predict play: joint_scratch won decisive-sign by +6.67pp but did not beat baseline in games.",
+    "Search depth is the only lever that moved strength: value_final 64->256 sims lifted score 0.100->0.225.",
+    "But search-depth PLATEAUS: 256->512 sims went 0.225->0.200 (flat within noise). It is a one-shot crutch, not a path.",
+    "Even the best config tops out ~0.2 vs the weakest limited Stockfish (Elo-1320 floor)."
+  ]
+}

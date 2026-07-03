@@ -1,0 +1,64 @@
+{
+  "runs": [
+    {
+      "tag": "S0",
+      "d_model": 128,
+      "trunk_layers": 6,
+      "n_heads": 4,
+      "attention_every": 1,
+      "params": 2983617,
+      "train_positions": 5000000,
+      "lr": 0.0003,
+      "eval_policy_ce": 2.3569729806518556,
+      "eval_value_mse": 0.7117912942743302,
+      "eval_top1": 0.30198,
+      "wall_clock_s": 961.2538475210022,
+      "peak_vram_gb": 0.441092608
+    },
+    {
+      "tag": "S1",
+      "d_model": 192,
+      "trunk_layers": 8,
+      "n_heads": 6,
+      "attention_every": 1,
+      "params": 7429121,
+      "train_positions": 5000000,
+      "lr": 0.00019999999999999998,
+      "eval_policy_ce": 2.333877392578125,
+      "eval_value_mse": 0.7212534686851502,
+      "eval_top1": 0.30776,
+      "wall_clock_s": 1648.7326755749964,
+      "peak_vram_gb": 0.70725632
+    },
+    {
+      "tag": "S2",
+      "d_model": 256,
+      "trunk_layers": 10,
+      "n_heads": 8,
+      "attention_every": 1,
+      "params": 14893889,
+      "train_positions": 5000000,
+      "lr": 0.00015,
+      "eval_policy_ce": 2.328764085083008,
+      "eval_value_mse": 0.7176946205425262,
+      "eval_top1": 0.30922,
+      "wall_clock_s": 2451.4115407729987,
+      "peak_vram_gb": 1.001723392
+    },
+    {
+      "tag": "S3",
+      "d_model": 320,
+      "trunk_layers": 10,
+      "n_heads": 8,
+      "attention_every": 1,
+      "params": 22886273,
+      "train_positions": 5000000,
+      "lr": 0.00011999999999999999,
+      "eval_policy_ce": 2.309683162841797,
+      "eval_value_mse": 0.7210910852527619,
+      "eval_top1": 0.3161,
+      "wall_clock_s": 3397.3090115640007,
+      "peak_vram_gb": 1.324547072
+    }
+  ]
+}

@@ -867,3 +867,138 @@ stop this checkpoint lineage rather than unfreezing more layers or extending epo
 ```bash
 bash scripts/train_value_repair_trunk.sh
 ```
+
+### D35 — Joint-from-scratch won the offline value metric but not play; offline value ≠ strength, and only search depth moves the number
+Abandoned the frozen-trunk value-repair lineage (D30–D34 all regressed on held-out value) and tried the one
+untried lever: train the whole model from random init with joint policy+value, value target = side-to-move game
+result (±1). On the same held-out Stockfish depth-14 split (25,010 positions) this broke the long-standing
+decisive-sign wall: decisive sign 65.95% → 72.62% (+6.67pp), won sign 81.32% → 86.73% (+5.41pp). But it traded
+away near-equality: Pearson 0.5226 → 0.4796 and overall sign 66.58% → 63.50%. (R²/MSE/MAE are not comparable
+across cp vs ±1 targets and are excluded.)
+
+The decisive test was play, not the offline metric. Search vs Stockfish 1320 (UCI_LimitStrength floor;
+STOCKFISH_TIME=0.05s; N=20 games, score SE ≈ 0.09):
+
+| sims | value_final (cp) | joint_scratch (±1) |
+|------|------------------|--------------------|
+| 64   | 0.100            | 0.100              |
+| 256  | 0.225            | 0.175              |
+
+Two conclusions. (1) The joint value head is **not** better at the board — it won the offline metric by +6.67pp
+and came out level-to-behind in games (0.175 vs 0.225, within noise). The hypothesis "sharper decisive-sign value
+→ stronger play" is falsified. The broader lesson: **offline value metrics do not predict play at this scale**, so
+the entire D30–D35 value-repair campaign was optimizing a non-predictive proxy. (2) The only lever that measurably
+moved strength was **search depth** (value_final 0.100 → 0.225 from 64 → 256 sims) — but it **plateaus**: 512 sims
+scored 0.200 (2W-4D-14L), flat within noise, so doubling search past 256 buys nothing. Search is a one-shot crutch,
+not a path. The best config tops out ~0.2 vs the weakest limited Stockfish, consistent with the memoized finding
+that search only helps after real value training and with a 28M-param laptop-scale ceiling. Full curve in
+`reports/search_depth/results.json`; figures: `reports/joint_scratch/` and `reports/search_depth/`.
+
+```bash
+CHECKPOINT=runs/value/value_final.pt GAMES=20 SIMULATIONS=512 STOCKFISH_ELO=1320 \
+  EVAL_OUT=eval_pgns/value_final_512sim_vs_1320.pgn bash scripts/run_search_eval.sh
+```
+
+### D36 — Stop point-experiments; run a scaling-law study (params × data × LR) on an attention backbone to find whether the target is reachable
+Thirty-five point-experiments, none beat SFT ~1320, all on a single fixed ~32M model. D35 showed the metric we
+gate on (match play) is noisy and non-predictive, while cheap policy cross-entropy is smooth. The rational pivot is
+to stop guessing single tricks and instead **measure the scaling curve**: fit L(N, D) for policy loss over model
+size N and positions seen D, then extrapolate to answer one question honestly — what N and D reach a target
+move-match (Elo proxy), and is that reachable on the 8GB 4060 or is it fundamentally a cloud-scale problem. This is
+the Chinchilla/Kaplan method (arXiv:2001.08361, 2203.15556); the searchless-chess result (arXiv:2402.04494) reached
+2895 Lichess Elo with 270M params on ~15B positions, which is the scale reference the study is meant to locate us
+against. Rationale and full design: `docs/scaling_study/`.
+
+Fixed choices. Architecture family is **attention-first** (hard constraint): set `attention_every=1` so every trunk
+block is causal attention (the current default is `attention_every=3`, mostly SSM). Task metric is **policy
+cross-entropy** on Lichess-Elite human moves (primary, low-variance) plus value MSE (secondary) and top-1 move-match
+as the interpretable capability axis — **not** match-play Elo. Data is the already-cached Elite pool; eval is a
+fixed game-disjoint held-out position set. LR uses μP-style transfer: tune once at the smallest size, scale by
+`base_width / width`, with cosine decay + warmup (fixes the joint_scratch epoch-3 divergence in `reports/joint_scratch/`).
+
+Model-size ladder (all attention, scale width `d_model` and `trunk_layers`; policy head is `d_model × 4672` so
+params are not pure width²; exact counts measured by the harness):
+
+| tag | d_model | trunk_layers | approx params |
+|-----|---------|--------------|---------------|
+| S0  | 128     | 6            | ~5M           |
+| S1  | 192     | 8            | ~10M          |
+| S2  | 256     | 10           | ~18M          |
+| S3  | 320     | 10           | ~32M (current)|
+| S4  | 448     | 12           | ~60M (grad-accum on 8GB) |
+
+Cheapest first cut: train the ladder at fixed data-rich D to convergence and fit policy-loss vs params — that alone
+gives the exponent and whether more params still help before committing to a full IsoFLOP (N,D) grid. Entrypoint to
+build first (does not exist yet): `scripts/scaling_sweep.py` driving `train_bc.py` per rung and logging
+`(N, D, policy_loss, value_mse, top1)` to `reports/scaling_law/results.json`.
+
+```bash
+# to build: scripts/scaling_sweep.py --sizes S0,S1,S2,S3 --max-positions 20000000 --lr-transfer mup
+python scripts/scaling_sweep.py --sizes S0,S1,S2,S3 --attention-every 1 --max-positions 20000000
+```
+
+### D37 — Params arm: policy scales but shallowly and does not saturate; value does not scale at all; the bottleneck is data, not capacity
+Built `scripts/scaling_sweep.py` (self-contained trainer: config overrides, μP LR transfer, cosine schedule +
+warmup, held-out eval; leaves `train_bc.py` untouched) and ran the attention-first ladder (`attention_every=1`) at a
+fixed 5M positions/rung, eval on held-out lichess-elite 2025-11:
+
+| tag | params | policy CE | top-1 | value MSE | LR (μP) |
+|-----|--------|-----------|-------|-----------|---------|
+| S0  | 2.98M  | 2.3570    | 30.20% | 0.7118   | 3.0e-4  |
+| S1  | 7.43M  | 2.3339    | 30.78% | 0.7213   | 2.0e-4  |
+| S2  | 14.89M | 2.3288    | 30.92% | 0.7177   | 1.5e-4  |
+| S3  | 22.89M | 2.3097    | 31.61% | 0.7211   | 1.2e-4  |
+
+Three findings. (1) Policy CE falls monotonically but **shallowly** — a log-linear fit gives ~0.015 CE reduction per
+params-doubling (CE ≈ 2.673 − 0.0212·ln(params); scipy absent so no power-law floor). 7.7× params buys only −0.047 CE
+/ +1.4pp top-1. (2) It is **not saturating** — S2→S3 was the largest step — so this is not a capacity wall. (3) Value
+MSE is **flat at ~0.71–0.72** across an 8× param range: model size does nothing for value, corroborating D35 that value
+is a target-quality problem, not a capacity one. The shallow, non-saturating policy slope at fixed tiny D is the
+signature of **data starvation**: Chinchilla ~20 tokens/param implies S3 (23M) wants ~460M positions; it got 5M
+(~0.2/param, ~100× under-fed). Figure: `reports/scaling_law/fig1_scaling_curve.png`.
+
+Next: hold S2 fixed and scale data (the only variable). LR pinned to the params-arm S2 value (1.5e-4, via
+`--lr-transfer constant`) so only D changes; each D written to its own results file to avoid the tag-keyed upsert
+clobbering the 5M point. If 5M→20M CE drop clearly beats the ~0.015/doubling params slope, data is the lever and the
+ceiling is not fundamental; if it is also shallow, that is the clean final scale-wall verdict.
+
+```bash
+python scripts/scaling_sweep.py --sizes S2 --max-positions 20000000 \
+  --lr-transfer constant --base-lr 1.5e-4 --device cuda \
+  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
+  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
+  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
+  --train-pgn data/raw/lichess_elite_2025-10.pgn \
+  --out reports/scaling_law/data_arm_s2_20M.json
+```
+
+
+### D38 (teaser — 2 points, 40M pending) — Data arm: data is ~10× the lever that params are; direction validated
+First real turning point in the log. Held S2 (14.89M params) fixed, LR pinned at 1.5e-4, and scaled data only:
+
+| positions | policy CE | top-1 | value MSE |
+|-----------|-----------|-------|-----------|
+| 5M        | 2.3288    | 30.92% | 0.7177   |
+| 20M       | 2.0437    | 37.65% | 0.6999   |
+
+4× data → CE **−0.285**, top-1 **+6.73pp**. That is **−0.1425 CE per data-doubling** vs the params arm's **−0.0147
+per params-doubling** — **~10× steeper**. One rung of extra data moved top-1 more (+6.7pp) than the entire 7.7× params
+ladder did (+1.4pp). Value MSE also improved (0.7177 → 0.6999), where it was dead flat across the params arm — so data
+helps the value head that capacity could not touch. This confirms the D37 diagnosis: the model was never
+capacity-limited, it was **data-starved** (S2 is Chinchilla-optimal near ~300M positions; 20M is still ~15× short, so
+we are still on the steep part). The lever is data, and data is just wall-clock on hardware already owned.
+Figures: `reports/scaling_law/fig2_data_scaling_curve.png` (+ `fig1` for the params contrast).
+
+Teaser status: only two data points. Next brick is the 40M third point to confirm the exponent holds (or find where it
+bends) and enable a real extrapolation "positions → target top-1/CE → hours". Also revisit whether the win transfers to
+actual play (search gate) — CE/top-1 is the proxy, not Elo (D35). Full D38 to be finalized after 40M lands.
+
+```bash
+python scripts/scaling_sweep.py --sizes S2 --max-positions 40000000 \
+  --lr-transfer constant --base-lr 1.5e-4 --device cuda \
+  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
+  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
+  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
+  --train-pgn data/raw/lichess_elite_2025-10.pgn \
+  --out reports/scaling_law/data_arm_s2_40M.json
+```
