@@ -1,0 +1,14 @@
+{
+  "model": "S2 shaw, 15.2M params, 100M positions",
+  "sims": 256,
+  "games_per_level": 40,
+  "total_games": 160,
+  "final_elo": 2483,
+  "elo_ci": 32,
+  "per_level": [
+    {"opp_elo": 1900, "score": 0.938, "w": 37, "d": 1, "l": 2},
+    {"opp_elo": 2100, "score": 0.850, "w": 31, "d": 6, "l": 3},
+    {"opp_elo": 2300, "score": 0.700, "w": 24, "d": 8, "l": 8},
+    {"opp_elo": 2500, "score": 0.525, "w": 13, "d": 16, "l": 11}
+  ]
+}

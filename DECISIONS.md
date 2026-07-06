@@ -312,3 +312,27 @@ Promotion criteria:
 No value repair, TDLeaf, OPD, or offline teacher distillation is allowed in this run.
 This experiment isolates whether additional capacity becomes useful only after the
 data starvation identified in D13 has been reduced.
+
+---
+
+## D44 — measured Elo of the 100M shaw model (calibrated, 160 games)
+
+Proper Elo measurement of runs/scaling_shaw_data/checkpoints/S2_shaw_100M.pt via PUCT (256 sims) vs
+Stockfish UCI_Elo, 40 games/level over 4 levels (real 20-line opening book, alternating colors):
+
+| opponent | score | W/D/L |
+|---|---|---|
+| SF-1900 | 0.938 | 37/1/2 |
+| SF-2100 | 0.850 | 31/6/3 |
+| SF-2300 | 0.700 | 24/8/8 |
+| SF-2500 | 0.525 | 13/16/11 |
+
+Overall 0.753 across 160 games. **Final iterative performance Elo = 2483 (±~32)** — computed with the
+proper sequential update R += K(S−E), E = 1/(1+10^((R_opp−R)/400)), K=16, iterated to convergence from
+R0=2280. Monotonic ladder; the model is ~even (0.525) with SF-2500, sweeps SF-1900.
+
+Supersedes the earlier single-anchor ~2280 (D43) with a multi-level calibrated fit. Note: the prior cloud
+attempt (random 8-ply openings) gave a spurious ~1697 — random openings drop the model into untrained
+positions and are not comparable; the fixed opening book is essential. Best 37 wins vs SF-2300/2500 saved to
+reports/scaling_law/elo_local/best_games.pgn. Method uses the repo's eval_search_vs_stockfish.py (opening book
+extended 5→20 lines). Cloud pod was terminated (~$0.30 spent).
