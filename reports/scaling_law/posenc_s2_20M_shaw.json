@@ -1,0 +1,20 @@
+{
+  "runs": [
+    {
+      "tag": "S2",
+      "d_model": 256,
+      "trunk_layers": 10,
+      "n_heads": 8,
+      "attention_every": 1,
+      "pos_encoding": "shaw",
+      "params": 15223105,
+      "train_positions": 20000000,
+      "lr": 0.00015,
+      "eval_policy_ce": 2.038173483581543,
+      "eval_value_mse": 0.6986876499736309,
+      "eval_top1": 0.3856,
+      "wall_clock_s": 10173.377172622,
+      "peak_vram_gb": 1.131305984
+    }
+  ]
+}

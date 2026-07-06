@@ -1,0 +1,11 @@
+{
+  "checkpoint": "runs/tdleaf/tdleaf.pt",
+  "games": 40,
+  "simulations": 256,
+  "value_scale": 1.0,
+  "stockfish_elo": 1320,
+  "wins": 39,
+  "draws": 0,
+  "losses": 1,
+  "score": 0.975
+}

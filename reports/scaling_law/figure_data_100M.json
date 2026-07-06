@@ -1,0 +1,31 @@
+{
+  "scaling_curve_shaw": [
+    {"positions": 20000000, "top1": 0.3856, "value_mse": 0.6987},
+    {"positions": 40000000, "top1": 0.4452, "value_mse": 0.6779},
+    {"positions": 100000000, "top1": 0.4945, "value_mse": 0.6497}
+  ],
+  "scaling_curve_absolute_reference": [
+    {"positions": 5000000, "top1": 0.3092, "value_mse": 0.7177},
+    {"positions": 20000000, "top1": 0.3765, "value_mse": 0.6999}
+  ],
+  "inloop_play_sf1900_64sims": [
+    {"positions": 20000000, "score": 0.250},
+    {"positions": 40000000, "score": 0.350},
+    {"positions": 60000000, "score": 0.650},
+    {"positions": 80000000, "score": 0.775},
+    {"positions": 100000000, "score": 0.825}
+  ],
+  "elo_per_checkpoint_256sim_sf1900": [
+    {"checkpoint": "base (0M, untrained)", "score": 0.738, "elo": 2080, "elo_ci": [1913, 2247]},
+    {"checkpoint": "49M", "score": 0.800, "elo": 2141, "elo_ci": [1959, 2323]},
+    {"checkpoint": "73M", "score": 0.800, "elo": 2141, "elo_ci": [1959, 2323]},
+    {"checkpoint": "100M", "score": 0.900, "elo": 2282, "elo_ci": [2046, 2517]}
+  ],
+  "gauntlet_100M_256sim": [
+    {"opponent_elo": 1900, "score": 0.900, "games": 20},
+    {"opponent_elo": 2100, "score": 0.700, "games": 15},
+    {"opponent_elo": 2300, "score": 0.833, "games": 15}
+  ],
+  "gauntlet_fitted_elo": 2470,
+  "hf_url": "https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-100m"
+}

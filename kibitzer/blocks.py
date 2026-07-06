@@ -48,6 +48,73 @@ class EncoderBlock(nn.Module):
         return x + self.ffn(self.ffn_norm(x))
 
 
+class RelativeEncoderBlock(nn.Module):
+    """Encoder block with Shaw-style relative position attention over 64 chess squares.
+
+    Relative offsets are bucketed by (rank_delta, file_delta) in [-7, 7] x [-7, 7],
+    giving 15*15=225 buckets, each with a learned relative vector added to the
+    query and key terms (Chessformer/Shaw form). The relative logit terms are
+    folded into an additive attention bias so the q.k term can be computed by
+    the fused `F.scaled_dot_product_attention` kernel. No causal mask: the
+    encoder is bidirectional over squares.
+    """
+
+    def __init__(self, dim: int, n_heads: int, ff_mult: int = 4) -> None:
+        super().__init__()
+        assert dim % n_heads == 0
+        self.n_heads = n_heads
+        self.head_dim = dim // n_heads
+
+        self.attn_norm = RMSNorm(dim)
+        self.q_proj = nn.Linear(dim, dim, bias=False)
+        self.k_proj = nn.Linear(dim, dim, bias=False)
+        self.v_proj = nn.Linear(dim, dim, bias=False)
+        self.out_proj = nn.Linear(dim, dim, bias=False)
+
+        n_buckets = 225
+        self.rel_q = nn.Embedding(n_buckets, dim)
+        self.rel_k = nn.Embedding(n_buckets, dim)
+
+        squares = torch.arange(64)
+        file = squares % 8
+        rank = squares // 8
+        file_delta = file.view(64, 1) - file.view(1, 64)
+        rank_delta = rank.view(64, 1) - rank.view(1, 64)
+        buckets = (rank_delta + 7) * 15 + (file_delta + 7)
+        self.register_buffer("rel_buckets", buckets.long(), persistent=False)
+
+        self.ffn_norm = RMSNorm(dim)
+        self.ffn = SwiGLU(dim, ff_mult * dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        batch, seq_len, dim = x.shape
+        h = self.attn_norm(x)
+
+        q = self.q_proj(h).view(batch, seq_len, self.n_heads, self.head_dim).transpose(1, 2)
+        k = self.k_proj(h).view(batch, seq_len, self.n_heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(h).view(batch, seq_len, self.n_heads, self.head_dim).transpose(1, 2)
+
+        buckets = self.rel_buckets[:seq_len, :seq_len]
+        a_q = self.rel_q(buckets).view(seq_len, seq_len, self.n_heads, self.head_dim)
+        a_k = self.rel_k(buckets).view(seq_len, seq_len, self.n_heads, self.head_dim)
+
+        # Fold the relative terms into an additive bias so SDPA's fused kernel
+        # handles the q.k part directly:
+        #   e_ij = q_i.k_j + q_i.a^K_ij + a^Q_ij.k_j + a^Q_ij.a^K_ij
+        # SDPA computes softmax(q.k^T / sqrt(d) + attn_mask), so the bias below
+        # must already be divided by sqrt(head_dim) to match e_ij / sqrt(d).
+        qk_bias = torch.einsum("bhid,ijhd->bhij", q, a_k)
+        qk_bias = qk_bias + torch.einsum("bhjd,ijhd->bhij", k, a_q)
+        static_bias = torch.einsum("ijhd,ijhd->hij", a_q, a_k)  # no batch dim
+        bias = (qk_bias + static_bias.unsqueeze(0)) / (self.head_dim**0.5)
+
+        out = F.scaled_dot_product_attention(q, k, v, attn_mask=bias)
+
+        out = out.transpose(1, 2).reshape(batch, seq_len, dim)
+        x = x + self.out_proj(out)
+        return x + self.ffn(self.ffn_norm(x))
+
+
 class CausalAttentionBlock(nn.Module):
     def __init__(self, dim: int, n_heads: int, max_seq_len: int, ff_mult: int = 4) -> None:
         super().__init__()

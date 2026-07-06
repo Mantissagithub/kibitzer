@@ -27,6 +27,7 @@ class KibitzerConfig:
     n_aux: int = AUX_SIZE
     n_squares: int = 64
     vocab_pieces: int = NUM_PIECE_TOKENS
+    pos_encoding: str = "shaw"
 
 
 class Kibitzer(nn.Module):
@@ -41,6 +42,7 @@ class Kibitzer(nn.Module):
             n_heads=cfg.encoder_heads,
             n_layers=cfg.encoder_layers,
             n_aux=cfg.n_aux,
+            pos_encoding=cfg.pos_encoding,
         )
         blocks: list[nn.Module] = []
         for i in range(cfg.trunk_layers):

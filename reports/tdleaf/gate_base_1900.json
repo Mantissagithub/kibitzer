@@ -1,0 +1,11 @@
+{
+  "checkpoint": "runs/scaling/S2.pt",
+  "games": 40,
+  "simulations": 256,
+  "value_scale": 1.0,
+  "stockfish_elo": 1900,
+  "wins": 27,
+  "draws": 5,
+  "losses": 8,
+  "score": 0.7375
+}

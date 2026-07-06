@@ -1002,3 +1002,250 @@ python scripts/scaling_sweep.py --sizes S2 --max-positions 40000000 \
   --train-pgn data/raw/lichess_elite_2025-10.pgn \
   --out reports/scaling_law/data_arm_s2_40M.json
 ```
+
+
+### D39 — Shaw chess-aware relative position encoding in the encoder (arch lever, not scale)
+Read two papers to find a lever that isn't "add params": **Chessformer** (Monroe 2024, arXiv:2409.12272) and
+**KnightCap** (Baxter/Tridgell/Weaver 1998, arXiv:cs/9901002).
+
+Chessformer's headline ablation: the dominant lever for a chess transformer is the **position representation**, not
+model scale. Shaw et al. relative attention (learned per-pair `a^Q,a^K,a^V` added to the attention logits,
+`e_ij = (x_iW^Q + a_ij^Q)(x_jW^K + a_ij^K)ᵀ/√d`) beats relative-bias by **+1.83% policy accuracy** and beats absolute
+position embedding by more — *"a good choice of position representation can in large part replace the need for model
+scale"* (≈ the gain from doubling params). It's how they matched searchless-chess (GC-270M) at **30× less compute** and
+beat AlphaZero-policy at 8×. Honest caveat: still searchless-supervised, does **not** beat its generator/Stockfish —
+this is an *efficiency* result (same ceiling as D35), not a "beat Stockfish" result.
+
+Audit of our encoder (`kibitzer/position_encoder.py`, `kibitzer/blocks.py`): we have **only** an absolute learned
+`square_emb(0..63)` added to the piece embedding, then vanilla `nn.MultiheadAttention` with **no relative term**. That
+is exactly the row Chessformer's ablation ranks **worst**. We are leaving the full ~1.83% (≈2× param-efficiency) on the
+table.
+
+Decision: implement a Shaw-style relative attention module and wire it behind a config flag, keyed to chess geometry
+(relative offset by `(file_delta, rank_delta)` → 15×15=225 buckets, far cheaper than full 64×64). Swap it into
+`EncoderBlock` only — the encoder is where the 64-square attention actually lives; the trunk runs at seq_len=1
+(collate `.unsqueeze(1)`), so relative encoding there would be a no-op. Test as a pure-supervised **A/B at equal
+params** in `scaling_sweep.py` (absolute vs Shaw), same data/LR — the clean test of "geometry beats scale". Success =
+Shaw lifts eval top-1 / lowers policy CE at matched params by a margin comparable to a params-doubling on the D37 curve.
+
+Sequencing note (why this first, TDLeaf later): KnightCap's result — a *tiny* linear eval + alpha-beta + **TDLeaf(λ)**
+(TD update applied to the leaf of the search PV, dense signal) went **1650→2150 Elo in 308 games / 3 days**, and
+crucially found **varied real opponents beat self-play**, and needed a **sensibly-initialized eval** (material values,
+not random). That vindicates the "play a Stockfish level-curriculum with outcome reward" instinct, but says value/eval
+is the *mechanism* (not droppable) and learning must be **online** (bootstrapped target goes stale if frozen/accumulated).
+So: land the Chessformer position-encoding win first to get a stronger base eval, *then* layer TDLeaf on top of it.
+This D39 covers the arch lever; TDLeaf is a later decision.
+
+```bash
+# A/B once implemented: absolute (current) vs Shaw relative, S2, matched data/LR.
+python scripts/scaling_sweep.py --sizes S2 --max-positions 20000000 \
+  --lr-transfer constant --base-lr 1.5e-4 --device cuda --pos-encoding absolute \
+  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
+  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
+  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
+  --train-pgn data/raw/lichess_elite_2025-10.pgn --out reports/scaling_law/posenc_s2_20M_absolute.json
+python scripts/scaling_sweep.py --sizes S2 --max-positions 20000000 \
+  --lr-transfer constant --base-lr 1.5e-4 --device cuda --pos-encoding shaw \
+  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
+  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
+  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
+  --train-pgn data/raw/lichess_elite_2025-10.pgn --out reports/scaling_law/posenc_s2_20M_shaw.json
+```
+
+**Result (A/B, S2 @ 20M positions, LR 1.5e-4, matched data/seed).** The absolute arm reuses the D38 20M run (same
+config, seed 42, pre-dated the flag → was `pos_encoding="absolute"` by construction). Shaw wins, modestly but real:
+
+| metric | absolute | shaw | Δ |
+|--------|----------|------|---|
+| eval top-1 | 37.65% | **38.56%** | **+0.91pp** |
+| eval policy CE | 2.0437 | **2.0382** | −0.0055 |
+| eval value MSE | 0.6999 | 0.6987 | −0.0012 (flat) |
+| params | 14.89M | 15.22M | +2% |
+
+Not noise: top-1 SE over the 50k-position eval slice at p≈0.38 is ~0.22pp, so +0.91pp is **~4 SE**. Scale-equivalent:
+on the D37 params arm a params-doubling bought ~+0.48pp top-1, so Shaw's **+0.91pp ≈ 1.9 doublings of accuracy for
++2% params** — a strongly favorable efficiency trade. But CE (−0.0055) moved only ~⅓ of a doubling: **Shaw sharpens the
+argmax (top-1) more than the full distribution (CE)**. Value MSE dead flat (0.699→0.699), as expected — value is a
+target-quality problem (D35/D37), untouched by any attention trick.
+
+Calibration vs Chessformer: they reported +1.83% policy accuracy ("≈ doubling"); we got **+0.91pp, ~half**. Same
+direction, same order; the gap is plausibly because we are data-starved at 20M (their effect measured at scale), a
+smaller model, and we dropped the a^V relative-value term when refolding onto `F.scaled_dot_product_attention` for the
+fused kernel (4.44× faster, logits identical to the a^V-free path to 9.5e-7; a^V is the least important Shaw term).
+
+Verdict: the arch lever is real, cheap, and stacks with the dominant data lever (D38). Next: re-run the 40M data point
+with shaw to test whether the gain **compounds with data** (Chessformer predicts it grows at scale). If it does, make
+`pos_encoding="shaw"` the default and treat it as the stronger base eval that a later TDLeaf stage sits on.
+
+```bash
+python scripts/scaling_sweep.py --sizes S2 --max-positions 40000000 \
+  --lr-transfer constant --base-lr 1.5e-4 --device cuda --pos-encoding shaw \
+  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
+  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
+  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
+  --train-pgn data/raw/lichess_elite_2025-10.pgn --out reports/scaling_law/posenc_s2_40M_shaw.json
+```
+
+**Update — shaw made the default.** shaw-40M ran: top-1 **44.52%** (+5.96pp over shaw-20M — the data lever is still
+steep). On that basis `KibitzerConfig.pos_encoding` is flipped `"absolute" → "shaw"`: every new model now uses relative
+attention unless a flag says otherwise. Safe because each checkpoint saves its own `config` and `inference.py` rebuilds
+from it, so pre-existing absolute checkpoints still load correctly; the only paths that would mis-build are
+`gate_value.py` / `distill_stockfish.py`, which hardcode `Kibitzer(KibitzerConfig())` — both are the dead-end
+distill/value-gate scripts and not on the live path. Full test suite green (80 passed).
+
+Still open (deferred, not blocking the default): the **absolute-40M** counterfactual, to settle whether Shaw's edge
+compounds with data (absolute-40M ≈ 43.6% → parallel curves; < 43.6% → compounds). The default flip stands on the 20M
+A/B regardless of how that lands.
+
+### D40 — TDLeaf(λ): value learns from its own search leaves, online vs Stockfish curriculum
+After the D30–D35 verdict (value-target repair improves the offline metric but not play; *offline value ≠ play at
+this scale*), the chosen next swing is the one thing that campaign never did: **couple value *learning* to search**.
+D30–D35 searched at inference over a *statically* trained value head; TDLeaf trains the head *from its own search
+leaves*. That is the KnightCap mechanism (arXiv:cs/9901002), which took a tiny linear eval 1650→2150 Elo in 308
+games by TD-updating the minimaxed PV-leaf eval against varied real opponents.
+
+**Adaptation to the MCTS model.** `puct_search` returns `root_value` (mean over simulations, side-to-move POV) — the
+analog of KnightCap's minimaxed PV-leaf eval. Over the model's own-move sequence `V_0..V_{T-1}` (already model POV,
+since side-to-move == model at those plies) with terminal game result `z`, form forward-view **TD(λ)** targets
+`G_t = V_t + Σ_{k≥0} λ^k δ_{t+k}`, `δ_j = V_{j+1} − V_j`, `V_T = z`. Regress the network's **raw** value head onto
+`G_t` (semi-gradient MSE). Bootstrapping on search values gives a dense, lower-variance target than the ±1
+game-result label — the thing D35 identified as the actual defect.
+
+**Scope (deliberate).** Freeze encoder + trunk + policy head; train **only the value head + final RMSNorm**
+(33,281 params). PUCT leans on the 44.5%-top-1 SFT priors — letting policy drift under a noisy TD signal risks
+wrecking the one thing that works. Isolates the TDLeaf effect and is cheap. Follow-up if it shows life but caps:
+unfreeze the last trunk block.
+
+**Base:** `runs/scaling/S2.pt` (shaw, 15.22M, 44.5% top-1 — the D38/D39 shaw-40M base). **Online cadence:** play K=4
+games → TD(λ) targets → grad step → the same in-memory model is what search uses next game (no reload). **Opponent
+curriculum:** Stockfish `UCI_Elo` ladder 1320→1500→1700→1900→2100, advance when the rolling 20-game score ≥ 0.60.
+Game diversity from randomized openings (PUCT argmax + fixed-Elo Stockfish are near-deterministic).
+
+**Build:** `scripts/train_tdleaf.py` (reuses `puct_search`, `ModelEvaluator`, `board_to_tensor`, Stockfish engine).
+TD(λ) math unit-verified (λ=0 → one-step TD, λ=1 → Monte Carlo). Smoke (4 games, 48 sims, 60-ply cap): loop +
+grad step work (MSE 0.075→0.063), 1W/3D vs SF-1320, **~8.5 s/game** → real config ~25–30 s/game, ~200 games in ~1.5–2h.
+
+**Falsifiable gate (given D35).** After ~200 games, play-gate the repaired value vs SF-1320 at 256 sims, N≥40
+(`scripts/eval_search_vs_stockfish.py`). Clear beat of D35's ~0.2 plateau (≥~0.35, ~2 SE) → the search-coupled
+signal moved the ceiling, continue/scale. Flat ~0.2 → the wall is re-confirmed at laptop scale and TDLeaf is not the
+lever either. Bounded, falsifiable bet.
+
+```bash
+systemd-inhibit --what=sleep:idle:handle-lid-switch --mode=block \
+  python scripts/train_tdleaf.py --games 200 --simulations 64 --lam 0.7 --lr 1e-4 \
+  --out runs/tdleaf/tdleaf.pt --log reports/tdleaf/tdleaf_log.jsonl
+```
+
+**Result (D40, controlled gate).** Ran the 2×2 — {untrained shaw base `S2.pt`, TDLeaf-trained} × {SF-1320, SF-1900},
+256 sims, N=40, fixed opening set, Wilson 95% CIs:
+
+| condition | score | W/D/L | 95% CI |
+|-----------|-------|-------|--------|
+| base @1320 | 0.975 | 39/0/1 | [0.871, 0.996] |
+| tdleaf @1320 | 0.975 | 39/0/1 | [0.871, 0.996] |
+| base @1900 | 0.738 | 27/5/8 | [0.585, 0.849] |
+| tdleaf @1900 | 0.762 | 26/9/5 | [0.611, 0.868] |
+
+**TDLeaf added no measurable strength.** Δ@1900 = **+0.025** (SE≈0.085, z≈0.30 — indistinguishable from zero);
+@1320 identical (saturated). The training-time curriculum climb (1320→1900) at 64 sims and the ceiling-break are
+**entirely the base + deep search**, not the value repair. This is D35's "offline value ≠ play" verdict reproduced
+even for the *untried* mechanism (value *learning* coupled to search): coupling didn't help either. Minor texture:
+TDLeaf shifted 1900 from 27W/5D/8L → 26W/9D/5L (fewer losses, more draws — slightly risk-averse value), net noise.
+
+**The real headline is the base, not TDLeaf.** The *untrained* shaw base at 256 sims scores **0.975 vs SF-1320**
+(D35's old base capped ~0.2) and **0.738 vs SF-1900**. The D35 laptop-scale ceiling is decisively broken — by
+**architecture (shaw) + data (D38) + search depth (64→256 sims)**, the three levers with live evidence. Value-head
+training (static targets D30–D35, or search-coupled TDLeaf here) remains a dead lever for *strength* at this scale.
+
+Verdict: TDLeaf is **not** the path; **stop the value-head line of attack entirely**. The productive frontier is
+scaling the base (more data / larger shaw model, D37–D39) and paying for deeper search at inference. Figures:
+`reports/tdleaf/fig_panelA_curriculum.png`, `reports/tdleaf/fig_tdleaf_result.png`.
+
+### D41 (staged, not launched) — Scale the shaw base on data; TDLeaf/self-play retired
+Post-D40 direction: strength = base (shaw arch D39 + data D38) + inference search depth; the value-head lever is
+retired (D30–D35 static, D40 search-coupled, both null). No self-play/RL — TDLeaf *was* the honest self-play-vs-Stockfish
+test and it added +0.025 (noise). Plan is staged supervised scaling of the shaw base, re-gated with 256-sim search.
+
+Stage 1 (ready, ~11h, held for an uninterrupted window): S2 shaw, 40M→80M positions (clean 2× extending the D38
+curve 5→20→40→80M), all 10 training months, eval 2025-11, LR pinned 1.5e-4. Added interim checkpointing to
+`scaling_sweep.py` (`--save-every`, saves mid-run so an interrupt keeps the latest partial model — fixes the
+absolute-40M total-loss failure mode). Writes to a fresh `runs/scaling_shaw_data/` so the `runs/scaling/S2.pt`
+TDLeaf base is preserved. Stage 2 (conditional on Stage 1 top-1 climbing past 44.5%): S3 shaw + more data.
+
+```bash
+systemd-inhibit --what=sleep:idle:handle-lid-switch --mode=block \
+  uv run python scripts/scaling_sweep.py --sizes S2 --max-positions 80000000 \
+  --pos-encoding shaw --lr-transfer constant --base-lr 1.5e-4 --device cuda \
+  --save-every 5000 --ckpt-dir runs/scaling_shaw_data \
+  --out reports/scaling_law/data_arm_s2_80M_shaw.json \
+  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
+  --train-pgn data/raw/lichess_elite_2025-01.pgn --train-pgn data/raw/lichess_elite_2025-02.pgn \
+  --train-pgn data/raw/lichess_elite_2025-03.pgn --train-pgn data/raw/lichess_elite_2025-04.pgn \
+  --train-pgn data/raw/lichess_elite_2025-05.pgn --train-pgn data/raw/lichess_elite_2025-06.pgn \
+  --train-pgn data/raw/lichess_elite_2025-07.pgn --train-pgn data/raw/lichess_elite_2025-08.pgn \
+  --train-pgn data/raw/lichess_elite_2025-09.pgn --train-pgn data/raw/lichess_elite_2025-10.pgn
+```
+
+---
+
+## D42 — 100M data-arm run with in-loop SF-1900 early stopping
+
+Supersedes D41's 80M target: push the S2 shaw data arm to **100M positions** (extends the D38 curve
+5→20→40→100M). Two changes to `scaling_sweep.py`:
+
+1. **In-loop play eval + early stop.** Every `--eval-every` positions (default here 20M → 5 eval points)
+   the in-training model is wrapped in a `ModelEvaluator` and plays `--eval-games` games (20) vs
+   **Stockfish 1900** using PUCT at **64 sims** — 64 chosen over 256 because it is ~2.5× faster and we only
+   need the *trend*, not an absolute strength number (D40's 0.738 was a 256-sim headline; here we track slope).
+   Early stop when the play score fails to beat the running best by `--eval-min-delta` (0.02) for
+   `--eval-patience` (2) consecutive evals. Rationale: D38 top-1 was still climbing steeply at 40M, so a real
+   plateau in the 60–100M range is the signal we want to cut on; N=20 @ 64 sims is noisy (~0.11 std) so
+   patience=2 tolerates a single dip. The eval runs *between* optimizer steps and never calls the optimizer,
+   so it does not perturb training numerics — the 100M point still lands cleanly on the fp32 curve.
+
+2. Eval is **opt-in** (`--eval-every 0` = off, the default) so existing offline-only invocations are unchanged.
+
+Precision decision (from this session): stayed **fp32** on the local 4060 rather than bf16 or a rented pod —
+GPU probed at ~94% util (compute-bound, not starved, so workers/parallelism buy nothing), and Prime balance
+($4.44) plus a 1.3 GB-VRAM tiny model plus 2.9 GB PGN upload made renting non-viable and numerically riskier.
+fp32 overnight keeps the 100M point comparable to the 5/20/40M points.
+
+```bash
+systemd-inhibit --what=sleep:idle:handle-lid-switch --mode=block \
+  uv run python scripts/scaling_sweep.py --sizes S2 --max-positions 100000000 \
+  --pos-encoding shaw --lr-transfer constant --base-lr 1.5e-4 --device cuda \
+  --save-every 5000 --ckpt-dir runs/scaling_shaw_data \
+  --out reports/scaling_law/data_arm_s2_100M_shaw.json \
+  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
+  --eval-every 20000000 --eval-elo 1900 --eval-games 20 --eval-sims 64 \
+  --eval-patience 2 --eval-min-delta 0.02 \
+  --train-pgn data/raw/lichess_elite_2025-01.pgn ... (through 2025-10)
+```
+
+---
+
+## D43 — 100M shaw data point + Elo per checkpoint + HF artifact
+
+Final point of the S2 shaw data arm (D42 run, 100M positions, 15.3h, fp32, LR 1.5e-4 constant, no early stop).
+
+Offline (held-out Lichess Elite 2025-11): **top-1 49.45%** (5M abs 30.92% → 20M shaw 38.56% → 40M 44.52% →
+100M 49.45%), **value MSE 0.650** (0.699 → 0.678 → 0.650). Data scaling still climbing at 100M; no plateau.
+
+In-loop SF-1900 @ 64 sims (the falsifiable play signal, N=20/point): 20M 0.250 → 40M 0.350 → 60M 0.650 →
+80M 0.775 → **100M 0.825**. Monotonic — play strength scales with data, contradicting the earlier apparent
+256-sim plateau (which was two noisy N=20 points at 49M/73M both = 0.800).
+
+Elo table (256-sim PUCT vs Stockfish UCI_Elo, single-anchor SF-1900, Wilson CI; N=20):
+| ckpt | vs SF-1900 | Elo | 95% CI |
+|---|---|---|---|
+| base | 0.738 | 2080 | [1913, 2247] |
+| 49M | 0.800 | 2141 | [1959, 2323] |
+| 73M | 0.800 | 2141 | [1959, 2323] |
+| 100M | 0.900 | 2282 | [2046, 2517] |
+
+100M gauntlet (256 sims): SF-1900 0.900 (20g), SF-2100 0.700 (15g), SF-2300 0.833 (15g). 3-level weighted
+logistic fit ≈ **2470**, but levels are non-monotonic (2100<2300) so the fit is noise-inflated; defensible
+range **~2280–2470**. 100M is clearly the strongest (base +~200 Elo).
+
+Artifact: highest-Elo checkpoint (100M) pushed to **https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-100m**
+(S2_shaw_100M.pt + custom model card). Checkpoints preserved at runs/scaling_shaw_data/checkpoints/{S2_shaw_49M,73M,100M}.pt.
