@@ -47,6 +47,7 @@ lightning_logs/
 wandb/
 mlruns/
 data/
+*.log
 
 # Editors / OS
 .vscode/
