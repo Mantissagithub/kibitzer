@@ -1,1251 +1,314 @@
-# Kibitzer — Decision Log
-
-Goal: build kibitzer into a **3000+ Elo chess model** that can compete with and
-ultimately beat Stockfish at that level. Previous budget limits, infrastructure
-constraints, and training plans recorded below are historical decisions, not current
-constraints. Current work must run on an **RTX 4060 laptop GPU with 8 GB VRAM**. The
-next decision must state the strongest evidence-backed path toward 3000+ that fits
-this hardware, its cost, its measurable success criterion, and the condition for
-continuing or abandoning it.
-
----
-
-## Context inherited from prior sessions
-- Student `kibitzer`: ~28M-param causal transformer, policy over 4672 AZ moves + tanh
-  value. **History-dependent** (forwards full game history; single-position play ≈ 0%).
-- SFT baseline ≈ Stockfish-1320. Value head poorly calibrated (≈0 even up a queen).
-- Prior RL/distill attempts (AZ outcome, AZ Stockfish-value, offline Stockfish
-  best-move distillation @100k) **all failed to beat the ~1320 baseline**. Offline
-  distillation overfit to **unrealistic generated-game histories** → 0% in real games.
-  → Lesson: train on **realistic histories** + use a **richer teacher signal**.
-
-## Decisions this session
-
-### D1 — Rent the cheapest *apt* non-spot GPU, not the cheapest GPU
-Chose **runpod RTX3090, 32 vCPU (256 cores visible), 125GB RAM, 24GB, $0.48/hr**
-(offer aeba94) over a $0.41 L4 (6 vCPU). Rationale: 100k Stockfish labeling is
-**CPU-bound**, so vCPU count dominates throughput-per-dollar; 24GB trivially fits the
-28M student + 34M teacher. Image `ubuntu_22_cuda_12` (runpod rejected the pytorch
-aliases). Pod id `0719dab48a6c4983845a4ae99dfe27dd`.
-
-### D2 — Keep `.env` local; push to HF only from the laptop
-Synced a tarball of code + `sft_best.pt` + the cached 22k dataset to the pod, **explicitly
-excluding `.env`**. Training runs `hf_push=false` on the pod; checkpoints are pulled back
-and pushed to HF locally via `scripts/hf_persist.py` (reads token from `.env`).
-
-### D3 — Persist all artifacts to the HF `kibitzer` collection
-Wrote `scripts/hf_persist.py` (create repo + upload + add to collection). So far pushed:
-- `Pradheep1647/kibitzer-sft` (baseline model)
-- `Pradheep1647/kibitzer-distill-100k` (the 100k distillation dataset, 100,323 positions)
-Rationale: never regenerate/retrain the same artifact twice.
-
-### D4 — Extend dataset to 100k, generate on the pod
-Used `build_or_extend_dataset` (parallel Stockfish-14.1 labeling, depth 12, 64 workers,
-~125 live SF procs) to grow 22k → **100,323 positions** in ~4 rounds. Realistic-ish
-generation (random_open_plies=3, mixed Elos 1320–2850).
-
-### D5 — Train distillation with eval disabled on the pod; eval locally
-Pod has no cutechess-cli. So: train with `eval_every_steps=0`, save per-epoch checkpoints,
-pull them local, eval vs the Stockfish Elo ladder with cutechess here (catches the best
-epoch — important given the prior epoch-2 overfitting collapse). batch 32, peak_lr 3e-4.
-
-### D6 — Verified ChessBot as the on-policy distillation teacher (~2500–2600)
-`Maxlegrec/ChessBot` (34.7M, PyTorch, LCzero-style, FEN→policy+value). Local bracket
-vs Stockfish (4 games each, 50ms): **100% @1500, 100% @2000, 88% @2500**. First teacher
-capable of pushing the student past the ~1320 ceiling. API: `get_move_from_fen_no_thinking
-(fen, T, return_probs=True)` → `{uci:prob}`; `get_position_value(fen)` → `[bw,draw,ww]`.
-Env pitfall: needs transformers 4.44.x + huggingface-hub<1.0; run via `.venv/bin/python`
-(uv re-syncs lockfile and reverts pins).
-
-### D7 — Built on-policy distillation pipeline (`kibitzer/opd.py`)
-Student self-plays (on-policy → realistic histories *for it*); ChessBot labels each
-position with a **dense policy distribution + value**; train with the existing dense
-`az_loss` (CE to dense target + value MSE + ref-KL to frozen init). Richer than offline
-single-best-move distillation and fixes the history-mismatch failure.
-
-### D8 — Cap Stockfish distillation at 2 epochs, then pivot to OPD  *(user decision)*
-Distillation loss was flat (~2.5–2.9, top1 ~0.2, value MAE ~0.25 not improving) —
-the known-weak approach. User: run **2 epochs**, eval+push the best checkpoint, then put
-remaining budget into OPD (the real path to 2500). Also: maintain this decision log.
-
----
-
-## Cost ledger
-| Item | Rate | Notes |
-|---|---|---|
-| runpod RTX3090 pod | $0.48/hr | started ~03:19 UTC. ~$0.45 spent at the 2-epoch decision. |
-
-## HF artifacts (collection: `kibitzer`)
-- model `Pradheep1647/kibitzer-sft` — SFT baseline (~1320)
-- dataset `Pradheep1647/kibitzer-distill-100k` — 100,323 Stockfish-labeled positions
-
-### D9 — Use TRL's JSD loss inside the native kibitzer OPD loop  *(user decision)*
-User asked to "use trl for opd." Verified TRL's `GKDTrainer`/`DistillationTrainer`
-(on-policy distillation) only wraps HF **CausalLM** text models (token logits + shared
-tokenizer + `.generate()`) — kibitzer (4672-move policy/value net, board-tensor input) and
-ChessBot (FEN→move-dict) don't fit. User chose the middle ground: keep the custom net +
-my loop, but swap the policy term to **TRL's `generalized_jsd_loss`**. Implemented in
-`kibitzer/opd.py::opd_loss`: teacher dense dist → teacher logits (`log p`, legal-masked);
-JSD(student, teacher) + value MSE + ref-KL. Gotcha fixed: TRL's `batchmean` divides by
-`batch*seq`, so logits must be `(B,1,V)` — else the policy term is ~4672× too small.
-Installed `trl==0.11.4` (coexists with the transformers 4.44 pin ChessBot needs).
-
-## Open log (append below as work proceeds)
-- 2-epoch Stockfish distillation running on pod; OPD (TRL-JSD) built + smoke-tested locally.
-- AZ in-training cutechess eval is now disabled by setting `eval_every_iters <= 0`; enabled eval keeps the existing `evaluate_checkpoint` path.
-- Added `scripts/train_selfplay.sh` for pod self-play from `checkpoints/sft_best.pt` with eval off and per-iteration checkpoints in `runs_rl/`.
-- Local dry-run passed with eval off: 1 self-play game, 1 train update, checkpoint written to `/tmp/kibitzer_az_dryrun/az_iter_1.pt`.
-
-### D10 — Stop distillation at epoch 1 (collapsed to 0%); init OPD from SFT
-Pulled the epoch-1 distilled checkpoint (step 3125) and evaluated locally:
-**0% vs SF-1320 and 0% vs SF-1800** — worse than the SFT baseline (42% / 17%). Same
-overfitting collapse as the prior 100k attempt, now visible at epoch 1. Continuing to
-epoch 2 would only waste budget, so killed distillation early. The failed distill
-checkpoint is NOT pushed to HF (0% is not worth persisting). **OPD inits from
-`checkpoints/sft_best.pt`**, not the distilled net. Phase-1 conclusion: offline
-Stockfish best-move distillation does not help this net — confirmed again.
-- Launched OPD (TRL-JSD, ChessBot teacher) on the pod from `sft_best.pt`: 3 rounds,
-  60 games/round, eval off (eval locally), checkpoints to `runs_rl/opd_round_*.pt`.
-- Fixed: ChessBot's `return_probs` crashes on legal moves missing from its vocab
-  (knight underpromotions, e.g. `h7h8n`) — `teacher.label` now falls back to one-hot
-  best-move, then uniform, so generation never dies.
-
-### D11 — OPD round-1 also collapsed (0% vs 1320); trying a gentle, anchored retry
-OPD round-1 (LR 1e-4, temp 0.9, 2 epochs) eval: **0% vs SF-1320, 8% vs SF-1800** — again
-worse than SFT (42% / 17%). Pattern across distill + OPD: **any aggressive training
-collapses this 28M net below its fragile SFT optimum** (looks like catastrophic
-forgetting — overwriting SFT knowledge on the weird self-play positions faster than it
-learns the teacher). Killed the 3-round run (rounds 2/3 trained from the degraded net).
-Retry: **gentle OPD** = LR 2e-5, kl_coef 0.5 (strong anchor to SFT init), student_temp 0.4
-(more realistic positions), 1 round / 1 epoch, 80 games. If this still degrades, the SFT
-~1320 is the real architectural ceiling for this net and 2500 is out of reach via distill.
-
-### D12 — Gate all further OPD/distillation spending on rented-GPU eval
-User clarified that the laptop should not carry heavier runs because local space is tight,
-so evaluation/training should move back to Prime. Current Prime wallet: **$4.93**. No
-active pods. Availability check showed the same non-spot **RTX3090 24GB / 32 vCPU /
-125GB RAM** shape (`aeba94`, ~$0.48/hr) is available; prefer it over H100/H200 because
-this phase is decision-gated evaluation plus a short guarded run, not large-model
-pretraining. Claude Code review was attempted for a second opinion, but the CLI failed
-with `API Error: Unable to connect to API (ConnectionRefused)`, so Codex proceeds from
-repo evidence.
-
-Local sanity eval before the user correction was intentionally tiny and not decision-grade:
-4 games at 200ms gave **SFT 0/4 vs SF-1320** and **`opd_gentle.pt` 0/4 vs SF-1320**;
-PGNs showed one SFT time-forfeit and repeated tactically losing openings. This is useful
-only as a warning that the current eval surface is noisy/sensitive, not as a final Elo
-estimate. The rented-GPU gate should therefore run a paired, same-settings eval:
-
-1. `checkpoints/sft_best.pt` vs SF-1320, enough games to re-anchor the baseline.
-2. `runs_rl/opd_gentle.pt` vs SF-1320 under the same conditions.
-3. If gentle OPD is **not clearly better than SFT** (or at least non-degrading), stop
-   ChessBot OPD and offline distillation; do not spend the remaining budget on a path
-   with repeated catastrophic forgetting.
-4. If gentle OPD preserves/improves the baseline, run only one more **trust-region OPD**
-   probe: lower LR, higher reference KL, short horizon, save every round, then re-eval
-   before any self-play escalation.
-
-Technical rationale: three separate teacher-forcing paths have shown collapse or weak
-transfer, so the next optimal decision is not "more epochs"; it is **sequential
-hypothesis testing** under a hard compute budget. The invariant is monotonic strength
-preservation against the rated ladder. A checkpoint that cannot preserve SF-1320 strength
-must not become the seed for self-play toward 2300/2800, because self-play would amplify
-the degraded policy distribution rather than repair it.
-
-### D13 — Stop OPD/distillation; pivot remaining budget to search/AZ
-Rented Prime pod `75e9d51acb5d491db2b009bad6406cc0` on RTX3090 24GB (`aeba94`,
-~$0.48/hr). Setup copied only source, `checkpoints/sft_best.pt`, and
-`runs_rl/opd_gentle.pt`; `.env` stayed local. Pod had Python 3.11 + CUDA but no `uv`,
-Stockfish, or cutechess. Installed `uv`, `stockfish`, and used a direct
-`python-chess`/`KibitzerEngine` eval because Ubuntu had no `cutechess-cli` package.
-This Stockfish build enforces `UCI_Elo >= 1350`, so the rented-gate opponent is
-**SF-1350**, not SF-1320.
-
-Prime gate results written to `eval_pgns_prime/`:
-
-| checkpoint / mode | opponent | games | result | score |
-|---|---:|---:|---|---:|
-| `checkpoints/sft_best.pt` raw | SF-1350 | 8 | 1W / 5L / 2D | 2.0/8 |
-| `runs_rl/opd_gentle.pt` raw | SF-1350 | 8 | 2W / 6L / 0D | 2.0/8 |
-| `checkpoints/sft_best.pt` + MCTS | SF-1350 | 4 | 2W / 1L / 1D | 2.5/4 |
-
-Decision: **do not spend more GPU on offline distillation or ChessBot OPD**. Gentle OPD
-failed the monotonic-improvement gate: same score as SFT and no clear evidence of
-strength gain. The only positive signal is inference-time search with material blending
-(`Sims=32`, `Material=0.85`, `Cpuct=1.5`), which scored above the raw policies in the
-small Prime gate. Next spend should therefore go to **search-coupled AlphaZero-style
-self-play/training from `sft_best.pt`**, not teacher-forcing. Any self-play checkpoint
-must still pass a paired ladder gate before becoming the new seed.
-
-Budget note: Prime wallet after the gate was **$4.83**; recent billings showed **$0.10**
-compute for pod `75e9d51acb5d491db2b009bad6406cc0` plus the existing image charge. Keep
-the pod only while actively running gated eval/training.
-
-### D14 — One AZ iteration is the only keeper; continuation regressed raw strength
-Ran a bounded AZ/search probe on the same Prime pod, then terminated the pod. Final pod
-state: **0 active pods**, wallet **$4.64**, billed **$0.29 compute** for
-`75e9d51acb5d491db2b009bad6406cc0` plus the image charge.
-
-Training probe 1:
-- Init: `checkpoints/sft_best.pt`
-- Config: stockfish curriculum at **SF-1350**, `sims=32`, `material_weight=0.85`,
-  `context_window=128`, `value_target=stockfish`, `value_stockfish_depth=4`,
-  `peak_lr=5e-5`, `kl_coef=0.2`, 1 iteration, 4 games, 20 update steps.
-- Result: `runs_rl/az_prime_gate/az_iter_1.pt`
-- Trainer metrics: loss **2.4156**, policy **2.1776**, value **0.2380**, ref-KL
-  **0.0001**, entropy **2.0369**, 130 samples, 20 updates.
-- Gate: raw **2.0/8** vs SF-1350 (same as SFT), search **3.0/4** vs SF-1350
-  (better than SFT+search **2.5/4** in the small gate).
-
-Training probe 2:
-- Init: `runs_rl/az_prime_gate/az_iter_1.pt`
-- Config: same curriculum, lower `peak_lr=3e-5`, 2 continuation iterations.
-- Results pulled: `runs_rl/az_prime_gate_cont/az_iter_1.pt` and
-  `runs_rl/az_prime_gate_cont/az_iter_2.pt`.
-- Iter metrics: iter1 loss **2.9372**, policy **2.6678**, value **0.2694**,
-  ref-KL **0.0001**, 127 samples; iter2 loss **2.9219**, policy **2.6555**,
-  value **0.2663**, ref-KL **0.0002**, 221 samples.
-- Gate: `az_prime_gate_cont/az_iter_2.pt` raw eval was **0.0/8** vs SF-1350.
-  Search eval was interrupted after raw failed the stop condition; partial search was
-  2/2, but raw collapse dominates the decision because raw policy preservation is the
-  seed-quality invariant for future self-play.
-
-Decision: keep `az_prime_gate/az_iter_1.pt` as an experimental search-compatible
-checkpoint, but **do not continue from `az_prime_gate_cont/az_iter_2.pt`** and do not
-promote it. The pattern is now consistent across OPD, distillation, and longer AZ
-continuation: the net can get a short search-assisted tactical bump, but additional
-gradient steps rapidly damage the raw policy. Next architecture/training decision should
-focus on preserving raw policy while improving search targets: smaller LR, replay mixing
-with SFT positions, stronger frozen-reference KL to `sft_best`, and promotion only when
-raw SF-1350 score is non-decreasing and search score improves.
-
-### D15 — Make the Prime gate reproducible before spending more GPU
-The previous Prime eval was run through one-off Python snippets because the rented image
-had Stockfish but no `cutechess-cli`. To avoid future decision drift, added
-`scripts/gate_stockfish.py`: a direct `python-chess`/`KibitzerEngine` gate that supports
-multiple checkpoints, raw or MCTS-backed play, JSON output, context-window control, and
-automatic clamping when the installed Stockfish build has a higher `UCI_Elo` minimum
-(e.g. Ubuntu Stockfish 14.1 rejected 1320 and required 1350).
-
-This turns checkpoint promotion into a repeatable invariant:
-
-```bash
-uv run python scripts/gate_stockfish.py \
-  --checkpoint sft=checkpoints/sft_best.pt \
-  --checkpoint az1=runs_rl/az_prime_gate/az_iter_1.pt \
-  --stockfish-path /usr/games/stockfish \
-  --elo 1350 --n-games 8 --device cuda \
-  --out eval_pgns_prime/raw_gate.json
-
-uv run python scripts/gate_stockfish.py \
-  --checkpoint az1=runs_rl/az_prime_gate/az_iter_1.pt \
-  --stockfish-path /usr/games/stockfish \
-  --elo 1350 --n-games 4 --device cuda --search \
-  --sims 32 --material 0.85 \
-  --out eval_pgns_prime/search_gate.json
-```
-
-Verification: `uv run pytest tests/test_gate_stockfish.py -q` passed (**3 passed**),
-`uv run python scripts/gate_stockfish.py --help` worked, and
-`uv run python -m compileall -q scripts/gate_stockfish.py tests/test_gate_stockfish.py`
-passed. This is a tooling decision, not a model-strength claim; no GPU was rented for it.
-
-### D16 — Add SFT-anchor replay before the next AZ spend
-D14 showed the failure mode clearly: short AZ/search training can improve search-mode
-play, but more gradient steps can collapse the **raw policy manifold** to 0/8. Before
-renting again, added an optional supervised-anchor replay path in `kibitzer/az_trainer.py`.
-When `--sft-anchor-data-dir` is provided, the trainer parses elite PGNs into replay
-anchors: real game histories, one-hot targets for the human move, and side-to-move
-game-result values. Each AZ iteration mixes a configurable fraction of those SFT anchors
-into replay after collecting search/Stockfish samples.
-
-New knobs:
-
-```bash
---sft-anchor-data-dir data/raw
---sft-anchor-min-elo 2400
---sft-anchor-max-games 64
---sft-anchor-max-plies 160
---sft-anchor-fraction 0.25
-```
-
-Decision: the next Prime AZ probe should start from `checkpoints/sft_best.pt` or the
-non-collapsed `runs_rl/az_prime_gate/az_iter_1.pt`, but must include SFT-anchor replay,
-strong reference KL, and the reproducible SF-1350 raw/search gate from D15. Promotion
-requires raw SF-1350 score to be non-decreasing and search score to improve; any raw
-collapse means immediate rollback. This is a **trust-region / rehearsal-buffer**
-intervention against catastrophic forgetting, not another attempt to push epochs harder.
-
-Suggested next Prime command shape:
-
-```bash
-uv run python scripts/train_az.py \
-  --init-checkpoint checkpoints/sft_best.pt \
-  --output-dir runs_rl/az_anchor_gate \
-  --device cuda --dtype bfloat16 \
-  --opponent stockfish --stockfish-path /usr/games/stockfish \
-  --stockfish-levels 1350,1500,1800 --stockfish-time-ms 50 \
-  --value-target stockfish --value-stockfish-depth 4 \
-  --sft-anchor-data-dir data/raw --sft-anchor-fraction 0.25 \
-  --sft-anchor-max-games 64 --sft-anchor-max-plies 160 \
-  --n-iterations 1 --games-per-iter 4 --max-plies 120 \
-  --sims 32 --material-weight 0.85 --context-window 128 \
-  --train-steps-per-iter 20 --batch-size 32 \
-  --peak-lr 3e-5 --min-lr 1e-5 --kl-coef 0.5 \
-  --eval-every-iters 0 --checkpoint-every 1 --hf-push false
-```
-
-Verification: `uv run pytest tests/test_az_anchor.py tests/test_gate_stockfish.py -q`
-passed (**7 passed**), `uv run python -m compileall -q kibitzer/az_trainer.py
-scripts/gate_stockfish.py tests/test_az_anchor.py tests/test_gate_stockfish.py` passed,
-and `.venv/bin/python scripts/train_az.py --help` showed the `--sft-anchor-*` flags.
-No GPU was rented for this change.
-
-### D17 — Claude review confirms SFT start; Prime pod attempts were not connectable
-Claude Code was available again and reviewed D14-D16. Recommendation: start the anchored
-AZ probe from **`checkpoints/sft_best.pt`**, not `az_prime_gate/az_iter_1.pt`, because
-`az_iter_1` only had a small 4-game search-mode bump and no raw improvement. The anchored
-run should be treated as an intervention test, not as a continuation of an unvalidated
-checkpoint. Claude also recommended a stricter stop rule:
-
-- run **one anchored iteration only**;
-- abort immediately if raw SF-1350 falls below the SFT raw baseline;
-- promote only on a larger gate, at least **16 raw games** and **8 search games**, where
-  raw is non-decreasing and search improves beyond obvious sampling noise;
-- if raw nudges down but does not collapse, the next cheaper intervention is higher
-  anchor fraction, not more iterations.
-
-Local prerequisite check found **no local `data/*.pgn` anchor files**, so the correct
-execution plan is to download a small Lichess Elite sample on the rented pod, not onto
-the laptop. Prime availability initially failed in-sandbox with DNS errors, then worked
-with an escalated query. Cheap known RTX3090 was unavailable, so three short pod attempts
-were made and terminated when they failed to produce SSH:
-
-| pod | provider / GPU | result | billed |
-|---|---|---|---:|
-| `b154d3e39af546999b425affa41c2a29` | massedcompute A6000 48GB | stuck `PROVISIONING`, no SSH | $0.00 |
-| `cf23443355c74787b1f47bab63e2f41c` | massedcompute RTX6000 Ada 48GB | stuck `PROVISIONING`, no SSH | $0.00 |
-| `92b1b40e3c344ea8a708ad9298165e00` | datacrunch A100 40GB | stuck `PROVISIONING`, no SSH | $0.00 |
-
-Final state after cleanup: **0 active pods**, wallet **$4.64**. Decision: do not keep
-churning providers while the platform is failing to attach; retry later with the same
-SFT-start anchored plan. If Prime availability is healthy, prefer a provider that reaches
-SSH quickly over the absolute cheapest listed GPU, because setup latency is now the
-dominant risk to the remaining budget.
-
-### D18 — Retry with Crusoe also failed to attach; preserve budget
-Retried after a successful escalated availability query. Prime showed wallet **$4.64** and
-no active pods. Cheapest available non-spot GPUs were again massedcompute A6000/RTX6000
-Ada, but those providers had just failed to expose SSH in D17, so chose a different
-backend: **Crusoe L40S 48GB** (`0b28ef`, ~$1.00/hr, pod
-`3d764385665d48368a9198078188e388`). Result: pod stayed `PROVISIONING` with installation
-`PENDING`, no IP/SSH. Terminated before setup. Final state: **0 active pods**, wallet
-**$4.64**, compute billing for the Crusoe attempt **$0.00**.
-
-Decision: the anchored AZ run remains the correct next experiment, but Prime provisioning
-is the blocker, not model code. Do not keep spinning pods in a tight loop. Next retry
-should first require a provider/pod that reaches SSH, then:
-
-1. download a small Lichess Elite sample on the pod;
-2. run one SFT-start anchored AZ iteration with `--sft-anchor-*`;
-3. gate with `scripts/gate_stockfish.py` using SFT baseline vs anchored checkpoint;
-4. promote only if the D17 criteria pass.
-
-### D19 — Convert the next rented-GPU attempt into a single pod-side gate
-Prime provisioning has become the immediate bottleneck, and the remaining budget is small
-enough that setup latency matters. Added `scripts/run_anchor_gate_prime.sh` so the next
-successful SSH pod can run the anchored AZ experiment without retyping one-off commands.
-
-The script deliberately does **not** auto-promote or push anything. It:
-
-1. verifies `uv`, `checkpoints/sft_best.pt`, and Stockfish are present;
-2. downloads one Lichess Elite sample into `data/raw` only if no local anchor PGN exists;
-3. runs exactly one SFT-start anchored AZ iteration with the D16/D17 settings;
-4. gates SFT vs the anchored checkpoint with 16 raw SF-1350 games and 8 search games;
-5. exits with rejection if raw regresses below SFT or search fails to improve.
-
-Decision: use this runner only after a pod reaches SSH. This keeps the rented GPU path
-reproducible and preserves the laptop by downloading anchor data on the pod. No Prime pod
-was rented for D19, and nothing was committed or pushed.
-
-Verification: `bash -n scripts/run_anchor_gate_prime.sh` passed, and the script was made
-executable.
-
-### D20 — Pivot to the searchless-chess recipe: dense ChessBot labels on REAL games, train a fresh base on the laptop
-Repeated catastrophic forgetting (OPD/distill/AZ all produced `-minus-` Elo
-checkpoints on HF) confirmed the SFT base is a fragile, *undertrained* optimum, not an
-architectural ceiling. Grounded the next phase in literature instead of more probes:
-
-- **Grandmaster-Level Chess Without Search** (DeepMind, arXiv:2402.04494): supervised
-  distillation of an engine's **dense per-move action-values** on **real** games, **no
-  self-play, no search**. 9M→2054, 136M→2156, 270M→2299 vs bots (270M = **2895 vs
-  humans on Lichess**). Their ablation: strength "only emerges at sufficient dataset+
-  model scale" — 10k–100k *games* is too little; we'd been training on 100k *positions*.
-- **Stop Regressing** (arXiv:2403.03950): HL-Gauss value-as-classification for a
-  scalable, calibrated value head (the documented fix for our dead value head).
-
-**Target reframe (honest):** a 28M net sits between their 9M/136M, so the realistic
-ceiling is **~2050–2150 vs engines**. The "2800" goal is a *Lichess-vs-humans* number:
-their 270M was 2299 vs bots but 2895 vs humans (a +596 bot/human gap), so ~2100–2200 vs
-engines plausibly reads ~2700–2800 on Lichess blitz vs humans. **2800 engine-strength is
-not realistic for this net, and self-play is not the path** — a strong supervised base is.
-
-**Decisions:**
-- **Label locally, not on free Colab.** Dense labeling is CPU-bound (python-chess legal
-  moves / encoding). The laptop has **24 threads** vs free Colab's ~2 vCPU; ChessBot
-  (34.7M) needs **<1GB VRAM**, so the 4060's 8GB and 16GB T4 are both overkill. No robust
-  `colab-cli` for headless GPU rental; rejected.
-- **Real positions only.** Walk real Lichess PGNs; **do not** reuse
-  `kibitzer-distill-100k` (the failed unrealistic-history set) or any `kibitzer-az/
-  distill-elo-minus-*` HF checkpoint (all worse than baseline).
-- **Train from scratch.** Every warm-start from the SFT manifold collapsed; random init +
-  the searchless recipe cleanly escapes it. `checkpoints/sft_best.pt` (the ~1212 baseline,
-  already local; canonical `kibitzer-sft`) stays only as the gate baseline / optional
-  warm-start knob. **Nothing needs pulling from the HF collection for this.**
-- **HL-Gauss deferred:** kept the scalar tanh value head + MSE for now (the deadness was
-  collapse/undertraining, not MSE). HL-Gauss becomes an *additive* value-bucket head only
-  if the gate shows value is still miscalibrated.
-
-**Built (all local, 7 tests passing, compileall clean):**
-- `kibitzer/chessbot_label.py` + `scripts/label_chessbot.py`: stream real PGNs → label each
-  position with ChessBot's dense legal-move policy + value → **sparse, sharded** storage
-  (~280 B/position → 1M ≈ 280 MB). Teacher imported lazily; parsing works in any env.
-- `kibitzer/shard_trainer.py` + `scripts/train_shards.py`: **RAM-bounded streaming**
-  (one shard + a fixed shuffle buffer, independent of dataset size), dense-policy CE +
-  value MSE, grad accumulation (eff. batch 256 on 8GB), cosine LR, **`--resume`** for
-  multi-day runs. Scale lever is purely labeling volume — aim for **5–10M positions**, not 1M.
-- Tests: `tests/test_chessbot_label.py`, `tests/test_shard_trainer.py` (real CPU train + resume).
-
-**Measured resource use:** base imports **367 MB** RSS; full labeling process est.
-**~2–2.5 GB host RAM**, **<1 GB VRAM** — no need to close apps for RAM, only mild VRAM
-headroom for a long run. Disk: 24 GB free, ample.
-
-**Env pitfall (recurring):** the venv reverted to `huggingface-hub==1.14.0`, breaking the
-`transformers 4.44` ChessBot needs. Re-pin via the venv python directly (sticks because we
-do **not** use `uv run` for the teacher):
-`.venv/bin/pip install "transformers==4.44.2" "huggingface-hub<1.0"`.
-
-**Blocker / next step:** no local `data/raw/*.pgn` yet (same as D17). The chain is
-label → train → gate; training cannot start until a Lichess Elite sample is fetched and
-labeled. Run order:
-```bash
-.venv/bin/pip install "transformers==4.44.2" "huggingface-hub<1.0"
-.venv/bin/python scripts/label_chessbot.py --pgn-dir data/raw \
-  --out-dir data/chessbot_labeled --min-elo 2200 --position-stride 2 --device cuda
-uv run python scripts/train_shards.py --data-dir data/chessbot_labeled \
-  --output-dir runs_base --batch-size 16 --grad-accum-steps 16 --epochs 4
-uv run python scripts/gate_stockfish.py --checkpoint sft=checkpoints/sft_best.pt \
-  --checkpoint base=runs_base/base_final.pt --elo 1350 --n-games 16
-```
-
-### D21 — Executed the dense-policy base run end-to-end; it converged but is strictly weaker than SFT. Policy distillation from ChessBot is a dead end; pivot to action-values
-Ran the full D20 plan locally on the 4060 (no GPU rental; wallet untouched).
-
-**Pipeline executed (all built + tested this session):**
-- **Labeling sped up ~12x.** `kibitzer/chessbot_label.py` got `BatchTeacherLabeler` (batches ChessBot's
-  forward — policy *and* value in one pass — + dict move-index lookup replacing an O(1929) `list.index()`
-  called ~60k times/position) and `label_pgn_dir_parallel` (3 GPU-sharing spawn workers, round-robin
-  game shards). Bench: ~110 pos/s -> **~1,030 pos/s**, peak ~1.2GB VRAM. (6-worker test: same throughput,
-  GPU-saturated at 3.)
-- **Data:** labeled `data/raw/lichess_elite_2024-11.pgn` (272,548 games, 2300/2500+) ->
-  **11,788,146 positions**, 546 sparse shards, ~3h. Pushed public to
-  **`Pradheep1647/kibitzer-chessbot-dense-12m`** (added to the `kibitzer` collection) via a new
-  `--folder` path in `scripts/hf_persist.py` (`upload_large_folder`).
-- **Trainer:** `kibitzer/shard_trainer.py` streams shards RAM-bounded with a DataLoader **prefetch**
-  pipeline (`ShardIterableDataset`, 6 workers encode in parallel, pin_memory) so the GPU stays fed.
-- **Gate hardened:** `scripts/gate_stockfish.py` gained `--opening-random-plies` + `--seed` (seeded
-  openings shared across checkpoints = paired, low-variance comparison) after 16-game evals proved too
-  noisy (SFT swung 2.5/16 -> 5.5/16 between runs).
-
-**Training:** from scratch, ChessBot **dense policy** targets + scalar value MSE, ctx-window 8, eff-batch
-256, cosine LR. **GPU-bound at ~427 pos/s** (4060 power-capped at 77W; 92-95% util — prefetch worked, the
-GPU itself is the ceiling, ~7 effective TFLOPS not the 15-30 I estimated). 2 epochs = ~15h. Loss converged
-cleanly (policy 3.35->~1.77, value 0.28->0.056) — **the first training run in this project's history that
-did NOT collapse** (cf. all the `-minus-` OPD/distill/AZ checkpoints). Stopped at **step 68,000/92,096**
-(checkpoints every 1k; resumable) once the eval verdict was conclusive.
-
-**Eval verdict (SF-1350):**
-| | raw | search (sims32, mat0.85) |
+# Kibitzer — Training Decision Log
+
+Goal: train a **3000+ Elo** chess model that can compete with Stockfish while keeping
+the training path runnable on an **RTX 4060 Laptop GPU with 8 GB VRAM**.
+
+Only decisions that change the model, data, target, loss, optimization, curriculum,
+or checkpoint-promotion rule belong in this file.
+
+## D1 — Reject offline best-move distillation on generated histories
+
+The original history-dependent 28M model was distilled on **100,323** Stockfish-14.1
+positions labeled at depth 12. Positions came from generated games with three random
+opening plies and opponent levels from 1320 to 2850. Training used batch 32 and peak
+LR `3e-4`.
+
+Epoch 1 scored **0% vs SF-1320** and **0% vs SF-1800**, compared with the supervised
+baseline at 42% and 17%. This reproduced the earlier collapse: generated histories
+did not match the histories encountered during real play, and additional teacher
+forcing destroyed the fragile supervised policy.
+
+Decision: stop after epoch 1. Do not use offline single-best-move distillation on
+generated histories again.
+
+## D2 — Reject ChessBot on-policy distillation
+
+`Maxlegrec/ChessBot` was strong enough to serve as a teacher: in a small local bracket
+it scored 100% vs SF-1500, 100% vs SF-2000, and 88% vs SF-2500. The student generated
+its own positions; ChessBot supplied a dense legal-move distribution and scalar value.
+The loss was generalized JSD on policy logits, value MSE, and KL to the frozen initial
+student. JSD inputs used shape `(B, 1, 4672)` so TRL's `batchmean` reduction did not
+divide the policy term by the vocabulary size.
+
+The aggressive run (`lr=1e-4`, two epochs) scored **0% vs SF-1320**. A trust-region
+retry (`lr=2e-5`, reference KL 0.5, student temperature 0.4, one epoch) only matched
+the baseline in the paired gate: both scored **2/8 vs SF-1350**.
+
+Decision: stop ChessBot policy distillation. On-policy sampling fixed the history
+distribution but did not prevent catastrophic forgetting.
+
+## D3 — Bound AlphaZero-style training by raw-policy preservation
+
+A search-coupled probe started from the supervised checkpoint and used SF-1350,
+32 PUCT simulations, material weight 0.85, Stockfish depth-4 value targets,
+`lr=5e-5`, reference KL 0.2, four games, and 20 updates.
+
+The first iteration preserved raw play at **2/8 vs SF-1350** and improved the small
+search gate to **3/4**, versus the supervised checkpoint at 2.5/4. Continuing for two
+iterations at `lr=3e-5` collapsed raw play to **0/8**.
+
+Decision: a search improvement cannot promote a checkpoint if raw policy strength
+regresses. Additional AZ iterations from a degraded checkpoint are forbidden; raw
+play is the seed-quality constraint.
+
+## D4 — Train dense targets only on real positions
+
+To remove generated-history mismatch, the next base was trained from scratch on
+**11,788,146 positions** from 272,548 Lichess Elite games. ChessBot supplied dense
+policy targets and values. Training used context window 8, effective batch 256, cosine
+LR, and streamed shards. At step 68,000, policy loss had fallen from 3.35 to about
+1.77 and value MSE from 0.28 to 0.056 without optimization collapse.
+
+Gameplay still failed. Against SF-1350, the model scored **3/40 raw** and **0.5/8 with
+search**, versus the supervised baseline at 11/40 raw and 4/8 with search.
+
+Decision: real positions are mandatory, but ChessBot's dense policy head is not a
+sufficient target. Its playing strength comes from value-based move selection, not
+from the policy distribution being distilled.
+
+## D5 — Preserve action-value argmax information in the target
+
+The same real-position pipeline was relabeled with ChessBot values after every legal
+move. The first 500k-position run converted values to
+`softmax(move_value / 0.1)`. It scored **3% vs SF-1350** at both step 2,000 and step
+5,000 and produced near-random policies with entropy about 2.79.
+
+The target was defective: legal-move values were tightly clustered, so temperature
+0.1 assigned only 0.14–0.21 probability to the best move. Temperature 0.03 produced
+0.34–0.65 and temperature 0.01 produced 0.65–0.93.
+
+Decision: never discard the teacher's decisive argmax through an over-soft target.
+Store raw action values and choose temperature at train time, or use a one-hot target
+on the value-best move. The failed 500k run does not falsify action-value supervision.
+
+## D6 — Remove game-history dependence
+
+Chess is Markovian for move selection: the current board, side to move, castling
+rights, en-passant state, and clocks contain the relevant state. The causal history
+trunk created a distribution-matching burden without adding useful move-quality
+information and repeatedly overfit to game paths.
+
+Decision: rebuild from scratch as a **single-position model**. Keep the 64-square
+position encoder and set the temporal context to one. Initial policy supervision is
+one-hot behavioral cloning of moves played in 2300/2500+ Lichess Elite games. Initial
+value supervision is separated from policy training so a weak value target cannot
+damage the policy representation.
+
+## D7 — Use staged policy training followed by a frozen-representation value fit
+
+The clean rebuild trained policy on **5M positions per epoch for three epochs** with
+batch 128. The value head was then trained alone on **250k game-disjoint positions**
+labeled by Stockfish depth 14; 224,990 positions were used for training and 25,010 for
+evaluation.
+
+Value performance peaked at epoch 4: MSE **0.0637**, Pearson **0.5235**, sign accuracy
+66.28%, and R2 **0.2736**. Epoch 5 improved sign accuracy only to 66.58% while MSE,
+Pearson, and R2 regressed.
+
+At 64 PUCT simulations the model scored 10% vs SF-1320; at 256 simulations it scored
+5%. Deeper search reduced capped ACPL from 126.7 to 118.7 cp and major blunders from
+51 to 42, but did not improve match score.
+
+Decision: retain the clean single-position policy base. Stop the value-only stage at
+epoch 4 and do not treat more simulations as a substitute for a better value model.
+
+## D8 — Joint Stockfish distillation must preserve every epoch and use constrained selection
+
+Joint distillation started from the clean value checkpoint. Stockfish depth-14
+MultiPV-8 labeled 250k cached positions. Both heads, final norm, and the last three
+trunk blocks were trainable; earlier layers stayed frozen. Training used batch 128,
+five epochs, `lr=1e-4`, and equal policy/value loss weights.
+
+Policy CE improved from 2.6014 to **2.5801** by epoch 3, but value quality peaked at
+epoch 1: MSE **0.0717**, sign accuracy **66.74%**, and R2 **0.2872**. The scalar selector
+`policy_CE + value_MSE` incorrectly selected epoch 3 because CE changes dominated MSE
+changes. That checkpoint scored 20% at 64 simulations and 5% at 256 simulations.
+
+Decision: save every epoch. Multi-head selection must apply value and policy floors
+before ranking candidates; unlike metrics must not be added without normalization.
+The joint checkpoint is rejected because deeper search amplified its value errors.
+
+## D9 — Gate training changes on a locked common oracle
+
+Training decisions use real positions from unseen PGN months. A depth-20 Stockfish
+oracle contains separate game-disjoint validation and test splits, each with 200
+positions in four absolute-score bins: `<0.5`, `0.5–2`, `2–5`, and `>5` pawns.
+All checkpoints use `clip(cp / 1000, -1, 1)` as the value transform.
+
+Policy evaluation reports exact-best accuracy, within-50cp accuracy, mean/p90/p95
+regret, and paired bootstrap intervals. Value evaluation reports MAE and sign accuracy
+per score bin. PUCT configuration is selected on validation; the test split is consumed
+only after a candidate passes validation.
+
+Decision: match WDL and aggregate MSE alone are too noisy to direct laptop-scale
+training. A checkpoint must show paired improvement and preserve tactical sanity before
+it can replace the current base.
+
+## D10 — Repair value targets only after auditing teacher-label headroom
+
+A deterministic audit re-evaluated 3,000 cached depth-14 positions at depth 20.
+Bounded-value MAE was **0.0217**, sign disagreement 2.90%, and decisive/won-bin sign
+disagreement 0%. Teacher depth was therefore far below the model's 0.165 validation
+MAE and was not the bottleneck.
+
+The first repair trained only the value head with inverse-frequency score-bin sampling
+(exponent 0.5, maximum weight 1.894), three epochs, and `lr=1e-4`. Epoch 1 improved
+decisive sign from 66.5% to 68.5% and natural-weighted MAE from 0.16527 to 0.16341.
+At 64 simulations it improved mean regret by 8.52 cp over the previous checkpoint, but
+the paired 95% interval was `[-2.38, 20.68]`; near-best improvement was also
+indistinguishable from zero.
+
+Adding final RMSNorm capacity with policy KL anchoring regressed held-out value metrics
+despite 99.84% policy top-1 agreement. The bounded last-block repair also failed to
+produce a promotable checkpoint.
+
+Decision: stop this value-repair lineage. Label quality had sufficient headroom;
+generalization, not Stockfish depth or policy drift, was the failure.
+
+## D11 — Reject offline value metrics as a strength proxy
+
+A full model trained from random initialization with joint policy and game-result value
+targets improved decisive sign from 65.95% to **72.62%** and won-position sign from
+81.32% to **86.73%**. It simultaneously reduced overall sign accuracy from 66.58% to
+63.50% and Pearson from 0.5226 to 0.4796.
+
+The offline gains did not transfer to play. Against SF-1320, the existing cp-value
+model and the joint-scratch model both scored 0.100 at 64 simulations; at 256 they
+scored 0.225 and 0.175. Increasing the cp-value model to 512 simulations produced
+0.200, within noise of the 256-simulation result.
+
+Decision: do not optimize value-head metrics in isolation. Strength must be validated
+in paired play or move-regret evaluation, and search beyond 256 simulations is not a
+training path by itself.
+
+## D12 — Replace point experiments with a controlled scaling study
+
+All subsequent base-model work uses an attention-first family and measures policy
+scaling at fixed data and data scaling at fixed model size. The primary metric is
+held-out policy cross-entropy on game-disjoint Lichess Elite moves; top-1 move match is
+the capability metric and value MSE is secondary. LR transfers by width and uses warmup
+plus cosine decay.
+
+The measured model ladder is:
+
+| tag | width | trunk blocks | parameters |
+|---|---:|---:|---:|
+| S0 | 128 | 6 | 2.98M |
+| S1 | 192 | 8 | 7.43M |
+| S2 | 256 | 10 | 14.89M |
+| S3 | 320 | 10 | 22.89M |
+
+Decision: change one scaling variable at a time. Do not infer architectural limits
+from one fixed 32M-class model or from noisy short matches.
+
+## D13 — Data, not parameter count, is the dominant scaling lever
+
+At a fixed 5M positions, the parameter sweep produced:
+
+| model | policy CE | top-1 | value MSE |
+|---|---:|---:|---:|
+| S0 | 2.3570 | 30.20% | 0.7118 |
+| S1 | 2.3339 | 30.78% | 0.7213 |
+| S2 | 2.3288 | 30.92% | 0.7177 |
+| S3 | 2.3097 | 31.61% | 0.7211 |
+
+A 7.7x parameter increase reduced CE by only 0.047 and improved top-1 by 1.41 points.
+Value MSE was flat. The policy curve had not saturated, but every rung was severely
+undertrained.
+
+Holding S2 and `lr=1.5e-4` fixed, increasing data from 5M to 20M positions reduced CE
+from 2.3288 to **2.0437**, increased top-1 from 30.92% to **37.65%**, and reduced value
+MSE from 0.7177 to 0.6999. CE improved about **0.1425 per data doubling**, versus
+0.0147 per parameter doubling.
+
+Decision: prioritize more unique supervised positions before increasing width. At the
+measured scale, data is approximately 10x the policy-loss lever of parameters.
+
+## D14 — Make chess-relative Shaw attention the encoder default
+
+The original encoder used only a learned absolute square embedding. A matched S2,
+20M-position A/B test replaced encoder attention with Shaw-style relative terms indexed
+by `(file_delta, rank_delta)` over 225 buckets. The temporal trunk remained unchanged
+because its sequence length is one.
+
+| metric | absolute | Shaw |
 |---|---:|---:|
-| SFT baseline | 27.5% (11/40, paired) | **50% (4/8)** |
-| base @ step 65-67k | **7.5% (3/40, paired)** | **6% (0.5/8)** |
-
-The strengthened 40-game paired gate made it unambiguous: base is **-20pts vs SFT raw (0 wins/40)**, and
-**search rescues SFT (27.5->50%) but does nothing for the base (7.5->6%)**. The base overfit to one greedy
-line and flounders off-book; its value head/policy prior aren't good enough for MCTS to help.
-
-**Conclusion:** distilling ChessBot's **policy head** is a confirmed dead end — loss converged perfectly
-(matched the teacher's distribution) but **ChessBot's policy head is itself only ~SF-1300; its 2500 strength
-lives in value-based move selection (`get_best_move_value`/`calculate_move_values`), which we didn't
-distill.** Not pushed to HF. Decision: do **not** finish the run (evidence-based; converged + strictly
-sub-SFT in both modes).
-
-**Next:** the now-proven pipeline stays; only the **target** changes — relabel the same 12M positions with
-**per-move action-values** (ChessBot's `calculate_move_values`, or Stockfish), the actual
-searchless-chess recipe (DeepMind 2402.04494) that reached 2000+. Reuses labeler/trainer/prefetch/gate
-wholesale. The 12M-position dataset, the non-collapsing training recipe, and the hardened paired gate are
-the durable assets from this session.
-
-### D22 — Built + launched the action-value pivot (reuse infra, swap target); cleaned disk first
-User chose **reuse infra, swap to action-values** (not a from-scratch rebuild; keep DECISIONS.md — the
-record of dead ends is the value). User also asked to clean up first ("more headspace").
-
-**Cleanup (disk was at 98%, 5GB free):** deleted, with approval, the 67 abandoned policy checkpoints
-(kept only `runs_base/base_step_0068000.pt` for the record), the local `data/chessbot_labeled` (5.6GB,
-already public+verified on HF), and `runs_rl/*` (3.4GB of prior PPO/AZ/OPD/distill artifacts, D8-D16).
-**5GB -> 25GB free.** Kept `data/raw` (PGN, needed) and `checkpoints/sft_best.pt` (baseline).
-
-**Action-value labeler (additive to `kibitzer/chessbot_label.py`):** `LabelConfig` got `label_mode`
-("policy"|"action_value") + `av_temp`; `BatchTeacherLabeler` got `_label_actionvalue` — for each board it
-evaluates the position **after every legal move** (batched via ChessBot's `get_batch_position_values`),
-takes the mover-perspective value (ww-bw, sign-flipped for black), and builds the policy target as
-`softmax(move_values / av_temp)` (peaked on the value-best move) with the scalar value = best move-value.
-**Verified correct:** the labeler's argmax move matches ChessBot's own `calculate_move_values` best move on
-every test position. Shard format/trainer/gate all **unchanged** — full infra reuse.
-
-**Throughput:** **~43 pos/s** (vs ~1030 for policy) — it does ~30x more forwards/position (one per legal
-move). So 12M is infeasible (~77h); sized the first run small.
-
-**Gate hardening recap (this session):** `scripts/gate_stockfish.py` gained `--opening-random-plies` +
-`--seed` (seeded openings shared across checkpoints = paired, low-variance). 16-game gates were too noisy
-(SFT swung 2.5->5.5/16); use the 40-game paired gate. Reference scores vs SF-1350 to beat:
-**SFT raw 27.5% (11/40), SFT search 50% (4/8); failed policy-base raw 7.5%, search 6%.**
-
-**Launched (overnight, ~5h, hands-off):** ~**500k action-value positions** (`--max-games 11500`,
-stride 2, 3 workers -> `data/chessbot_av`, ~3.2h), then auto-pipeline: from-scratch train (batch 64,
-grad-accum 4, **4 epochs**, prefetch 6 workers -> `runs_av`, ~1.3h), then the paired raw+search gate vs
-SFT (`eval_pgns_prime/av_gate.json`, `av_search_gate.json`). Phased ScheduleWakeup loop drives it; will
-NOT push to HF without asking. 500k chosen for a fast first read on whether action-values transfer; scale
-to 1-2M only if it beats SFT.
-
-### D23 — Action-value run scored 3% (flat); root-caused to a soft-target bug (av_temp), NOT the approach
-Ran the 500k action-value pipeline. Intermediate gameplay gates (the D-eval the user asked for) showed a
-**flat trajectory: step2000 = 3%, step5000 = 3%** vs SF-1350 (SFT 27.5%, failed policy-base 7.5%). User
-chose **stop + analyze** rather than grind. The analysis found the real cause:
-
-- The trained model plays **near-randomly**: greedy top-move prob ~0.10-0.16 (vs SFT 0.44-0.71), doesn't
-  match ChessBot's value-best move, even plays junk (h7h5 in a QGD). Training entropy stayed ~2.79 (≈ uniform
-  over ~16 legal moves).
-- **Root cause = target construction.** ChessBot's per-move action-values cluster tightly (good moves all
-  near the top value; only blunders far below), so `softmax(values / av_temp=0.1)` gave a **near-uniform
-  target — best move only 0.14-0.21 prob.** We trained on mush; the model learned mush. ChessBot's 2500
-  strength is its *decisive argmax*; av_temp=0.1 softened it away. Temp sweep confirmed: best-move target
-  prob 0.14-0.21 @0.1 → 0.34-0.65 @0.03 → 0.65-0.93 @0.01.
-- **Confound also noted:** 500k AV vs 12M policy is 24x less data, so the 3% is not a clean
-  signal-quality comparison regardless.
-
-**Conclusion:** action-value distillation is NOT disproven — the av_temp=0.1 default neutered the signal.
-**Fix:** sharpen the target — one-hot on the value-best move (pure behavioral cloning of ChessBot's argmax
-play) or a small temp (~0.01-0.02). Better still, store the **raw per-move values** in the shards so the
-temperature becomes a free train-time knob (no re-label to retune). Either fix needs one re-label (~3.2h for
-500k; the shards stored the softmaxed distribution, not raw values). Stopped training at step 7000; latest
-ckpt `runs_av/base_step_0007000.pt`. Diagnostic method (greedy-move vs teacher-argmax + target-sharpness
-sweep) is the reusable tool that caught this — gameplay/entropy, not loss, is the signal (loss "converged"
-at 2.8 while play was random).
-
-### D24 — Drop history-dependence: rebuild single-position from scratch, Maia-style human-move cloning
-After a brutal-honesty review of the whole project: **nothing has ever beaten the SFT ~1320 baseline** across
-23 decisions. Root insight — we kept changing the *signal* (policy/value/self-play/distill) but never the
-real handicap: **kibitzer is history-dependent** (causal trunk over a sequence of past boards), which is wrong
-for chess.
-
-Why history is a liability here, not an asset:
-- **Chess is fully observable + Markovian.** The current FEN (board + side-to-move + castling + en-passant +
-  halfmove clock) is a *complete sufficient statistic* for the best move. The path to a position does not
-  change which move is best. History carries ~zero extra signal for move quality (only threefold-repetition /
-  50-move depend on history, and those need just the FEN clock / a tiny fixed window — AlphaZero's 8-position
-  stack is for repetition, not better moves).
-- **With limited data, history actively hurts:** the model overfits to game-path/style correlations instead of
-  position→move. That IS the recurring failure — D10 ("overfit to unrealistic histories → 0% real games"),
-  the off-book fragility (opening-random-plies wrecking from-scratch models), the ctx-8-vs-128 mismatch. A
-  position-only model *cannot* make that mistake.
-- Best case a history model only *ties* position-only (no extra signal to win with) and needs far more data to
-  learn to ignore the history. Every strong engine (Stockfish, Leela, AlphaZero, searchless-chess) is
-  position-based.
-
-**Decision (user):** drop history; train single-position from scratch. Architecturally this is NOT a new model
-family (not an RNN — that's *more* history) — it is the existing transformer with the **history half removed**:
-keep the position encoder (transformer over the 64 squares), feed **one board** (context_window=1; the causal
-trunk over a length-1 sequence is a no-op for history). Reuse the whole pipeline (labeler shard format,
-shard_trainer, paired gate) at context_window=1.
-
-**Phase-1 signal = behavioral cloning of elite human moves (Maia-style), NO teacher:** target = one-hot of the
-move the 2300/2500+ player actually played + side-to-move game result as value. This removes every signal bug
-we've hit (no unrealistic histories, no weak teacher policy head, no near-uniform action-value targets) and the
-target is unambiguous/trivially validated. Labeling needs no GPU/teacher (just PGN parsing) so it is fast and
-CPU-parallel → "more games": label the **full elite set** (272k games) at single-position scale. Realistic
-ceiling for BC-of-humans is ~1800-2000 (can't exceed the humans it learns from); exceeding that later needs
-value+search. Methodology fix from the review: **validate small first** (overfit a tiny batch / check target
-sharpness) before any long run.
-
-### D25 — Completed the clean-rebuild policy/value run; search reduces some errors but the model is still below SF-1320
-Executed the new position-only training pipeline locally on the RTX 4060 Laptop GPU. The launcher downloaded
-and cached six Lichess Elite months (`2025-06` through `2025-11`), then trained policy and value in separate
-stages with mandatory Hugging Face uploads.
-
-**Policy stage:** elite-human move cloning, 5M positions/epoch, batch 128, 3 epochs. Each epoch had 39,064
-batches and took about 56 minutes; the full policy stage took about 2h50m. The final checkpoint was uploaded to
-`Pradheep1647/kibitzer-clean-policy`. This stage trains the shared representation and policy head; the value
-head stays frozen.
-
-**Value stage:** 250k positions labeled by Stockfish at depth 14. The first implementation labeled positions
-sequentially; a live benchmark exposed that bottleneck, so labeling was changed to eight independent Stockfish
-workers. The real run labeled all positions in **45m10s at 92.23 positions/s**. Games were split before training
-to prevent position leakage: **224,990 train / 25,010 held-out evaluation**. Only the value head was trainable.
-
-| epoch | MSE ↓ | MAE ↓ | Pearson ↑ | sign accuracy ↑ | R² ↑ |
-|---:|---:|---:|---:|---:|---:|
-| 1 | 0.0654 | 0.1671 | 0.5065 | 65.08% | 0.2552 |
-| 2 | 0.0645 | 0.1653 | 0.5153 | 64.93% | 0.2647 |
-| 3 | 0.0638 | 0.1639 | 0.5225 | 65.60% | 0.2730 |
-| 4 | **0.0637** | 0.1639 | **0.5235** | 66.28% | **0.2736** |
-| 5 | 0.0640 | **0.1638** | 0.5207 | **66.58%** | 0.2709 |
-
-Epoch 5 was a plateau, not a reason to keep training the small head: MSE/Pearson/R² peaked at epoch 4 while
-MAE/sign accuracy improved only marginally at epoch 5. The final checkpoint was uploaded to
-`Pradheep1647/kibitzer-clean-value`.
-
-**PUCT gate:** added legal policy/value inference, side-to-move-correct PUCT backup, paired openings, color
-alternation, PGN output, and a limited-strength Stockfish gate. The value-sign path was tested independently:
-a synthetic favorable root branch received 123 visits versus 5 for the unfavorable branch, ruling out the
-common negamax sign bug.
-
-| gate vs SF-1320 | W-D-L | score | capped ACPL ↓ | major blunders ↓ |
-|---|---:|---:|---:|---:|
-| 64 simulations | 0-2-8 | 10% | 126.7 cp | 51 |
-| 256 simulations | 0-1-9 | 5% | **118.7 cp** | **42** |
-
-The 10-game match scores are too noisy to interpret as a precise Elo comparison. The independent move analysis
-is clearer: 256 simulations modestly reduced average loss and major errors, but all decisive games were still
-losses by checkmate. More search is therefore not the current lever. The policy is still human imitation and
-the Stockfish-trained value head sits on a frozen human-policy representation; deeper PUCT can only partially
-repair that mismatch.
-
-### D26 — Next phase is cached joint Stockfish distillation, not more search
-Built `scripts/train_joint_distill.sh` for the next run. It starts from `runs/value/value_final.pt` and teaches
-the policy and value jointly from Stockfish depth-14, MultiPV-8 targets. To avoid destroying the useful base,
-the default trainable scope is both heads, final norm, and only the last three trunk blocks; the position encoder
-and early trunk stay frozen.
-
-**Default run:** 250k positions, eight Stockfish workers, MultiPV 8, five epochs, batch 128, LR `1e-4`, value
-weight `1.0`, and a 10% game-disjoint evaluation split. Teacher labels are written atomically to
-`data/stockfish/joint_d14_mpv8_250000.pt`; a matching rerun loads the cache and skips Stockfish entirely, while
-mismatched label settings fail explicitly instead of silently reusing stale targets.
-
-The trainer now reports averaged epoch losses rather than the last batch, plus held-out policy cross-entropy,
-teacher top-1 agreement, teacher-set coverage, value MSE/MAE/Pearson/sign accuracy/R², stage durations,
-trainable parameter count, and whether a new best checkpoint was saved. The checkpoint chosen by held-out joint
-score is saved to `runs/joint_distill/joint_best.pt` and HF push is fixed on to
-`Pradheep1647/kibitzer-clean-joint-distill`. The known `pynvml` package warning is suppressed narrowly in all
-launchers; unrelated warnings remain visible.
-
-Both cache-miss and cache-hit smoke runs passed, including real Stockfish MultiPV labels and checkpoint reload.
-The suite is at **40 passing tests**. The full joint run has **not** been executed yet. Command:
-
-```bash
-bash scripts/train_joint_distill.sh
-```
-
-### D27 — Joint distillation finished; 256-sim search regressed again, so diagnose value/search before any new training
-Executed D26 end-to-end. Eight Stockfish workers labeled 250k depth-14 MultiPV-8 positions in **6h34m40s
-(10.56 positions/s)** and saved the reusable cache at
-`data/stockfish/joint_d14_mpv8_250000.pt`. The game-disjoint split stayed 224,990 train / 25,010 eval.
-Training both heads, final norm, and the last three trunk blocks exposed 9,549,633 trainable parameters
-(29.7%); each GPU epoch took about two minutes.
-
-| epoch | policy CE ↓ | teacher top-1 ↑ | teacher coverage ↑ | value MSE ↓ | value sign ↑ | value R² ↑ |
-|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 2.6014 | 30.71% | 73.66% | **0.0717** | **66.74%** | **0.2872** |
-| 2 | 2.5829 | **30.75%** | **73.77%** | 0.0721 | 66.12% | 0.2833 |
-| 3 | **2.5801** | 30.72% | 73.65% | 0.0732 | 65.60% | 0.2731 |
-| 4 | 2.5881 | 30.49% | 73.37% | 0.0744 | 65.26% | 0.2606 |
-| 5 | 2.6015 | 30.41% | 73.01% | 0.0752 | 65.29% | 0.2530 |
-
-Training overfit after epoch 3, but the more important discovery is a **checkpoint-selection scale bug**:
-the selector minimized `policy_CE + value_MSE`. CE changes were about 10-20x larger than MSE changes, so it
-selected epoch 3 for a negligible policy gain while value quality had already fallen from epoch 1. Only the
-epoch-3 `joint_best.pt` survived because each new composite best overwrote the previous file. Future multi-head
-training must save every epoch and use constrained/lexicographic selection, not add unlike metrics directly.
-The selected checkpoint was uploaded to `Pradheep1647/kibitzer-clean-joint-distill`.
-
-**Search gate:** joint at 64 simulations scored 2-0-8 (20%) versus nominal SF-1320; the same checkpoint at
-256 simulations scored 0-1-9 (5%). This repeats the pre-joint `10% -> 5%` pattern. Ten games over five opening
-pairs are too noisy for Elo or small model comparisons, but repeated deeper-search regression plus only
-~65-67% value-sign accuracy makes value amplification the prime suspect. Stop increasing simulations and stop
-using `UCI_LimitStrength + time` WDL as the primary development signal.
-
-### D28 — Opus-reviewed next step: locked common-oracle diagnostics with explicit stop/go gates
-Ran four direct `claude -p --model claude-opus-4-8` critique/revision cycles. The final plan was approved only
-after fixing three experimental-design errors: Phase-2 (MultiPV 1) and joint (MultiPV 8) logged value metrics
-are not directly comparable; checkpoint selection and final gating cannot reuse one dataset; and a 25-Elo SPRT
-is not laptop-bounded. The accepted decision is **diagnose before training**.
-
-**Common oracle contract:** sample only real games from entirely unseen PGN months (default Jan-May 2025).
-A depth-10 prescan oversamples candidates, then Stockfish depth-20 MultiPV-1 re-bins them by absolute score:
-`<0.5`, `0.5-2`, `2-5`, `>5` pawns. Lock at least 200 positions/bin in each of two game-disjoint splits:
-validation for checkpoint/config selection and an untouched test split that can be consumed only once. Add
-months rather than relaxing bin counts if decisive positions are scarce. All models use the identical target
-transform `clip(cp / 1000, -1, 1)`; arbitrary selected moves get independent depth-20 evaluations cached by
-FEN+move.
-
-**Metrics/gates:** raw policy and PUCT report exact-best/within-50cp accuracy, mean/p90/p95 capped regret, and
-paired bootstrap confidence intervals. Values report MAE/sign accuracy per oracle bin plus natural-distribution
-reweighting. Test gates are: 2-5-pawn sign >=90%, >5-pawn sign >=95%; paired regret and near-best confidence
-intervals above zero; p90 regret reduced by both >=15cp and >=10%; and no regression versus the baseline on a
-fixed tactical sanity suite. Tune `value_scale={0,0.5,1}` at 64 simulations first; only spend on simulation or
-`c_puct` sweeps if nonzero value passes.
-
-**Diagnostic routing:** if policy coverage fails while value passes, try cached MultiPV-8 policy-head-only
-distillation with trunk/value frozen; allow at most one trunk block plus policy-retention KL only if the cheap
-head probe improves validation. If value fails (expected), train the value head plus at most one or two upper
-trunk blocks with policy logits anchored to the current policy champion. Save every epoch; reject checkpoints
-below baseline value floors, then rank decisive sign, decisive MAE, global MSE, policy CE. No large relabeling
-until one cached-label branch passes validation and the untouched test.
-
-**Implemented now:** `kibitzer/diagnostics.py`, `scripts/diagnose_search.py`, and
-`scripts/run_search_diagnostics.sh`; PUCT and the match launcher now accept `value_scale`. The launcher has
-three explicit actions: `build` creates the locked oracle, `validate` compares Phase-2/joint and value scales,
-and `test` requires an explicitly selected checkpoint/scale and writes a permanent consumption lock. A fixed
-30-position mate-in-one EPD suite provides baseline-relative legality/sign sanity (not an Elo benchmark).
-Oracle and selected-move caches are atomic/reusable. Mocked oracle-build tests and a real CUDA + Stockfish
-evaluation/cache smoke passed. The full unseen-month depth-20 oracle has **not** been built yet.
-
-Run order:
-
-```bash
-ACTION=build bash scripts/run_search_diagnostics.sh
-ACTION=validate bash scripts/run_search_diagnostics.sh
-# ACTION=test only after validation selects one checkpoint/value scale.
-```
-
-### D29 — Common-oracle validation rejects joint and deeper search; audit the depth-14 label ceiling next
-Built the full locked oracle from five unseen real-game months (`2025-01` through `2025-05`). Stockfish
-depth-20 MultiPV-1 produced 800 validation and 800 untouched test positions, game-disjoint and exactly balanced
-at 200 positions in each absolute-value bin. The natural unseen-game distribution estimated during prescan was
-33.46% quiet, 32.29% edge, 24.47% decisive, and 9.78% won. Only validation has been consumed; the test split
-remains locked.
-
-**Value verdict:** both checkpoints fail on the positions that search most needs them to recognize.
-
-| checkpoint | natural MAE ↓ | decisive sign ↑ | won sign ↑ | won MAE ↓ |
-|---|---:|---:|---:|---:|
-| Phase-2 | **0.16527** | **66.5%** | **74.5%** | 0.6625 |
-| joint epoch 3 | 0.16544 | 66.0% | 71.5% | **0.6536** |
-
-Joint did slightly improve raw policy (mean regret 235.9cp -> 229.7cp; near-best 56.0% -> 57.88%; exact
-best 32.25% -> 33.25%) but damaged decisive/won value sign. This explains why its match score did not survive
-deeper search.
-
-**Search verdict:** Phase-2 at 64 simulations with `value_scale=0.5` is the only configuration whose mean
-regret and near-best bootstrap intervals are both strictly positive. It reduced mean regret by 22.05cp
-(95% CI 4.15..40.16), improved near-best by 1.625 points (CI 0.375..2.875), and reduced p90 by 61.4cp.
-However p90 improved **9.21%**, narrowly below the predeclared 10% gate, and the absolute value-sign gates
-failed badly. `value_scale=1.0` met the p90 threshold but its mean-regret CI crossed zero. No joint search
-configuration passed. The fixed mate-in-one sanity solve rate was only 30% for Phase-2 scale 0.5 and 23.3%
-for joint scale 0.5. Therefore do **not** consume the test split and do not increase simulations.
-
-An additional Opus 4.8 review challenged the planned repair training on one unmeasured assumption: the model
-was trained on depth-14 targets but graded by depth 20. If depth-14/depth-20 target disagreement already
-accounts for most of the 0.165 validation MAE or flips decisive signs, balanced sampling/sign loss would train
-the model harder on teacher errors. The mandatory next process is therefore a **label-ceiling audit**, not a
-repair run: deterministically sample 3,000 cached training positions, re-evaluate them at depth-20 MultiPV-1,
-and report bounded-value MAE/sign disagreement overall and per value bin plus the cached-label bin census.
-
-Decision after the audit:
-- disagreement >= `0.1653 - 0.02`: depth-14 is label-limited; do not repair on it. Relabel only a balanced
-  30-50k subset at depth 20.
-- disagreement < `0.10` and won-bin sign disagreement <=8%: cached labels have headroom; run staged value
-  repair (head only -> norm -> last block + policy KL).
-- otherwise: borderline; permit only a head-only probe, no trunk unfreeze or test consumption.
-
-The earlier 90/95% sign thresholds remain long-term strength targets, not plausible one-step development
-gates from a 66% baseline. Before any training and while test is still untouched, the next candidate gate will
-be defined as bootstrap-separated improvement over Phase-2 plus the existing regret/calibration floors.
-
-### D30 — Depth-14 labels pass the ceiling audit; run a balanced value-head-only repair
-The deterministic 3,000-position audit compared the cached depth-14 MultiPV-8 value targets with fresh
-depth-20 MultiPV-1 evaluations. Overall bounded-value MAE was **0.0217**, sign disagreement was **2.90%**, and
-strict direction flips were 1.93%. The depth-20 bins contained 1,335 quiet, 740 edge, 541 decisive, and 384 won
-positions. Decisive and won sign disagreement were both **0%**; won-bin MAE was 0.0683. This is far below the
-Phase-2 model's 0.1653 validation MAE, so teacher depth is not the current bottleneck. Do not spend another
-large labeling run at depth 20.
-
-Proceed with only Stage A of the reviewed repair plan. Initialize from `runs/value/value_final.pt`, freeze the
-entire encoder, trunk, norm, and policy head, and train only the value head on the existing 250k audited cache.
-Use inverse-frequency value-bin sampling with alpha 0.5 and a 4x cap, while keeping the epoch length unchanged.
-The actual train split has 97,681 quiet, 59,836 edge, 40,250 decisive, and 27,223 won positions; the resulting
-weights span only 1.000x to 1.894x. Run three epochs at LR `1e-4`, retain every epoch, and compare decisive/won
-sign and MAE against an epoch-0 baseline. Checkpoint selection is lexicographic: decisive/won sign first,
-decisive/won MAE second, then global MSE. The best checkpoint is uploaded to
-`Pradheep1647/kibitzer-clean-value-repair`.
-
-This stage does not use the locked common-oracle test split. After training, evaluate the selected repair on
-the already-used validation split before deciding whether to unfreeze norm or one trunk block. Command:
-
-```bash
-bash scripts/train_value_repair.sh
-```
-
-The run selected epoch 1. It improved cached-label decisive sign by 0.36 percentage points and won sign by
-0.73 points; decisive MAE fell 0.0057 and won MAE fell 0.0538. Epochs 2 and 3 regressed decisive sign and
-global metrics, so no additional head-only epochs are justified. Validate epoch 1 against Phase-2 on the
-locked common-oracle validation split at value scales 0, 0.5, and 1 before considering Stage B:
-
-```bash
-bash scripts/run_value_repair_validation.sh
-```
-
-### D31 — Repair scale 1 passes raw-search gates; require a direct paired Phase-2 comparison
-On the common-oracle validation split, value repair reduced natural-weighted MAE from 0.16527 to 0.16341.
-Decisive sign improved from 66.5% to 68.5% and decisive MAE fell by 0.0121. Won MAE fell by 0.0245 while won
-sign moved from 74.5% to 74.0%, a one-position regression. Quiet and edge sign improved, though their MAE rose
-slightly. These are useful but still far from the long-term absolute sign targets.
-
-At 64 simulations, `value_scale=1` is the first candidate to pass every search-versus-raw gate: mean regret
-improved 28.22cp (95% CI 7.88..49.63), near-best accuracy improved 2.5 points (CI 0.875..4.25), and p90 regret
-fell 86.2cp or 12.92%. Tactical solve rate was unchanged. Relative to Phase-2 at the same scale, point estimates
-also favor repair: mean regret -8.52cp, p90 -18.3cp, p95 -50cp, near-best +0.5 points, and exact-best +0.375
-points.
-
-The original report only bootstrapped each searched model against its own raw policy. It did not bootstrap the
-paired repair-versus-Phase-2 difference required by D29. Do not consume the test split from point estimates.
-Rerun only scale 1 after adding direct paired comparisons; chosen-move Stockfish scores are already cached:
-
-```bash
-VALUE_SCALES=1 \
-VALIDATION_OUTPUT=runs/diagnostics/value_repair_head_to_head.json \
-bash scripts/run_value_repair_validation.sh
-```
-
-### D32 — Stage A is directionally useful but not a new champion; proceed to norm-only capacity with a policy anchor
-The direct paired comparison did not separate Stage A from Phase-2. At 64 simulations and `value_scale=1`,
-repair improved mean regret by 8.52cp, but its 95% CI was -2.38..20.68. Near-best improved 0.5 percentage
-points with CI -0.5..1.5. P90 fell 18.3cp but only 3.05%, below the 10% relative gate. Therefore Phase-2
-remains the champion and the locked test split remains untouched.
-
-Proceed with Stage B from the Stage-A epoch-1 checkpoint. Train only the value head and shared final RMSNorm;
-the encoder, all trunk blocks, and policy head remain frozen. Because changing the shared norm also changes
-policy logits, anchor them to the frozen Phase-2 checkpoint with KL loss. Use head LR `1e-4`, norm LR `2e-5`,
-KL weight 1.0, and the same alpha-0.5 balanced sampling for two epochs. Reject any epoch with validation policy
-KL above 0.01 or policy top-1 agreement below 98%; retain every epoch and keep the epoch-0 checkpoint if no
-candidate improves the decisive/won lexicographic value rank within those floors. HF upload remains mandatory.
-
-```bash
-bash scripts/train_value_repair_norm.sh
-```
-
-### D33 — Sonnet 5 generated a reproducible run-analysis figure suite
-Invoked Sonnet 5 directly through `claude -p` to implement the requested graph package. The deterministic
-generator lives at `scripts/plot_run_analysis.py`, evidence parsing at `kibitzer/run_analysis.py`, and outputs
-under `reports/run_analysis/`. Five research-style PNGs separate epoch value metrics, epoch policy metrics,
-common-oracle value bins, search regret/accuracy, and noisy 10-game WDL results. Each figure names its local
-source; missing Phase-1 epoch history is shown explicitly rather than invented, and diagnostics inputs must
-declare `split=validation` so the locked test cannot be presented as consumed.
-
-Matplotlib is now a declared dependency. During verification, `uv sync` exposed the recurring D20 environment
-pitfall by selecting `huggingface-hub==1.14.0`, incompatible with the repo's manually installed Transformers
-4.44.2. The project and lockfile now enforce `huggingface-hub>=0.24,<1.0`; the environment was restored to
-Transformers 4.44.2, TRL 0.11.4, and HF Hub 0.36.2. Full verification passed with 79 tests.
-
-```bash
-uv run python scripts/plot_run_analysis.py
-```
-
-### D34 — Norm-only repair failed; allow one final last-block experiment with a hard stop
-Extended Stage B to five epochs. Training MSE continued falling to 0.0852, but held-out MSE rose to 0.0752,
-MAE to 0.1792, Pearson fell to 0.5216, and R² to 0.2532. Decisive sign fell 0.98 percentage points from the
-Stage-A baseline and won sign fell 0.76 points. Policy KL remained only 0.000009 with 99.84% top-1 agreement,
-so the failure is value generalization rather than policy drift. Epoch 0 remained best; the HF client correctly
-skipped a duplicate upload because that baseline checkpoint was already present.
-
-Permit one final bounded supervised experiment: start again from Stage-A epoch 1 and train the value head,
-final RMSNorm, and only the last trunk block. Keep the policy head, encoder, and first nine trunk blocks frozen.
-Use head LR `1e-4`, norm LR `2e-5`, trunk LR `5e-6`, Phase-2 policy KL weight 1.0, the existing policy-drift
-floors, balanced alpha-0.5 sampling, and three epochs with every epoch retained. If no epoch beats epoch 0,
-stop this checkpoint lineage rather than unfreezing more layers or extending epochs.
-
-```bash
-bash scripts/train_value_repair_trunk.sh
-```
-
-### D35 — Joint-from-scratch won the offline value metric but not play; offline value ≠ strength, and only search depth moves the number
-Abandoned the frozen-trunk value-repair lineage (D30–D34 all regressed on held-out value) and tried the one
-untried lever: train the whole model from random init with joint policy+value, value target = side-to-move game
-result (±1). On the same held-out Stockfish depth-14 split (25,010 positions) this broke the long-standing
-decisive-sign wall: decisive sign 65.95% → 72.62% (+6.67pp), won sign 81.32% → 86.73% (+5.41pp). But it traded
-away near-equality: Pearson 0.5226 → 0.4796 and overall sign 66.58% → 63.50%. (R²/MSE/MAE are not comparable
-across cp vs ±1 targets and are excluded.)
-
-The decisive test was play, not the offline metric. Search vs Stockfish 1320 (UCI_LimitStrength floor;
-STOCKFISH_TIME=0.05s; N=20 games, score SE ≈ 0.09):
-
-| sims | value_final (cp) | joint_scratch (±1) |
-|------|------------------|--------------------|
-| 64   | 0.100            | 0.100              |
-| 256  | 0.225            | 0.175              |
-
-Two conclusions. (1) The joint value head is **not** better at the board — it won the offline metric by +6.67pp
-and came out level-to-behind in games (0.175 vs 0.225, within noise). The hypothesis "sharper decisive-sign value
-→ stronger play" is falsified. The broader lesson: **offline value metrics do not predict play at this scale**, so
-the entire D30–D35 value-repair campaign was optimizing a non-predictive proxy. (2) The only lever that measurably
-moved strength was **search depth** (value_final 0.100 → 0.225 from 64 → 256 sims) — but it **plateaus**: 512 sims
-scored 0.200 (2W-4D-14L), flat within noise, so doubling search past 256 buys nothing. Search is a one-shot crutch,
-not a path. The best config tops out ~0.2 vs the weakest limited Stockfish, consistent with the memoized finding
-that search only helps after real value training and with a 28M-param laptop-scale ceiling. Full curve in
-`reports/search_depth/results.json`; figures: `reports/joint_scratch/` and `reports/search_depth/`.
-
-```bash
-CHECKPOINT=runs/value/value_final.pt GAMES=20 SIMULATIONS=512 STOCKFISH_ELO=1320 \
-  EVAL_OUT=eval_pgns/value_final_512sim_vs_1320.pgn bash scripts/run_search_eval.sh
-```
-
-### D36 — Stop point-experiments; run a scaling-law study (params × data × LR) on an attention backbone to find whether the target is reachable
-Thirty-five point-experiments, none beat SFT ~1320, all on a single fixed ~32M model. D35 showed the metric we
-gate on (match play) is noisy and non-predictive, while cheap policy cross-entropy is smooth. The rational pivot is
-to stop guessing single tricks and instead **measure the scaling curve**: fit L(N, D) for policy loss over model
-size N and positions seen D, then extrapolate to answer one question honestly — what N and D reach a target
-move-match (Elo proxy), and is that reachable on the 8GB 4060 or is it fundamentally a cloud-scale problem. This is
-the Chinchilla/Kaplan method (arXiv:2001.08361, 2203.15556); the searchless-chess result (arXiv:2402.04494) reached
-2895 Lichess Elo with 270M params on ~15B positions, which is the scale reference the study is meant to locate us
-against. Rationale and full design: `docs/scaling_study/`.
-
-Fixed choices. Architecture family is **attention-first** (hard constraint): set `attention_every=1` so every trunk
-block is causal attention (the current default is `attention_every=3`, mostly SSM). Task metric is **policy
-cross-entropy** on Lichess-Elite human moves (primary, low-variance) plus value MSE (secondary) and top-1 move-match
-as the interpretable capability axis — **not** match-play Elo. Data is the already-cached Elite pool; eval is a
-fixed game-disjoint held-out position set. LR uses μP-style transfer: tune once at the smallest size, scale by
-`base_width / width`, with cosine decay + warmup (fixes the joint_scratch epoch-3 divergence in `reports/joint_scratch/`).
-
-Model-size ladder (all attention, scale width `d_model` and `trunk_layers`; policy head is `d_model × 4672` so
-params are not pure width²; exact counts measured by the harness):
-
-| tag | d_model | trunk_layers | approx params |
-|-----|---------|--------------|---------------|
-| S0  | 128     | 6            | ~5M           |
-| S1  | 192     | 8            | ~10M          |
-| S2  | 256     | 10           | ~18M          |
-| S3  | 320     | 10           | ~32M (current)|
-| S4  | 448     | 12           | ~60M (grad-accum on 8GB) |
-
-Cheapest first cut: train the ladder at fixed data-rich D to convergence and fit policy-loss vs params — that alone
-gives the exponent and whether more params still help before committing to a full IsoFLOP (N,D) grid. Entrypoint to
-build first (does not exist yet): `scripts/scaling_sweep.py` driving `train_bc.py` per rung and logging
-`(N, D, policy_loss, value_mse, top1)` to `reports/scaling_law/results.json`.
-
-```bash
-# to build: scripts/scaling_sweep.py --sizes S0,S1,S2,S3 --max-positions 20000000 --lr-transfer mup
-python scripts/scaling_sweep.py --sizes S0,S1,S2,S3 --attention-every 1 --max-positions 20000000
-```
-
-### D37 — Params arm: policy scales but shallowly and does not saturate; value does not scale at all; the bottleneck is data, not capacity
-Built `scripts/scaling_sweep.py` (self-contained trainer: config overrides, μP LR transfer, cosine schedule +
-warmup, held-out eval; leaves `train_bc.py` untouched) and ran the attention-first ladder (`attention_every=1`) at a
-fixed 5M positions/rung, eval on held-out lichess-elite 2025-11:
-
-| tag | params | policy CE | top-1 | value MSE | LR (μP) |
-|-----|--------|-----------|-------|-----------|---------|
-| S0  | 2.98M  | 2.3570    | 30.20% | 0.7118   | 3.0e-4  |
-| S1  | 7.43M  | 2.3339    | 30.78% | 0.7213   | 2.0e-4  |
-| S2  | 14.89M | 2.3288    | 30.92% | 0.7177   | 1.5e-4  |
-| S3  | 22.89M | 2.3097    | 31.61% | 0.7211   | 1.2e-4  |
-
-Three findings. (1) Policy CE falls monotonically but **shallowly** — a log-linear fit gives ~0.015 CE reduction per
-params-doubling (CE ≈ 2.673 − 0.0212·ln(params); scipy absent so no power-law floor). 7.7× params buys only −0.047 CE
-/ +1.4pp top-1. (2) It is **not saturating** — S2→S3 was the largest step — so this is not a capacity wall. (3) Value
-MSE is **flat at ~0.71–0.72** across an 8× param range: model size does nothing for value, corroborating D35 that value
-is a target-quality problem, not a capacity one. The shallow, non-saturating policy slope at fixed tiny D is the
-signature of **data starvation**: Chinchilla ~20 tokens/param implies S3 (23M) wants ~460M positions; it got 5M
-(~0.2/param, ~100× under-fed). Figure: `reports/scaling_law/fig1_scaling_curve.png`.
-
-Next: hold S2 fixed and scale data (the only variable). LR pinned to the params-arm S2 value (1.5e-4, via
-`--lr-transfer constant`) so only D changes; each D written to its own results file to avoid the tag-keyed upsert
-clobbering the 5M point. If 5M→20M CE drop clearly beats the ~0.015/doubling params slope, data is the lever and the
-ceiling is not fundamental; if it is also shallow, that is the clean final scale-wall verdict.
-
-```bash
-python scripts/scaling_sweep.py --sizes S2 --max-positions 20000000 \
-  --lr-transfer constant --base-lr 1.5e-4 --device cuda \
-  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
-  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
-  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
-  --train-pgn data/raw/lichess_elite_2025-10.pgn \
-  --out reports/scaling_law/data_arm_s2_20M.json
-```
-
-
-### D38 (teaser — 2 points, 40M pending) — Data arm: data is ~10× the lever that params are; direction validated
-First real turning point in the log. Held S2 (14.89M params) fixed, LR pinned at 1.5e-4, and scaled data only:
-
-| positions | policy CE | top-1 | value MSE |
-|-----------|-----------|-------|-----------|
-| 5M        | 2.3288    | 30.92% | 0.7177   |
-| 20M       | 2.0437    | 37.65% | 0.6999   |
-
-4× data → CE **−0.285**, top-1 **+6.73pp**. That is **−0.1425 CE per data-doubling** vs the params arm's **−0.0147
-per params-doubling** — **~10× steeper**. One rung of extra data moved top-1 more (+6.7pp) than the entire 7.7× params
-ladder did (+1.4pp). Value MSE also improved (0.7177 → 0.6999), where it was dead flat across the params arm — so data
-helps the value head that capacity could not touch. This confirms the D37 diagnosis: the model was never
-capacity-limited, it was **data-starved** (S2 is Chinchilla-optimal near ~300M positions; 20M is still ~15× short, so
-we are still on the steep part). The lever is data, and data is just wall-clock on hardware already owned.
-Figures: `reports/scaling_law/fig2_data_scaling_curve.png` (+ `fig1` for the params contrast).
-
-Teaser status: only two data points. Next brick is the 40M third point to confirm the exponent holds (or find where it
-bends) and enable a real extrapolation "positions → target top-1/CE → hours". Also revisit whether the win transfers to
-actual play (search gate) — CE/top-1 is the proxy, not Elo (D35). Full D38 to be finalized after 40M lands.
-
-```bash
-python scripts/scaling_sweep.py --sizes S2 --max-positions 40000000 \
-  --lr-transfer constant --base-lr 1.5e-4 --device cuda \
-  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
-  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
-  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
-  --train-pgn data/raw/lichess_elite_2025-10.pgn \
-  --out reports/scaling_law/data_arm_s2_40M.json
-```
-
-
-### D39 — Shaw chess-aware relative position encoding in the encoder (arch lever, not scale)
-Read two papers to find a lever that isn't "add params": **Chessformer** (Monroe 2024, arXiv:2409.12272) and
-**KnightCap** (Baxter/Tridgell/Weaver 1998, arXiv:cs/9901002).
-
-Chessformer's headline ablation: the dominant lever for a chess transformer is the **position representation**, not
-model scale. Shaw et al. relative attention (learned per-pair `a^Q,a^K,a^V` added to the attention logits,
-`e_ij = (x_iW^Q + a_ij^Q)(x_jW^K + a_ij^K)ᵀ/√d`) beats relative-bias by **+1.83% policy accuracy** and beats absolute
-position embedding by more — *"a good choice of position representation can in large part replace the need for model
-scale"* (≈ the gain from doubling params). It's how they matched searchless-chess (GC-270M) at **30× less compute** and
-beat AlphaZero-policy at 8×. Honest caveat: still searchless-supervised, does **not** beat its generator/Stockfish —
-this is an *efficiency* result (same ceiling as D35), not a "beat Stockfish" result.
-
-Audit of our encoder (`kibitzer/position_encoder.py`, `kibitzer/blocks.py`): we have **only** an absolute learned
-`square_emb(0..63)` added to the piece embedding, then vanilla `nn.MultiheadAttention` with **no relative term**. That
-is exactly the row Chessformer's ablation ranks **worst**. We are leaving the full ~1.83% (≈2× param-efficiency) on the
-table.
-
-Decision: implement a Shaw-style relative attention module and wire it behind a config flag, keyed to chess geometry
-(relative offset by `(file_delta, rank_delta)` → 15×15=225 buckets, far cheaper than full 64×64). Swap it into
-`EncoderBlock` only — the encoder is where the 64-square attention actually lives; the trunk runs at seq_len=1
-(collate `.unsqueeze(1)`), so relative encoding there would be a no-op. Test as a pure-supervised **A/B at equal
-params** in `scaling_sweep.py` (absolute vs Shaw), same data/LR — the clean test of "geometry beats scale". Success =
-Shaw lifts eval top-1 / lowers policy CE at matched params by a margin comparable to a params-doubling on the D37 curve.
-
-Sequencing note (why this first, TDLeaf later): KnightCap's result — a *tiny* linear eval + alpha-beta + **TDLeaf(λ)**
-(TD update applied to the leaf of the search PV, dense signal) went **1650→2150 Elo in 308 games / 3 days**, and
-crucially found **varied real opponents beat self-play**, and needed a **sensibly-initialized eval** (material values,
-not random). That vindicates the "play a Stockfish level-curriculum with outcome reward" instinct, but says value/eval
-is the *mechanism* (not droppable) and learning must be **online** (bootstrapped target goes stale if frozen/accumulated).
-So: land the Chessformer position-encoding win first to get a stronger base eval, *then* layer TDLeaf on top of it.
-This D39 covers the arch lever; TDLeaf is a later decision.
-
-```bash
-# A/B once implemented: absolute (current) vs Shaw relative, S2, matched data/LR.
-python scripts/scaling_sweep.py --sizes S2 --max-positions 20000000 \
-  --lr-transfer constant --base-lr 1.5e-4 --device cuda --pos-encoding absolute \
-  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
-  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
-  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
-  --train-pgn data/raw/lichess_elite_2025-10.pgn --out reports/scaling_law/posenc_s2_20M_absolute.json
-python scripts/scaling_sweep.py --sizes S2 --max-positions 20000000 \
-  --lr-transfer constant --base-lr 1.5e-4 --device cuda --pos-encoding shaw \
-  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
-  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
-  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
-  --train-pgn data/raw/lichess_elite_2025-10.pgn --out reports/scaling_law/posenc_s2_20M_shaw.json
-```
-
-**Result (A/B, S2 @ 20M positions, LR 1.5e-4, matched data/seed).** The absolute arm reuses the D38 20M run (same
-config, seed 42, pre-dated the flag → was `pos_encoding="absolute"` by construction). Shaw wins, modestly but real:
-
-| metric | absolute | shaw | Δ |
-|--------|----------|------|---|
-| eval top-1 | 37.65% | **38.56%** | **+0.91pp** |
-| eval policy CE | 2.0437 | **2.0382** | −0.0055 |
-| eval value MSE | 0.6999 | 0.6987 | −0.0012 (flat) |
-| params | 14.89M | 15.22M | +2% |
-
-Not noise: top-1 SE over the 50k-position eval slice at p≈0.38 is ~0.22pp, so +0.91pp is **~4 SE**. Scale-equivalent:
-on the D37 params arm a params-doubling bought ~+0.48pp top-1, so Shaw's **+0.91pp ≈ 1.9 doublings of accuracy for
-+2% params** — a strongly favorable efficiency trade. But CE (−0.0055) moved only ~⅓ of a doubling: **Shaw sharpens the
-argmax (top-1) more than the full distribution (CE)**. Value MSE dead flat (0.699→0.699), as expected — value is a
-target-quality problem (D35/D37), untouched by any attention trick.
-
-Calibration vs Chessformer: they reported +1.83% policy accuracy ("≈ doubling"); we got **+0.91pp, ~half**. Same
-direction, same order; the gap is plausibly because we are data-starved at 20M (their effect measured at scale), a
-smaller model, and we dropped the a^V relative-value term when refolding onto `F.scaled_dot_product_attention` for the
-fused kernel (4.44× faster, logits identical to the a^V-free path to 9.5e-7; a^V is the least important Shaw term).
-
-Verdict: the arch lever is real, cheap, and stacks with the dominant data lever (D38). Next: re-run the 40M data point
-with shaw to test whether the gain **compounds with data** (Chessformer predicts it grows at scale). If it does, make
-`pos_encoding="shaw"` the default and treat it as the stronger base eval that a later TDLeaf stage sits on.
-
-```bash
-python scripts/scaling_sweep.py --sizes S2 --max-positions 40000000 \
-  --lr-transfer constant --base-lr 1.5e-4 --device cuda --pos-encoding shaw \
-  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
-  --train-pgn data/raw/lichess_elite_2025-06.pgn --train-pgn data/raw/lichess_elite_2025-07.pgn \
-  --train-pgn data/raw/lichess_elite_2025-08.pgn --train-pgn data/raw/lichess_elite_2025-09.pgn \
-  --train-pgn data/raw/lichess_elite_2025-10.pgn --out reports/scaling_law/posenc_s2_40M_shaw.json
-```
-
-**Update — shaw made the default.** shaw-40M ran: top-1 **44.52%** (+5.96pp over shaw-20M — the data lever is still
-steep). On that basis `KibitzerConfig.pos_encoding` is flipped `"absolute" → "shaw"`: every new model now uses relative
-attention unless a flag says otherwise. Safe because each checkpoint saves its own `config` and `inference.py` rebuilds
-from it, so pre-existing absolute checkpoints still load correctly; the only paths that would mis-build are
-`gate_value.py` / `distill_stockfish.py`, which hardcode `Kibitzer(KibitzerConfig())` — both are the dead-end
-distill/value-gate scripts and not on the live path. Full test suite green (80 passed).
-
-Still open (deferred, not blocking the default): the **absolute-40M** counterfactual, to settle whether Shaw's edge
-compounds with data (absolute-40M ≈ 43.6% → parallel curves; < 43.6% → compounds). The default flip stands on the 20M
-A/B regardless of how that lands.
-
-### D40 — TDLeaf(λ): value learns from its own search leaves, online vs Stockfish curriculum
-After the D30–D35 verdict (value-target repair improves the offline metric but not play; *offline value ≠ play at
-this scale*), the chosen next swing is the one thing that campaign never did: **couple value *learning* to search**.
-D30–D35 searched at inference over a *statically* trained value head; TDLeaf trains the head *from its own search
-leaves*. That is the KnightCap mechanism (arXiv:cs/9901002), which took a tiny linear eval 1650→2150 Elo in 308
-games by TD-updating the minimaxed PV-leaf eval against varied real opponents.
-
-**Adaptation to the MCTS model.** `puct_search` returns `root_value` (mean over simulations, side-to-move POV) — the
-analog of KnightCap's minimaxed PV-leaf eval. Over the model's own-move sequence `V_0..V_{T-1}` (already model POV,
-since side-to-move == model at those plies) with terminal game result `z`, form forward-view **TD(λ)** targets
-`G_t = V_t + Σ_{k≥0} λ^k δ_{t+k}`, `δ_j = V_{j+1} − V_j`, `V_T = z`. Regress the network's **raw** value head onto
-`G_t` (semi-gradient MSE). Bootstrapping on search values gives a dense, lower-variance target than the ±1
-game-result label — the thing D35 identified as the actual defect.
-
-**Scope (deliberate).** Freeze encoder + trunk + policy head; train **only the value head + final RMSNorm**
-(33,281 params). PUCT leans on the 44.5%-top-1 SFT priors — letting policy drift under a noisy TD signal risks
-wrecking the one thing that works. Isolates the TDLeaf effect and is cheap. Follow-up if it shows life but caps:
-unfreeze the last trunk block.
-
-**Base:** `runs/scaling/S2.pt` (shaw, 15.22M, 44.5% top-1 — the D38/D39 shaw-40M base). **Online cadence:** play K=4
-games → TD(λ) targets → grad step → the same in-memory model is what search uses next game (no reload). **Opponent
-curriculum:** Stockfish `UCI_Elo` ladder 1320→1500→1700→1900→2100, advance when the rolling 20-game score ≥ 0.60.
-Game diversity from randomized openings (PUCT argmax + fixed-Elo Stockfish are near-deterministic).
-
-**Build:** `scripts/train_tdleaf.py` (reuses `puct_search`, `ModelEvaluator`, `board_to_tensor`, Stockfish engine).
-TD(λ) math unit-verified (λ=0 → one-step TD, λ=1 → Monte Carlo). Smoke (4 games, 48 sims, 60-ply cap): loop +
-grad step work (MSE 0.075→0.063), 1W/3D vs SF-1320, **~8.5 s/game** → real config ~25–30 s/game, ~200 games in ~1.5–2h.
-
-**Falsifiable gate (given D35).** After ~200 games, play-gate the repaired value vs SF-1320 at 256 sims, N≥40
-(`scripts/eval_search_vs_stockfish.py`). Clear beat of D35's ~0.2 plateau (≥~0.35, ~2 SE) → the search-coupled
-signal moved the ceiling, continue/scale. Flat ~0.2 → the wall is re-confirmed at laptop scale and TDLeaf is not the
-lever either. Bounded, falsifiable bet.
-
-```bash
-systemd-inhibit --what=sleep:idle:handle-lid-switch --mode=block \
-  python scripts/train_tdleaf.py --games 200 --simulations 64 --lam 0.7 --lr 1e-4 \
-  --out runs/tdleaf/tdleaf.pt --log reports/tdleaf/tdleaf_log.jsonl
-```
-
-**Result (D40, controlled gate).** Ran the 2×2 — {untrained shaw base `S2.pt`, TDLeaf-trained} × {SF-1320, SF-1900},
-256 sims, N=40, fixed opening set, Wilson 95% CIs:
-
-| condition | score | W/D/L | 95% CI |
-|-----------|-------|-------|--------|
-| base @1320 | 0.975 | 39/0/1 | [0.871, 0.996] |
-| tdleaf @1320 | 0.975 | 39/0/1 | [0.871, 0.996] |
-| base @1900 | 0.738 | 27/5/8 | [0.585, 0.849] |
-| tdleaf @1900 | 0.762 | 26/9/5 | [0.611, 0.868] |
-
-**TDLeaf added no measurable strength.** Δ@1900 = **+0.025** (SE≈0.085, z≈0.30 — indistinguishable from zero);
-@1320 identical (saturated). The training-time curriculum climb (1320→1900) at 64 sims and the ceiling-break are
-**entirely the base + deep search**, not the value repair. This is D35's "offline value ≠ play" verdict reproduced
-even for the *untried* mechanism (value *learning* coupled to search): coupling didn't help either. Minor texture:
-TDLeaf shifted 1900 from 27W/5D/8L → 26W/9D/5L (fewer losses, more draws — slightly risk-averse value), net noise.
-
-**The real headline is the base, not TDLeaf.** The *untrained* shaw base at 256 sims scores **0.975 vs SF-1320**
-(D35's old base capped ~0.2) and **0.738 vs SF-1900**. The D35 laptop-scale ceiling is decisively broken — by
-**architecture (shaw) + data (D38) + search depth (64→256 sims)**, the three levers with live evidence. Value-head
-training (static targets D30–D35, or search-coupled TDLeaf here) remains a dead lever for *strength* at this scale.
-
-Verdict: TDLeaf is **not** the path; **stop the value-head line of attack entirely**. The productive frontier is
-scaling the base (more data / larger shaw model, D37–D39) and paying for deeper search at inference. Figures:
-`reports/tdleaf/fig_panelA_curriculum.png`, `reports/tdleaf/fig_tdleaf_result.png`.
-
-### D41 (staged, not launched) — Scale the shaw base on data; TDLeaf/self-play retired
-Post-D40 direction: strength = base (shaw arch D39 + data D38) + inference search depth; the value-head lever is
-retired (D30–D35 static, D40 search-coupled, both null). No self-play/RL — TDLeaf *was* the honest self-play-vs-Stockfish
-test and it added +0.025 (noise). Plan is staged supervised scaling of the shaw base, re-gated with 256-sim search.
-
-Stage 1 (ready, ~11h, held for an uninterrupted window): S2 shaw, 40M→80M positions (clean 2× extending the D38
-curve 5→20→40→80M), all 10 training months, eval 2025-11, LR pinned 1.5e-4. Added interim checkpointing to
-`scaling_sweep.py` (`--save-every`, saves mid-run so an interrupt keeps the latest partial model — fixes the
-absolute-40M total-loss failure mode). Writes to a fresh `runs/scaling_shaw_data/` so the `runs/scaling/S2.pt`
-TDLeaf base is preserved. Stage 2 (conditional on Stage 1 top-1 climbing past 44.5%): S3 shaw + more data.
-
-```bash
-systemd-inhibit --what=sleep:idle:handle-lid-switch --mode=block \
-  uv run python scripts/scaling_sweep.py --sizes S2 --max-positions 80000000 \
-  --pos-encoding shaw --lr-transfer constant --base-lr 1.5e-4 --device cuda \
-  --save-every 5000 --ckpt-dir runs/scaling_shaw_data \
-  --out reports/scaling_law/data_arm_s2_80M_shaw.json \
-  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
-  --train-pgn data/raw/lichess_elite_2025-01.pgn --train-pgn data/raw/lichess_elite_2025-02.pgn \
-  --train-pgn data/raw/lichess_elite_2025-03.pgn --train-pgn data/raw/lichess_elite_2025-04.pgn \
-  --train-pgn data/raw/lichess_elite_2025-05.pgn --train-pgn data/raw/lichess_elite_2025-06.pgn \
-  --train-pgn data/raw/lichess_elite_2025-07.pgn --train-pgn data/raw/lichess_elite_2025-08.pgn \
-  --train-pgn data/raw/lichess_elite_2025-09.pgn --train-pgn data/raw/lichess_elite_2025-10.pgn
-```
-
----
-
-## D42 — 100M data-arm run with in-loop SF-1900 early stopping
-
-Supersedes D41's 80M target: push the S2 shaw data arm to **100M positions** (extends the D38 curve
-5→20→40→100M). Two changes to `scaling_sweep.py`:
-
-1. **In-loop play eval + early stop.** Every `--eval-every` positions (default here 20M → 5 eval points)
-   the in-training model is wrapped in a `ModelEvaluator` and plays `--eval-games` games (20) vs
-   **Stockfish 1900** using PUCT at **64 sims** — 64 chosen over 256 because it is ~2.5× faster and we only
-   need the *trend*, not an absolute strength number (D40's 0.738 was a 256-sim headline; here we track slope).
-   Early stop when the play score fails to beat the running best by `--eval-min-delta` (0.02) for
-   `--eval-patience` (2) consecutive evals. Rationale: D38 top-1 was still climbing steeply at 40M, so a real
-   plateau in the 60–100M range is the signal we want to cut on; N=20 @ 64 sims is noisy (~0.11 std) so
-   patience=2 tolerates a single dip. The eval runs *between* optimizer steps and never calls the optimizer,
-   so it does not perturb training numerics — the 100M point still lands cleanly on the fp32 curve.
-
-2. Eval is **opt-in** (`--eval-every 0` = off, the default) so existing offline-only invocations are unchanged.
-
-Precision decision (from this session): stayed **fp32** on the local 4060 rather than bf16 or a rented pod —
-GPU probed at ~94% util (compute-bound, not starved, so workers/parallelism buy nothing), and Prime balance
-($4.44) plus a 1.3 GB-VRAM tiny model plus 2.9 GB PGN upload made renting non-viable and numerically riskier.
-fp32 overnight keeps the 100M point comparable to the 5/20/40M points.
-
-```bash
-systemd-inhibit --what=sleep:idle:handle-lid-switch --mode=block \
-  uv run python scripts/scaling_sweep.py --sizes S2 --max-positions 100000000 \
-  --pos-encoding shaw --lr-transfer constant --base-lr 1.5e-4 --device cuda \
-  --save-every 5000 --ckpt-dir runs/scaling_shaw_data \
-  --out reports/scaling_law/data_arm_s2_100M_shaw.json \
-  --eval-pgn data/raw/lichess_elite_2025-11.pgn \
-  --eval-every 20000000 --eval-elo 1900 --eval-games 20 --eval-sims 64 \
-  --eval-patience 2 --eval-min-delta 0.02 \
-  --train-pgn data/raw/lichess_elite_2025-01.pgn ... (through 2025-10)
-```
-
----
-
-## D43 — 100M shaw data point + Elo per checkpoint + HF artifact
-
-Final point of the S2 shaw data arm (D42 run, 100M positions, 15.3h, fp32, LR 1.5e-4 constant, no early stop).
-
-Offline (held-out Lichess Elite 2025-11): **top-1 49.45%** (5M abs 30.92% → 20M shaw 38.56% → 40M 44.52% →
-100M 49.45%), **value MSE 0.650** (0.699 → 0.678 → 0.650). Data scaling still climbing at 100M; no plateau.
-
-In-loop SF-1900 @ 64 sims (the falsifiable play signal, N=20/point): 20M 0.250 → 40M 0.350 → 60M 0.650 →
-80M 0.775 → **100M 0.825**. Monotonic — play strength scales with data, contradicting the earlier apparent
-256-sim plateau (which was two noisy N=20 points at 49M/73M both = 0.800).
-
-Elo table (256-sim PUCT vs Stockfish UCI_Elo, single-anchor SF-1900, Wilson CI; N=20):
-| ckpt | vs SF-1900 | Elo | 95% CI |
-|---|---|---|---|
-| base | 0.738 | 2080 | [1913, 2247] |
-| 49M | 0.800 | 2141 | [1959, 2323] |
-| 73M | 0.800 | 2141 | [1959, 2323] |
-| 100M | 0.900 | 2282 | [2046, 2517] |
-
-100M gauntlet (256 sims): SF-1900 0.900 (20g), SF-2100 0.700 (15g), SF-2300 0.833 (15g). 3-level weighted
-logistic fit ≈ **2470**, but levels are non-monotonic (2100<2300) so the fit is noise-inflated; defensible
-range **~2280–2470**. 100M is clearly the strongest (base +~200 Elo).
-
-Artifact: highest-Elo checkpoint (100M) pushed to **https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-100m**
-(S2_shaw_100M.pt + custom model card). Checkpoints preserved at runs/scaling_shaw_data/checkpoints/{S2_shaw_49M,73M,100M}.pt.
+| parameters | 14.89M | 15.22M |
+| policy CE | 2.0437 | **2.0382** |
+| top-1 | 37.65% | **38.56%** |
+| value MSE | 0.6999 | **0.6987** |
+
+The 0.91-point top-1 gain was about four standard errors on the 50k-position evaluation
+slice and cost about 2% more parameters. At 40M positions, Shaw S2 reached **44.52%**
+top-1.
+
+Decision: Shaw relative attention is the default for every newly trained model.
+Checkpoint-stored configuration preserves compatibility with older absolute models.
+
+## D15 — Reject TDLeaf value training
+
+TDLeaf trained only the value head and final RMSNorm of the 40M-position Shaw S2 base.
+The encoder, trunk, and policy head remained frozen. Training alternated four games
+against a Stockfish curriculum with TD-lambda updates from PUCT root values
+(`lambda=0.7`, 64 simulations, `lr=1e-4`) for approximately 200 games.
+
+A controlled 256-simulation gate used identical openings:
+
+| model | SF-1320 | SF-1900 |
+|---|---:|---:|
+| untrained Shaw base | 0.975 | 0.738 |
+| TDLeaf | 0.975 | 0.762 |
+
+The SF-1900 delta was +0.025 with standard error about 0.085. TDLeaf changed losses
+into draws but added no measurable score.
+
+Decision: stop value-head and self-play repair. The strength jump came from supervised
+data, Shaw encoding, and inference search, not TDLeaf.
+
+## D16 — Scale Shaw S2 to 100M supervised positions with in-loop play gates
+
+The current strongest base trained Shaw S2 on **100M Lichess Elite positions** in fp32
+with constant `lr=1.5e-4`. The run took 15.3 hours on the RTX 4060 Laptop GPU. Held-out
+evaluation used Lichess Elite 2025-11. Every 20M positions, the current model played 20
+games against SF-1900 using 64 PUCT simulations.
+
+| positions | top-1 | SF-1900 score at 64 sims |
+|---:|---:|---:|
+| 20M | 38.56% | 0.250 |
+| 40M | 44.52% | 0.350 |
+| 60M | — | 0.650 |
+| 80M | — | 0.775 |
+| 100M | **49.45%** | **0.825** |
+
+Policy CE reached **1.57255** and value MSE reached **0.64971**. No offline or play
+plateau appeared by 100M positions.
+At 256 simulations, the 100M checkpoint scored 0.900 vs SF-1900, 0.700 vs SF-2100,
+and 0.833 vs SF-2300. The non-monotonic opponent results make the fitted 2470 estimate
+noise-inflated; the defensible current range is approximately **2280–2470 Elo**.
+
+Decision: the 100M Shaw S2 checkpoint is the current training champion. Supervised
+data scaling remains the only training lever with monotonic offline and play evidence.
+
+## D17 — Next experiment: test capacity at matched 100M data
+
+The next run is a controlled **S3 Shaw at 100M positions** experiment. It must use the
+same training PGN pool, held-out month, target construction, optimizer schedule, and
+effective batch as D16. Use width-transferred LR `1.2e-4`; use gradient accumulation
+as needed to stay within 8 GB VRAM. Save checkpoints and evaluate offline every 20M
+positions so the S3 curve is directly paired with S2.
+
+Promotion criteria:
+
+1. On the same 50k-position held-out slice, S3 must reach policy CE below **1.57255**
+   and top-1 of at least **49.95%**. The 0.50-point top-1 margin is more than twice the
+   approximately 0.22-point standard error at this sample size.
+2. Compare S3 directly with S2 over identical openings at 256 simulations against
+   SF-1900, SF-2100, and SF-2300, with at least 40 games per level. The pooled paired
+   bootstrap interval for score difference must exclude zero, and score must decrease
+   monotonically as opponent Elo increases.
+3. If S3 misses either criterion at 100M, reject the capacity increase and run the next
+   controlled point as S2 Shaw at 200M positions.
+
+No value repair, TDLeaf, OPD, or offline teacher distillation is allowed in this run.
+This experiment isolates whether additional capacity becomes useful only after the
+data starvation identified in D13 has been reduced.
