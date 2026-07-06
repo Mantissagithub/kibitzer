@@ -1,12 +1,12 @@
 # Kibitzer — Decision Log
 
-Goal: make the kibitzer chess model strong (target **2500+** Elo), climbing toward
-beating Stockfish. Hard constraints: **no GitHub pushes**, **≤ $4 GPU budget**,
-**non-spot rentals only**, `.env`/HF token **stays local** (never synced to rentals),
-push intermediate datasets + models to the HF **`kibitzer` collection**.
-
-Ordering agreed with user: **(1) 100k Stockfish distillation → (2) on-policy
-distillation from a strong HF chess model → (3) self-play RL.**
+Goal: build kibitzer into a **3000+ Elo chess model** that can compete with and
+ultimately beat Stockfish at that level. Previous budget limits, infrastructure
+constraints, and training plans recorded below are historical decisions, not current
+constraints. Current work must run on an **RTX 4060 laptop GPU with 8 GB VRAM**. The
+next decision must state the strongest evidence-backed path toward 3000+ that fits
+this hardware, its cost, its measurable success criterion, and the condition for
+continuing or abandoning it.
 
 ---
 
