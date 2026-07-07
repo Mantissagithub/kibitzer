@@ -1,0 +1,7 @@
+<UciProtocol (pid=260679)>: stderr >> [1m[31m       _
+<UciProtocol (pid=260679)>: stderr >> |   _ | |
+<UciProtocol (pid=260679)>: stderr >> |_ |_ |_|[0m v0.33.0-dev+git.d8ce482 built Jul  7 2026
+<UciProtocol (pid=260679)>: stderr >> Search algorithm: classic
+<UciProtocol (pid=260679)>: stderr >> Loading weights file from: data/leela/t1-256x10-distilled.pb.gz
+<UciProtocol (pid=260679)>: stderr >> Using Eigen version 3.4.0
+<UciProtocol (pid=260679)>: stderr >> Eigen max batch size is 256.

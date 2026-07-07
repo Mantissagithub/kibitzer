@@ -1,0 +1,12 @@
+{
+  "variant": "alphabeta",
+  "baseline": "baseline_puct",
+  "budget": 128,
+  "games": 20,
+  "w": 0,
+  "d": 3,
+  "l": 17,
+  "score": 0.075,
+  "avg_evals_variant": 145.9,
+  "avg_evals_baseline": 122.2
+}

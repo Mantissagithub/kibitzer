@@ -1,0 +1,12 @@
+{
+  "variant": "alphabeta_quiescence",
+  "baseline": "baseline_puct",
+  "budget": 128,
+  "games": 20,
+  "w": 0,
+  "d": 1,
+  "l": 19,
+  "score": 0.025,
+  "avg_evals_variant": 138.9,
+  "avg_evals_baseline": 121.9
+}

@@ -1,0 +1,11 @@
+{
+  "checkpoint": "runs/scaling_shaw_data/checkpoints/S2_shaw_100M_tactical.pt",
+  "games": 40,
+  "simulations": 256,
+  "value_scale": 1.0,
+  "stockfish_elo": 1900,
+  "wins": 34,
+  "draws": 3,
+  "losses": 3,
+  "score": 0.8875
+}

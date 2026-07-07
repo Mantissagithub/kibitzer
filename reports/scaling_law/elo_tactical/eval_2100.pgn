@@ -1,0 +1,440 @@
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "1"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 b5 5. Bb3 Nf6 6. O-O d6 7. c3 Be7 8. Re1 O-O 9. h3 Na5 10. Bc2 c5 11. d4 exd4 12. cxd4 Nc6 13. d5 Ne5 14. Nxe5 dxe5 15. a4 Qa5 16. Bd2 b4 17. Na3 g6 18. Nc4 Qc7 19. Bh6 Rd8 20. a5 Nh5 21. Nb6 Rb8 22. Ba4 Ng7 23. Rc1 Rxb6 24. axb6 Qxb6 25. Be3 Ne6 26. Qd2 a5 27. Red1 Qc7 28. Qe2 Nd4 29. Bxd4 exd4 30. Rxd4 Bd6 31. e5 f5 32. exd6 Qb7 33. Rxc5 Qb6 34. Qe7 Be6 35. Rc7 Qxc7 36. dxc7 Re8 37. Bxe8 a4 38. dxe6 g5 39. c8=Q g4 40. Bf7+ Kg7 41. Qg8+ Kh6 42. Qeg5# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "2"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. Bb5 Nd4 5. Ba4 Bc5 6. d3 O-O 7. Nxe5 d5 8. O-O dxe4 9. Nxe4 Nxe4 10. c3 Nf6 11. cxd4 Bxd4 12. Qe2 Qd5 13. Re1 Be6 14. Nf3 Bg4 15. h3 Bxf3 16. gxf3 Qh5 17. Kg2 Nd5 18. Qd2 Qg6+ 19. Qg5 c6 20. Qg4 Qxg4+ 21. fxg4 Rfe8 22. Bd2 a5 23. Rxe8+ Rxe8 24. Re1 Rxe1 25. Bxe1 Nf4+ 26. Kf3 Nxd3 27. Bxa5 Nxf2 28. Bc2 Nxh3 29. Bd2 h6 30. b4 Ng5+ 31. Kg2 Ne6 32. Be4 Kf8 33. Kf1 Ke7 34. Ke2 Kd6 35. b5 cxb5 36. Bd3 Bc5 37. Bb1 b4 38. Bh7 b5 39. Bd3 Nd4+ 40. Ke1 Nf3+ 41. Kf1 Nxd2+ 42. Kg2 Nc4 43. Be4 Ke5 44. Bf3 Kf4 45. Be2 Ne3+ 46. Kh3 Nc4 47. Bd3 Ne5 48. Bf5 g6 49. Bc8 Nd3 50. Kg2 Nc1 51. Bb7 Nxa2 52. Bf3 b3 53. Bd5 b2 54. Bxa2 Kxg4 55. Kh1 f5 56. Kg2 f4 57. Kf1 f3 58. Ke1 Kg3 59. Kd2 f2 60. Kc2 f1=Q 61. Kxb2 Qe2+ 62. Kc1 Qxa2 63. Kd1 b4 64. Kc1 b3 65. Kd1 b2 66. Kc2 b1=Q+ 67. Kc3 Qbb3# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "3"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O b5 6. Bb3 Nxe4 7. d4 d5 8. dxe5 Be6 9. c3 Be7 10. Nbd2 Nc5 11. Bc2 Bg4 12. h3 Bh5 13. Re1 Qd7 14. Nf1 Ne6 15. Ng3 Bg6 16. Nf5 h6 17. a4 O-O 18. Be3 Rfe8 19. b4 Bxf5 20. Bxf5 Bf8 21. Qd2 bxa4 22. Bc2 Ne7 23. Bxa4 Qc8 24. Bxe8 Qxe8 25. Nd4 Rd8 26. Rxa6 Ng6 27. Nxe6 fxe6 28. Bd4 Rb8 29. Rea1 c6 30. Ba7 Rb7 31. Bd4 Be7 32. Ra8 Rb8 33. Rxb8 Qxb8 34. Qe2 Qf8 35. Qg4 Qf7 36. Ra8+ Bf8 37. Bc5 Nxe5 38. Rxf8+ Qxf8 39. Qxe6+ Qf7 40. Qxe5 h5 41. Bd4 h4 42. Qg5 Qf8 43. Qxh4 Qa8 44. Qg4 Qa7 45. Bxa7 Kf7 46. Bd4 c5 47. Qxg7+ Ke6 48. bxc5 Kf5 49. Qg4# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "4"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+[Termination "THREEFOLD_REPETITION"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bc4 Nf6 5. Nc3 Nxe4 6. O-O Nxc3 7. dxc3 Be7 8. Qd5 O-O 9. Nxe5 Nxe5 10. Qxe5 Bf6 11. Qf5 d5 12. Qxd5 Qxd5 13. Bxd5 c6 14. Be4 Re8 15. Bd3 Be6 16. a4 Rad8 17. Re1 Bc4 18. Rxe8+ Rxe8 19. Kf1 Bxd3+ 20. cxd3 h5 21. Bd2 Rd8 22. Ke2 Re8+ 23. Be3 Bd8 24. Rh1 f5 25. Kd1 Kf7 26. h4 Kg6 27. g3 Bc7 28. Bg5 Kf7 29. b4 a5 30. Be3 axb4 31. cxb4 Ra8 32. b5 Rxa4 33. bxc6 Ra1+ 34. Bc1 bxc6 35. Rf1 Be5 36. Kc2 Bd4 37. Kd1 Bb2 38. Kc2 Bf6 39. Kd1 Bb2 40. Kd2 Bxc1+ 41. Rxc1 Rxc1 42. Kxc1 Ke6 43. Kb2 Kd5 44. Kc3 c5 45. Kb3 Kd4 46. Kc2 c4 47. dxc4 Kxc4 48. f3 Kd5 49. Kd3 Ke5 50. Ke2 f4 51. g4 hxg4 52. fxg4 Ke4 53. Kf2 f3 54. g5 Kf4 55. g6 Kg4 56. h5 Kxh5 57. Kxf3 Kxg6 58. Kg4 Kf6 59. Kf4 Kg6 60. Kg4 Kf6 61. Kf4 g6 62. Kg4 g5 63. Kh3 Kf5 64. Kg3 g4 65. Kf2 Kf4 66. Kg2 g3 67. Kg1 Kg4 68. Kg2 Kf4 69. Kg1 Kg4 70. Kg2 1/2-1/2
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "5"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d3 d6 5. O-O Na5 6. Bb5+ c6 7. Ba4 Bd7 8. c4 b5 9. Bc2 Nb7 10. Nc3 b4 11. Ne2 c5 12. h3 h6 13. Nh2 Na5 14. f4 Nc6 15. f5 a6 16. g4 Qc7 17. Ng3 Nh7 18. Nf3 Nd4 19. Nxd4 cxd4 20. Nh5 g6 21. fxg6 fxg6 22. Nf6+ Nxf6 23. Rxf6 Be7 24. Rxg6 h5 25. Ba4 O-O-O 26. Bxd7+ Qxd7 27. Bg5 hxg4 28. Bxe7 Rxh3 29. Qxg4 Rxd3 30. Qxd7+ Rxd7 31. Bxd6 Rd2 32. c5 Rxb2 33. Bxe5 Rc2 34. c6 Rd8 35. Rb1 d3 36. Rxb4 Rc1+ 37. Kf2 Rf8+ 38. Ke3 Re1+ 39. Kd2 Rf2+ 40. Kxe1 Re2+ 41. Kd1 Re1+ 42. Kxe1 a5 43. Rg8# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "6"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Bd5 Bc5 5. Bxc6 dxc6 6. Nc3 O-O 7. d3 Nd7 8. Ne2 a5 9. a4 f6 10. h3 b6 11. Be3 Bxe3 12. fxe3 Nc5 13. O-O Ne6 14. Qe1 c5 15. b3 Qe7 16. Nd2 Ba6 17. Nc3 c6 18. Kh2 Rad8 19. Kh1 Rd7 20. Nd1 Rfd8 21. Nb2 h6 22. Rc1 b5 23. Kg1 Kh7 24. Nf3 c4 25. axb5 cxb5 26. bxc4 bxc4 27. Qxa5 Ra7 28. Ra1 cxd3 29. Rf2 dxc2 30. Rxc2 Rda8 31. Qe1 Bb7 32. Rxa7 Rxa7 33. Rc4 Ra2 34. Qf2 Ba6 35. Ra4 Rxa4 36. Nxa4 Qb4 37. Qc2 Bb5 38. Nb6 Qc5 39. Qxc5 Nxc5 40. Nd2 Bd3 41. Kf2 Nxe4+ 42. Ke1 Nxd2 43. Kxd2 Bf1 44. Ke1 Bxg2 45. h4 Kg6 46. Nc4 Kh5 47. Kf2 Bd5 48. Nd6 Kxh4 49. Ke1 g6 50. Ne8 f5 51. e4 Bxe4 52. Kf1 g5 53. Kf2 g4 54. Kg1 g3 55. Nd6 Kg4 56. Nc4 f4 57. Nxe5+ Kh3 58. Ng4 Kxg4 59. Kf1 Kf3 60. Ke1 g2 61. Kd2 g1=Q 62. Kc3 Qe3+ 63. Kb4 h5 64. Kb5 h4 65. Kb4 h3 66. Ka4 h2 67. Ka5 h1=Q 68. Kb4 Qb6+ 69. Kc4 Qc1# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "7"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1/2-1/2"]
+[Termination "THREEFOLD_REPETITION"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 Nxe4 4. Qe2 d5 5. d3 Qe7 6. dxe4 Qxe5 7. exd5 Bd6 8. Qxe5+ Bxe5 9. Nc3 c6 10. Bd2 Bf5 11. O-O-O Bd4 12. Bc4 b5 13. dxc6 bxc4 14. Rhe1+ Be6 15. Nb5 Bb6 16. c7 Na6 17. Nd6+ Kd7 18. Bf4 Kc6 19. Nxf7 Bxf7 20. Rd6+ Kb7 21. Re7 Be8 22. Rd8 Rc8 23. Rxc8 Kxc8 24. Rxg7 Bc6 25. Be5 Re8 26. f4 Bxc7 27. Bxc7 Nxc7 28. Rxh7 c3 29. bxc3 Be4 30. Rg7 Nb5 31. c4 Nc7 32. g4 Rh8 33. Re7 Bf3 34. g5 Bg4 35. g6 Kd8 36. Rh7 Rg8 37. g7 Ne8 38. Rh8 Be6 39. f5 Bxc4 40. f6 Nxf6 41. h4 Ne8 42. h5 Nxg7 43. h6 Rxh8 44. hxg7 Rg8 45. Kb2 Bb5 46. c4 Bc6 47. Kc3 Rxg7 48. Kb4 Bg2 49. Kc5 Ba8 50. Kb4 Bb7 51. Kc5 Ba8 52. Kb4 Bc6 53. Kc5 1/2-1/2
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "8"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nc3 Nc6 4. d4 exd4 5. Nxd4 Bb4 6. Nxc6 bxc6 7. Bd2 O-O 8. Be2 Bxc3 9. Bxc3 Nxe4 10. Bb4 Re8 11. O-O Rb8 12. Qe1 d5 13. Ba3 c5 14. f3 Nd6 15. Qf2 d4 16. Rfd1 Qg5 17. Bf1 Nf5 18. Re1 Ne3 19. c3 Bh3 20. Qg3 Qxg3 21. hxg3 Nxf1 22. Rxf1 Bf5 23. Bxc5 d3 24. Rf2 a5 25. a4 Re5 26. g4 Rxc5 27. gxf5 Rxf5 28. b4 axb4 29. cxb4 Rxb4 30. a5 Rbb5 31. Rfa2 Rfd5 32. a6 Rd8 33. a7 Ra8 34. Ra3 d2 35. Rd3 Rb2 36. Rda3 Rc2 37. Rb3 Rc1+ 38. Kf2 h5 39. Ra5 d1=Q 40. Kg3 Qxb3 41. Rg5 Rxa7 42. Rf5 h4+ 43. Kg4 Ra4+ 44. f4 Qg3+ 45. Kh5 Qg6+ 46. Kxh4 Rh1# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "9"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Bd7 6. Bg5 e6 7. Qd2 Qb6 8. O-O-O h6 9. Bxf6 Nc6 10. Bh4 Nxd4 11. Qxd4 Qxd4 12. Rxd4 e5 13. Rd2 a5 14. Nd5 Bc6 15. Nc7+ Kd7 16. Nxa8 f5 17. exf5 g5 18. fxg6 Rg8 19. Nb6+ Ke8 20. Bc4 Rxg6 21. Bd5 Rg4 22. Bg3 Be7 23. Bxc6+ Kf7 24. Bd5+ Ke8 25. Bxb7 Rd4 26. Rxd4 Bd8 27. Rxd6 Ke7 28. Rhd1 Bxb6 29. Rxb6 Ke8 30. Bxe5 Kf8 31. Rd7 Ke8 32. Bc6 Kf8 33. Rb8# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "10"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nf3 d6 3. Nc3 Nf6 4. Bc4 e6 5. Bb3 Be7 6. d4 cxd4 7. Ba4+ Nc6 8. Qxd4 Bd7 9. Bxc6 Bxc6 10. Qd3 O-O 11. O-O Rc8 12. Nd4 a6 13. a4 Qc7 14. h3 Rfd8 15. Qe3 h6 16. Qe2 Bf8 17. a5 d5 18. e5 Ne4 19. Nxe4 dxe4 20. Nxc6 Qxc6 21. c3 Rd3 22. Bf4 Rcd8 23. Kh2 Bc5 24. Rae1 Qb5 25. Bg3 Rd2 26. Qxe4 Qxb2 27. Rb1 Qxc3 28. Qxb7 Qxa5 29. f4 Qa2 30. Ra1 Qb2 31. Qxb2 Rxb2 32. Be1 Ra8 33. Bc3 Rb3 34. Bd2 Rd8 35. Ra2 Rdd3 36. Bc1 Rb1 37. Re1 a5 38. Rxa5 Bf2 39. Ra8+ Kh7 40. Rf1 Bg3+ 41. Kh1 Rc3 42. Rb8 Rxb8 43. f5 Rb1 44. Rd1 Rcxc1 45. Rxc1 Rxc1# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "11"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nf3 Nc6 3. d4 Nxd4 4. Nxd4 cxd4 5. Qxd4 a6 6. Nc3 h6 7. Nd5 h5 8. Bg5 Nf6 9. O-O-O Nxd5 10. exd5 d6 11. Re1 Bd7 12. Bd3 Bc8 13. Re3 Qc7 14. Rhe1 Bg4 15. Bxe7 Qa5 16. Bxd6+ Kd7 17. Bxf8 Raxf8 18. Re7+ Kd8 19. b4 Kc8 20. bxa5 g6 21. Qc5+ Kb8 22. Qc7+ Ka8 23. Qxb7# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "12"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 e5 5. Nf5 d5 6. Ng3 Nf6 7. Be2 dxe4 8. Nd2 Bc5 9. Ngxe4 Nxe4 10. Nxe4 Qxd1+ 11. Kxd1 Be7 12. Bd2 Bf5 13. Bf3 O-O-O 14. Rc1 Nd4 15. Ng3 Nxf3 16. gxf3 Be6 17. Ke1 f5 18. h4 f4 19. Ne4 Bd5 20. Bc3 Rhe8 21. Rd1 h6 22. h5 Bf8 23. a3 Bc6 24. Rg1 Rxd1+ 25. Kxd1 Kd7 26. Kc1 Ke6 27. Bb4 Kf7 28. Rd1 Be7 29. Bxe7 Rxe7 30. Rg1 Rd7 31. b4 Rd5 32. Rg2 Rd4 33. Nd2 Rxd2 34. Kxd2 Bxf3 35. Rh2 Kf6 36. c4 e4 37. c5 a6 38. a4 Ke5 39. Rh4 Kf5 40. Rh2 Ke5 41. Rh3 Bg4 42. Rh1 Kd4 43. Rg1 Bxh5 44. Rxg7 e3+ 45. Ke1 Bf3 46. Rd7+ Kc3 47. Rf7 e2 48. b5 axb5 49. axb5 h5 50. Rxf4 Bd5 51. Rh4 Bc4 52. c6 bxc6 53. Rxc4+ Kxc4 54. bxc6 Kd5 55. c7 Kc6 56. c8=Q+ Kd6 57. Qh3 Ke5 58. Qxh5+ Kd4 59. Kxe2 Ke4 60. Qc5 Kf4 61. Qd5 Kg4 62. Ke3 Kh3 63. Qg8 Kh2 64. Qg5 Kh1 65. Qg4 Kh2 66. Kf3 Kh1 67. Qg6 Kh2 68. Qg5 Kh1 69. Qg2# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "13"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. e4 c5 2. Nc3 Nc6 3. Bb5 Nf6 4. Bxc6 bxc6 5. d3 g6 6. f4 d6 7. Nf3 Bg7 8. O-O O-O 9. Qe1 c4 10. dxc4 Ba6 11. b3 Nxe4 12. Bb2 f5 13. Nxe4 Qb6+ 14. c5 Qb5 15. Bxg7 Rfe8 16. c4 e5 17. cxd6 Qxc4 18. Nf6+ Kxg7 19. bxc4 Bxc4 20. Nxe8+ Rxe8 21. d7 Rd8 22. Qxe5+ Kg8 23. Qe7 Rxd7 24. Qxd7 Bd5 25. Rae1 Be4 26. Ng5 a5 27. Qf7+ Kh8 28. Qf8# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "14"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+[Termination "INSUFFICIENT_MATERIAL"]
+
+1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4 5. Nb5 Bg7 6. Nbxd4 Nf6 7. Nxc6 bxc6 8. Qd4 O-O 9. Be2 d6 10. Qd3 a5 11. c4 c5 12. O-O Bb7 13. e5 dxe5 14. Qxd8 Rfxd8 15. Nxe5 Ne4 16. Nd3 a4 17. a3 Ba6 18. Bf3 f5 19. Bxe4 fxe4 20. Nxc5 Bxc4 21. Re1 Bd5 22. Re2 Rac8 23. Nxa4 Bb3 24. Bg5 Bxa4 25. Rxe4 Bxb2 26. Rae1 Bb3 27. Rxe7 Bc3 28. Rc1 h6 29. Bxh6 Bf6 30. Ree1 Rxc1 31. Rxc1 g5 32. h4 gxh4 33. Be3 Kf7 34. a4 Bxa4 35. Bf4 Ke6 36. Kh1 Kf5 37. Bh6 Bb3 38. Kg1 Bd5 39. Rc5 Kg6 40. Bd2 Be6 41. Bc3 Rd1+ 42. Kh2 Rc1 43. Bd4 Rxc5 44. Bxc5 Kf5 45. Kg1 Bd5 46. f3 Ke6 47. Kh2 Kf5 48. Bf2 Be5+ 49. Kh3 Bf6 50. Be1 Be6 51. g4+ hxg3 52. Kxg3 Bd5 53. f4 Ke4 54. Kg4 Be6+ 55. Kg3 Bf5 56. Bf2 Be6 57. Ba7 Bf5 58. Bb8 Be6 59. Ba7 Bd4 60. Bxd4 Kxd4 61. f5 Bf7 62. Kf4 Kd5 63. f6 Kd6 64. Ke3 Be6 65. Kd3 Bf7 66. Ke4 Ke6 67. Ke3 Kd5 68. Kf2 Kd6 69. Ke2 Bd5 70. Kd3 Be6 71. Kc3 Bf7 72. Kd4 Be6 73. Kd3 Bf7 74. Kd2 Ke6 75. Kd1 Kxf6 1/2-1/2
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "15"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. e4 e6 2. d4 d5 3. e5 a6 4. c3 Ne7 5. h4 Bd7 6. h5 Nbc6 7. h6 gxh6 8. Bxh6 Nf5 9. Bxf8 Kxf8 10. g4 Nfe7 11. Nd2 h6 12. Bd3 Ke8 13. Ne2 Ng6 14. Bxg6 fxg6 15. Nf4 Rf8 16. Nxg6 Rf7 17. Rxh6 Rf8 18. Nxf8 Nxe5 19. dxe5 c5 20. Nxe6 Bxe6 21. Rxe6+ Kf8 22. Qf3+ Kg7 23. Rf6 Qd7 24. Rd6 Qa4 25. Qf6+ Kg8 26. Rd8+ Rxd8 27. Qxd8+ Kf7 28. Qf6+ Kg8 29. e6 c4 30. Qf7+ Kh8 31. e7 a5 32. e8=Q+ Qxe8+ 33. Qxe8+ Kg7 34. Qe7+ Kh6 35. Qf6+ Kh7 36. g5 b6 37. Qf7+ Kh8 38. g6 d4 39. Qh7# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "16"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. c3 Nf6 5. Bg5 Be7 6. Bd3 Bg4 7. Be2 Bxe2 8. Nxe2 O-O 9. Bxf6 Bxf6 10. h3 Re8 11. O-O Nd7 12. Nd2 c5 13. dxc5 Nxc5 14. Rb1 Qb6 15. Nf3 Rad8 16. g3 Qa6 17. Nf4 Qxa2 18. Qc2 Qc4 19. Nh5 Be7 20. Nd2 Qe2 21. Nf4 Qb5 22. Rfe1 Bg5 23. Rxe8+ Rxe8 24. Nxd5 Qe2 25. Nf4 Bxf4 26. Qf5 Bxd2 27. Qxc5 Qd3 28. Rd1 h6 29. Qh5 g6 30. Qc5 Qe2 31. Ra1 Be3 32. fxe3 Rxe3 33. Qc7 Rf3 34. Rd1 Qxd1+ 35. Kh2 Rf2# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "17"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1/2-1/2"]
+[Termination "STALEMATE"]
+
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. h4 c5 5. g4 Be6 6. c3 Bd7 7. dxc5 e6 8. Be3 Qc7 9. b4 Qxe5 10. Nf3 Qf6 11. g5 Qd8 12. h5 Nc6 13. Nbd2 Nge7 14. Bd3 Qb8 15. a4 e5 16. b5 Na5 17. Nh4 e4 18. Be2 Qc7 19. Bd4 Qf4 20. Ng2 Qxg5 21. Ne3 Be6 22. Rb1 Rc8 23. h6 f5 24. f4 Qxf4 25. hxg7 Qg3+ 26. Kf1 Qf4+ 27. Nf3 Bxg7 28. Bxg7 exf3 29. Bxf3 Rg8 30. Bh6 Qg3 31. Ng2 Rxc5 32. Bf4 Qg7 33. Qe2 Bd7 34. Re1 Nc4 35. Bh6 Qf6 36. Bf4 Rg7 37. Rh6 Qxc3 38. Bg5 Qe5 39. Bh5+ Kd8 40. Qxe5 Nxe5 41. Bf6 Ng4 42. Bxg7 Nxh6 43. Bxh6 Ng6 44. Nf4 d4 45. Nxg6 hxg6 46. Bg5+ Kc8 47. Bxg6 Rc4 48. Rc1 Rxc1+ 49. Bxc1 Kc7 50. Ke2 Be6 51. Kd3 f4 52. Bxf4+ Kc8 53. Kxd4 a6 54. b6 Bd7 55. a5 Be6 56. Be4 Bg4 57. Kc5 Bh3 58. Bd5 Bf5 59. Kd4 Bh3 60. Be5 Bf5 61. Kc5 Bh3 62. Kd6 Bf5 63. Be6+ Bxe6 64. Kxe6 Kd8 65. Bd6 Kc8 66. Kd5 Kd8 67. Bc5 Ke8 68. Kd6 Kd8 69. Ke6 Ke8 70. Be3 Kd8 71. Kd5 Ke8 72. Kd6 Kd8 73. Bd4 Kc8 74. Bc5 Kb8 75. Kd7 Ka8 76. Bd4 Kb8 77. Be5+ Ka8 78. Bb8 Kxb8 79. Kd6 Ka8 80. Kc7 1/2-1/2
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "18"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. Nd2 e6 5. Nb3 Nd7 6. h4 h5 7. Be3 Nh6 8. Be2 Ng4 9. Bf4 Be7 10. Nf3 a5 11. a3 a4 12. Nbd2 Qb6 13. Bd3 Bxd3 14. cxd3 Qxb2 15. Rb1 Qxa3 16. Ke2 b5 17. Rc1 Rc8 18. Rc2 b4 19. Nb1 Qa1 20. Rc1 Qb2+ 21. Rc2 Qb3 22. Nbd2 Qxd3+ 23. Kxd3 Nxf2+ 24. Ke2 Nxd1 25. Rxd1 b3 26. Rcc1 O-O 27. Ne1 c5 28. dxc5 Nxc5 29. Bg5 Bxg5 30. Rxc5 Bxd2 31. Rxc8 Rxc8 32. Kxd2 a3 33. Nd3 Rc2+ 34. Ke3 b2 35. Kd4 a2 36. Nf4 Rc1 37. Nxd5 exd5 38. Kxd5 Rxd1+ 39. Kc4 a1=Q 40. e6 Qc1+ 41. Kb3 b1=Q+ 42. Ka4 Qa2+ 43. Kb4 Qcc4# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "19"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. e4 g6 2. d4 Bg7 3. Nc3 d6 4. Be3 Nf6 5. Qd2 Nc6 6. f3 a6 7. O-O-O O-O 8. g4 e5 9. d5 Nd4 10. h4 h5 11. g5 Ne8 12. f4 c5 13. dxc6 Qa5 14. Nge2 Nxe2+ 15. Bxe2 bxc6 16. f5 gxf5 17. Bxh5 f4 18. Bf2 Rb8 19. g6 Be6 20. gxf7+ Bxf7 21. Bxf7+ Kxf7 22. Rhg1 Kg8 23. h5 Kh8 24. h6 Bxh6 25. Rh1 Kh7 26. Rdg1 Qd8 27. Bh4 Qb6 28. Bg5 Qxb2+ 29. Kd1 Qa1+ 30. Ke2 Qxg1 31. Rxg1 Bxg5 32. Rxg5 Ng7 33. Qxd6 Ne6 34. Qxe6 f3+ 35. Kf2 Rf5 36. Qxf5+ Kh6 37. Qg6# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "20"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+[Termination "THREEFOLD_REPETITION"]
+
+1. e4 g6 2. d4 Bg7 3. Nf3 d6 4. Be3 Nf6 5. Bb5+ c6 6. Bd3 O-O 7. O-O Nbd7 8. c3 e5 9. dxe5 dxe5 10. Bc2 Qe7 11. h3 Nh5 12. Re1 Nf4 13. a4 Rd8 14. Nbd2 Nf8 15. Qc1 N8e6 16. Nc4 Ng5 17. Bd1 Nxf3+ 18. Bxf3 Nd3 19. Qc2 Nxe1 20. Rxe1 Be6 21. Be2 b6 22. Qc1 Rd7 23. a5 b5 24. Nd2 Rad8 25. b4 Bf8 26. Nf3 f6 27. g4 g5 28. Nd2 Qf7 29. Nf1 Bc4 30. Qb2 Bxe2 31. Rxe2 Rd1 32. Qc2 Qc4 33. Bxa7 Ra1 34. Kg2 Rd3 35. Re3 Rdd1 36. Nd2 Rg1+ 37. Kf3 Qe6 38. Bb6 h5 39. Qb3 Qf7 40. gxh5 Bh6 41. Qxf7+ Kxf7 42. Rd3 Rh1 43. Rd7+ Ke6 44. Rc7 g4+ 45. hxg4 Bxd2 46. Bc5 f5 47. exf5+ Kf6 48. Be7+ Kg7 49. Bg5+ Kf8 50. Bxd2 Rh3+ 51. Ke4 Rg1 52. Kxe5 Rd3 53. Bf4 Re1+ 54. Be3 Rd5+ 55. Kf6 Rd6+ 56. Kg5 Ke8 57. f6 Rd5+ 58. Kh6 Rd6 59. Kg5 Rd5+ 60. Kg6 Rd6 1/2-1/2
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "21"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. c4 e6 3. Nc3 Bb4 4. cxd5 Bxc3+ 5. bxc3 exd5 6. e3 c5 7. dxc5 Qa5 8. Bd2 Qxc5 9. Nf3 Ne7 10. Bd3 Bf5 11. Bxf5 Nxf5 12. O-O O-O 13. Rb1 Nd6 14. c4 Nc6 15. cxd5 Qxd5 16. Bb4 Qxd1 17. Rfxd1 Nxb4 18. Rxb4 a5 19. Rb6 Ne4 20. Rxb7 Rfd8 21. Rxd8+ Rxd8 22. g3 Rc8 23. Ra7 g6 24. Rxa5 Rc1+ 25. Kg2 Rc2 26. Nd4 Rd2 27. Kf3 Nxf2 28. Nb3 Rb2 29. Nd4 Nd3 30. h3 h6 31. g4 Kg7 32. h4 Rb1 33. h5 Re1 34. hxg6 fxg6 35. Ra7+ Kf6 36. Ra6+ Ke7 37. a4 Ra1 38. a5 Kd7 39. Ra7+ Kd6 40. a6 h5 41. gxh5 gxh5 42. Rh7 Kd5 43. a7 h4 44. Nb5 Kc4 45. Nd6+ Kc5 46. Nc8 Ra3 47. Rc7+ Kd5 48. Nb6+ Kd6 49. a8=Q Ne5+ 50. Ke4 Rxa8 51. Nxa8 Ke6 52. Rh7 Nc6 53. Rxh4 Nd8 54. Rh6+ Ke7 55. Kd5 Kf7 56. e4 Ke7 57. Rh7+ Kf6 58. e5+ Kg6 59. Rd7 Nf7 60. e6 Ne5 61. Kxe5 Kg5 62. e7 Kg4 63. e8=Q Kh4 64. Rg7 Kh3 65. Qh8# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "22"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. c4 e6 3. cxd5 exd5 4. Nf3 Nf6 5. Nc3 c6 6. Bg5 Be7 7. Qc2 O-O 8. h4 h5 9. e3 Nbd7 10. Rc1 Re8 11. Bd3 Nf8 12. O-O Ng4 13. Rfe1 Ne6 14. Bh7+ Kh8 15. Bf4 Nxf4 16. exf4 Bd7 17. g3 Bf6 18. Rxe8+ Qxe8 19. Re1 Qd8 20. Ne5 Nxe5 21. dxe5 Be7 22. a3 g6 23. e6 Kxh7 24. f5 fxe6 25. Nxd5 cxd5 26. g4 exf5 27. Qc7 Qxc7 28. Kg2 Bxh4 29. Rh1 Qf4 30. Rxh4 fxg4 31. Rh2 Qf3+ 32. Kf1 g3 33. Rxh5+ gxh5 34. b3 Qxf2# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "23"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. c4 c6 3. Nf3 h6 4. Nc3 e6 5. e3 Nf6 6. Bd3 c5 7. O-O Nc6 8. cxd5 Nxd5 9. Nxd5 Qxd5 10. e4 Qd6 11. dxc5 Qxc5 12. Be3 Qd6 13. Qe2 Be7 14. Rfd1 e5 15. Bc4 Qg6 16. Bd5 O-O 17. Rac1 a5 18. Bxc6 Bh3 19. Ne1 bxc6 20. Bc5 Rae8 21. Bxe7 Rxe7 22. Rc3 Bg4 23. f3 Bh5 24. Nd3 Kh8 25. Nc5 f5 26. exf5 Qxf5 27. Ne4 Rd7 28. Rxd7 Qxd7 29. h3 Bf7 30. b3 Ra8 31. Rd3 Qa7+ 32. Kh2 a4 33. Nd6 Bg8 34. Qxe5 Qa5 35. Qxa5 Rxa5 36. b4 Ra8 37. a3 Rf8 38. Rc3 Rf6 39. Ne4 Rf4 40. Rxc6 Bd5 41. Rc5 Bb3 42. b5 Rf7 43. b6 Re7 44. Rc7 Re8 45. b7 Bg8 46. Rc8 Rxe4 47. fxe4 Kh7 48. b8=Q Bb3 49. Rh8+ Kg6 50. Qd6+ Be6 51. Qxe6+ Kg5 52. Qf5+ Kh4 53. Qg4# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "24"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. d4 d5 2. c4 c6 3. Nc3 Nf6 4. e3 e6 5. Be2 Nbd7 6. a3 dxc4 7. a4 e5 8. h3 exd4 9. Qxd4 Bc5 10. Qd1 O-O 11. a5 Ne5 12. g4 Nd3+ 13. Kf1 Be6 14. Ra4 b5 15. g5 Nd5 16. Bxd3 cxd3 17. Rg4 Nxc3 18. bxc3 Bxg4 19. hxg4 Qd5 20. Qf3 Qxf3 21. Nxf3 b4 22. Ne5 bxc3 23. Nxd3 Be7 24. f4 c2 25. Ke2 Rab8 26. Ne5 Rb1 27. Kd3 Rd8+ 28. Nd7 Rxd7+ 29. Kc3 Rd1 30. Rh3 Rdxc1 31. Rh4 Bb4+ 32. Kd3 Rd1+ 33. Kxc2 Rbc1+ 34. Kb2 Bc3+ 35. Kb3 Bxa5 36. f5 Rc3+ 37. Ka2 Rd2+ 38. Kb1 Rxe3 39. Rh1 Ree2 40. f6 Bc3 41. Kc1 gxf6 42. gxf6 Bxf6 43. Rf1 Bg5 44. Kb1 Rb2+ 45. Ka1 Ra2+ 46. Kb1 Reb2# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "25"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 c5 4. d5 g6 5. Nc3 h6 6. e4 exd5 7. exd5 d6 8. Bd3 b6 9. O-O Bg7 10. Re1+ Kf8 11. Bf4 a6 12. h3 Kg8 13. a4 a5 14. Nb5 Ne8 15. Rxe8+ Qxe8 16. Nxd6 Qd8 17. Nxc8 Qxc8 18. Qb3 Nd7 19. Re1 Qf8 20. Qb5 Nf6 21. Qxb6 Kh7 22. Bd6 Nd7 23. Qc6 Qc8 24. Re7 Qxc6 25. dxc6 Nb8 26. c7 f5 27. Bxc5 Rg8 28. Nd4 Na6 29. Bd6 Nb4 30. Ne6 Rae8 31. Nxg7 Ref8 32. Ne6+ Rg7 33. Rxg7+ Kh8 34. Bxf8 Na6 35. c8=Q Nc7 36. Qxc7 h5 37. Rh7+ Kg8 38. Qg7# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "26"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. d4 Nf6 2. c4 e6 3. g3 d5 4. Nf3 dxc4 5. Qa4+ Nbd7 6. Qxc4 a6 7. Bg2 b5 8. Qd3 Bb7 9. Be3 c5 10. dxc5 Bxc5 11. Nc3 Qb6 12. Bxc5 Nxc5 13. Qe3 b4 14. Nd1 O-O 15. O-O Rac8 16. Nd2 Bxg2 17. Kxg2 Qb5 18. b3 Nd5 19. Qf3 Rfd8 20. Ne3 Nc3 21. Ndc4 Rc7 22. Rfe1 h6 23. a3 Nxb3 24. axb4 Nxa1 25. h4 Nxe2 26. Qxe2 Nb3 27. Rd1 Rcd7 28. Nb6 Qxe2 29. Nxd7 Nd2 30. Ne5 Ne4 31. Rxd8+ Kh7 32. N3g4 f6 33. Rh8+ Kxh8 34. b5 axb5 35. Nc6 Qxg4 36. Kh2 Qf3 37. g4 Qxf2+ 38. Kh1 Ng3# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "27"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 d6 4. e4 e5 5. Nf3 Be6 6. dxe5 Nfd7 7. exd6 cxd6 8. Nd4 Bg7 9. Nxe6 Bxc3+ 10. bxc3 fxe6 11. Qxd6 Qf6 12. Qd4 Na6 13. Be2 b6 14. O-O Nac5 15. e5 Nxe5 16. Bf4 Ned7 17. Bf3 Rc8 18. Bd6 h5 19. Rfe1 Rg8 20. Rad1 Qf5 21. Re3 a6 22. Rde1 Kf7 23. Bd5 Rgd8 24. Rf3 Nf6 25. Rxf5 gxf5 26. Be5 Nxd5 27. cxd5 Rxd5 28. Qh4 Ne4 29. Qxh5+ Ke7 30. Qh7+ Kf8 31. Bg7+ Ke7 32. f3 Nf6 33. Bxf6+ Kxf6 34. Qh6+ Ke7 35. Qxe6+ Kf8 36. Qxc8+ Rd8 37. Qxd8+ Kf7 38. Re7+ Kg6 39. Qd6+ Kg5 40. Rg7+ Kh4 41. Qh6# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "28"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. d4 Nf6 2. c4 g6 3. a3 Bg7 4. Nc3 O-O 5. e4 d6 6. Nf3 e5 7. Be3 exd4 8. Qxd4 Ng4 9. Qd2 Nxe3 10. Qxe3 Nd7 11. h4 Nc5 12. Bd3 Re8 13. Bc2 Bxc3+ 14. bxc3 Nxe4 15. Bxe4 Bf5 16. Ng5 Bxe4 17. Nxe4 f5 18. f3 fxe4 19. f4 Qf6 20. g3 h5 21. O-O Qf5 22. Rab1 a6 23. Rxb7 Re7 24. Kg2 Rae8 25. Rd1 Qg4 26. Rd4 Rf7 27. Rxe4 Rxe4 28. Rb8+ Rf8 29. Rxf8+ Kxf8 30. Qxe4 Kf7 31. Qd5+ Kf6 32. Kf2 Qf5 33. Ke3 Qc2 34. Qd4+ Kf7 35. Qd5+ Kf6 36. Qg5+ Kf7 37. Qd8 Qxc3+ 38. Kf2 Qxc4 39. Qd7+ Kf6 40. Kg1 Qc5+ 41. Kh2 Qc2+ 42. Kh1 Qd1+ 43. Kh2 Qe2+ 44. Kg1 Qe3+ 45. Kh1 Qxg3 46. Qa4 Qxh4+ 47. Kg2 Qg4+ 48. Kh1 Qf3+ 49. Kh2 h4 50. Qc4 Qg3+ 51. Kh1 h3 52. Qe4 Qg2+ 53. Qxg2 hxg2+ 54. Kh2 Kf5 55. Kxg2 Kxf4 56. Kf2 Ke4 57. Ke1 Kd3 58. a4 a5 59. Kf1 d5 60. Ke1 Kc2 61. Kf1 d4 62. Ke1 d3 63. Kf2 d2 64. Kg2 d1=Q 65. Kg3 Qd4 66. Kg2 Qxa4 67. Kg1 Qb4 68. Kf2 a4 69. Kg1 a3 70. Kh1 a2 71. Kg2 a1=Q 72. Kf2 Qf4+ 73. Ke2 Qaf1# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "29"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. d4 Nf6 2. Nf3 e6 3. c4 b5 4. cxb5 Be7 5. Nc3 a6 6. e4 axb5 7. e5 Nd5 8. Nxd5 exd5 9. Bxb5 Nc6 10. O-O O-O 11. Bxc6 dxc6 12. Qc2 Ra6 13. h3 Bb7 14. Bd2 Rb6 15. Rac1 Qa8 16. b3 Re8 17. Ng5 Bxg5 18. Bxg5 c5 19. Qxc5 Rg6 20. Be3 Ba6 21. Rfe1 Bd3 22. a4 h6 23. Qxc7 Rb8 24. Rc3 Bf5 25. Rec1 Rb7 26. Qc5 Rbb6 27. Kh2 Rxg2+ 28. Kxg2 Qa6 29. Kh2 Bxh3 30. Qxd5 Bf5 31. Rc7 Re6 32. Qd8+ Kh7 33. Rxf7 Qa5 34. Qxa5 Bg4 35. Rxg7+ Kxg7 36. Rc7+ Kg6 37. d5 Rf6 38. exf6 Bc8 39. Rg7+ Kxf6 40. Qc3+ Kf5 41. Qxc8+ Ke4 42. Qg4+ Kxd5 43. Rd7+ Ke5 44. Re7+ Kd5 45. Qe6# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "30"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. d4 Nf6 2. Nf3 e6 3. Bf4 b6 4. h3 Bb7 5. c3 Be7 6. e3 O-O 7. a3 c5 8. a4 a6 9. Bh2 d6 10. Be2 Nbd7 11. O-O Qc7 12. Bd3 e5 13. dxe5 dxe5 14. Na3 Qc6 15. Bc4 Bd6 16. Re1 Rad8 17. Qb3 e4 18. Bxd6 exf3 19. Rad1 fxg2 20. Bxf8 Rxf8 21. e4 Ne5 22. Re3 Nh5 23. Bd5 Qh6 24. Nc4 Nf4 25. Nxe5 Nxh3+ 26. Kxg2 Nf4+ 27. Kg3 Qg5+ 28. Ng4 h5 29. e5 Qxg4+ 30. Kh2 Bxd5 31. Qxd5 Nxd5 32. c4 Nxe3 33. fxe3 Qxd1 34. e6 Qe2+ 35. Kg1 fxe6 36. b4 Rf1# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "31"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1/2-1/2"]
+[Termination "THREEFOLD_REPETITION"]
+
+1. d4 f5 2. g3 Nf6 3. Bg2 e6 4. Nf3 Be7 5. O-O O-O 6. c4 d5 7. Nc3 Ne4 8. Qc2 Nc6 9. Rd1 a6 10. a3 Bf6 11. b4 Ne7 12. Bb2 Nd6 13. cxd5 exd5 14. Ne5 Ne4 15. Nd3 c6 16. e3 h5 17. Rac1 Be6 18. Na4 b6 19. Nf4 Bf7 20. Nd3 Rb8 21. Ne5 Be8 22. Nc3 g5 23. f3 Nxc3 24. Bxc3 Kg7 25. Bf1 Kg8 26. Bxa6 f4 27. exf4 b5 28. fxg5 Bh8 29. g6 Ra8 30. Bb7 Ra7 31. Bxc6 Nxc6 32. Nxc6 Bxc6 33. Bd2 Ra6 34. Kg2 Be8 35. Bh6 Bxg6 36. Qc5 Rf7 37. Qxb5 Rfa7 38. Rc5 Be8 39. Rxd5 Qa8 40. Rg5+ Kh7 41. Qf5+ Kxh6 42. Rg8 Bg7 43. Re1 Rf7 44. Rexe8 Qxe8 45. Rxe8 Rxf5 46. Re4 Bf8 47. h4 Kh7 48. g4 Rf7 49. g5 Kh8 50. b5 Rg6 51. a4 Re7 52. a5 Rc7 53. b6 Rc2+ 54. Kg3 Rc8 55. b7 Bd6+ 56. f4 Rf8 57. a6 Bb8 58. a7 Bxa7 59. Re7 Bb8 60. Kf3 Rg7 61. Rxg7 Rxf4+ 62. Ke3 Kxg7 63. d5 Rxh4 64. d6 Rh1 65. d7 Rd1 66. Ke2 Rd5 67. d8=Q Rxd8 68. Kf3 Rd3+ 69. Ke4 Rd1 70. Kf5 Rd4 71. g6 h4 72. Kg5 Rb4 73. Kf5 Rd4 74. Kg5 h3 75. Kh5 Ra4 76. Kg5 Rd4 77. Kh5 Rf4 78. Kg5 1/2-1/2
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "32"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. d4 f5 2. g3 Nf6 3. Nd2 e6 4. Nh3 d5 5. Nf3 c5 6. e3 Nc6 7. Nf4 Bd6 8. c4 cxd4 9. exd4 O-O 10. Be2 Ne4 11. cxd5 exd5 12. O-O Bxf4 13. gxf4 Rf6 14. Kh1 Rh6 15. a4 Bd7 16. Ra3 Be8 17. Be3 Bh5 18. Ng1 Bxe2 19. Qxe2 Qh4 20. Nf3 Qh5 21. a5 Rf8 22. a6 b6 23. Rd3 Nb4 24. Ra3 Rc8 25. Rc1 Rxc1+ 26. Bxc1 Nc6 27. Qb5 Nxf2+ 28. Kg1 Ng4 29. Qxd5+ Kf8 30. h4 Rf6 31. Rc3 Ne7 32. Qd7 Rg6 33. Kf1 Nh2+ 34. Kf2 Nxf3 35. Rc8+ Nxc8 36. Qxc8+ Ke7 37. Qc7+ Ke6 38. Qc6+ Ke7 39. Qc7+ Ke6 40. Qc6+ Kf7 41. Qb7+ Kg8 42. Qd5+ Kf8 43. Qa8+ Kf7 44. Qxa7+ Kg8 45. Qb8+ Kf7 46. Qb7+ Kf6 47. Qc6+ Kf7 48. Qc7+ Kg8 49. Qc8+ Kf7 50. Qc4+ Re6 51. a7 Qxh4+ 52. Kxf3 Qh1+ 53. Kf2 Qe1+ 54. Kg2 Qe2+ 55. Qxe2 Rxe2+ 56. Kh1 Re1+ 57. Kg2 Re8 58. d5 Ra8 59. Be3 Rxa7 60. Kf3 Rb7 61. Kg3 b5 62. d6 Ke6 63. Kh4 Kxd6 64. b4 g6 65. Bc5+ Kd5 66. Kg5 Ke4 67. Kh4 Kxf4 68. Bf8 g5+ 69. Kh5 g4 70. Bc5 g3 71. Kh6 Kg4 72. Bd4 f4 73. Bf2 Kf3 74. Bd4 g2 75. Bc5 Kg4 76. Bd6 g1=Q 77. Bc7 Qh1+ 78. Kg7 Rxc7+ 79. Kf6 Qc6+ 80. Ke5 Re7+ 81. Kd4 Rd7+ 82. Ke5 Qd6+ 83. Ke4 Re7# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "33"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. c4 e5 2. Nc3 Nf6 3. Nf3 Bd6 4. g3 a5 5. Bg2 h6 6. O-O Nc6 7. d4 exd4 8. Nxd4 Be5 9. Ndb5 Bxc3 10. Nxc3 O-O 11. b3 Nb4 12. Bb2 Ne8 13. Qd2 d6 14. a3 Nc6 15. Rad1 Bd7 16. Nd5 Be6 17. h4 Qd7 18. Qc3 b6 19. Nf4 Rc8 20. Nxe6 Qxe6 21. Bxc6 Qg6 22. Bd7 a4 23. Bxc8 Nf6 24. Bh3 Ne4 25. Qf3 f5 26. Bxf5 Qxf5 27. Qxf5 Rxf5 28. b4 g5 29. hxg5 Nxg5 30. Rd5 Rf4 31. gxf4 Nh3+ 32. Kh2 Nxf4 33. Rf5 Ne6 34. Rg1+ Ng5 35. Rfxg5+ hxg5 36. Rxg5+ Kf7 37. Rg7+ Ke6 38. Rxc7 Kf5 39. Bd4 b5 40. cxb5 Kg6 41. b6 Kh5 42. b7 Kg5 43. b8=Q Kg4 44. Qf8 Kg5 45. Rg7+ Kh4 46. Qh8# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "34"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. c4 e5 2. Nc3 Nf6 3. a3 d5 4. Nxd5 Nxd5 5. Nf3 e4 6. Ne5 Nf6 7. d4 exd3 8. exd3 Bd6 9. Bf4 O-O 10. d4 Re8 11. Bd3 Nc6 12. Bc2 Bxe5 13. Bxe5 Nxe5 14. dxe5 Rxe5+ 15. Kf1 Qe7 16. h3 Be6 17. Qd4 Rd8 18. Qf4 Qc5 19. b3 Rd4 20. Qxd4 Qxd4 21. Rd1 Qxd1+ 22. Bxd1 Kf8 23. f4 Re4 24. Bf3 Re3 25. a4 Rxb3 26. Ke2 Bxc4+ 27. Kd2 Bd5 28. Rc1 c6 29. Bxd5 Nxd5 30. Re1 Ra3 31. f5 Rxa4 32. Re5 Ra2+ 33. Kd3 Rxg2 34. h4 Rg4 35. Kc2 Rxh4 36. Kb3 Rh3+ 37. Kc2 f6 38. Kb1 fxe5 39. f6 gxf6 40. Kc2 f5 41. Kc1 f4 42. Kd1 f3 43. Kd2 f2 44. Kc1 f1=Q+ 45. Kd2 Qf2+ 46. Kd1 Rh1# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "35"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. c4 Nf6 2. Nc3 e6 3. e4 e5 4. Nf3 Bb4 5. Nxe5 O-O 6. Be2 Bxc3 7. dxc3 Na6 8. f3 Nc5 9. Be3 Qe7 10. Nd3 Nxd3+ 11. Bxd3 a5 12. O-O b6 13. Bd4 c5 14. Bxf6 Qd6 15. e5 Qe6 16. f4 Re8 17. f5 Qxe5 18. Bxe5 Rxe5 19. Qf3 Bb7 20. Qxb7 Rd8 21. f6 d5 22. fxg7 f5 23. cxd5 Rde8 24. Bxf5 R8e7 25. Be6+ Kxg7 26. Qxe7+ Kh6 27. Qf6+ Kh5 28. g4# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "36"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. c4 Nf6 2. Nc3 e6 3. Qc2 d5 4. d4 dxc4 5. Nf3 a6 6. e3 b5 7. a4 b4 8. Nd1 Bb7 9. Bxc4 Nbd7 10. a5 c5 11. O-O Bxf3 12. gxf3 cxd4 13. exd4 Bd6 14. b3 O-O 15. Kh1 Rc8 16. Nb2 Nd5 17. Qe4 N7f6 18. Qh4 Ne7 19. Be3 Nf5 20. Qg5 h6 21. Qg2 Nh4 22. Qh3 Nf5 23. Na4 Qxa5 24. Nc3 Qd8 25. Ne4 Be7 26. Rg1 Kh8 27. Rxg7 Kxg7 28. Bxh6+ Nxh6 29. Rg1+ Nfg4 30. d5 f5 31. Bd3 fxe4 32. Rxg4+ Nxg4 33. Qxg4+ Bg5 34. Bxe4 Rc1+ 35. Kg2 Rf4 36. Qh5 Qf6 37. dxe6 Rh4 38. e7 Rxh5 39. e8=Q Rxh2+ 40. Kxh2 Qh6+ 41. Kg3 Rg1# 0-1
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "37"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. Nf3 d5 2. g3 Nf6 3. Bg2 Nbd7 4. O-O g6 5. d4 a5 6. c4 Bg7 7. cxd5 Nb6 8. Nc3 Bf5 9. Nh4 Bd7 10. e4 c6 11. dxc6 Bc8 12. e5 Nfd5 13. Nxd5 Nxd5 14. cxb7 Bxb7 15. Qb3 Bc6 16. Bd2 a4 17. Qf3 Qd7 18. Rfc1 e6 19. Rc4 O-O 20. Rac1 Rfc8 21. Qe2 Bf8 22. Qg4 Bb7 23. Nf3 Rab8 24. h4 Rxc4 25. Rxc4 Ba8 26. b3 axb3 27. axb3 Qb5 28. h5 Qxb3 29. Rc1 Qd3 30. Bf1 Qf5 31. Qxf5 exf5 32. h6 f6 33. Bc4 Kh8 34. exf6 Nb6 35. Ne5 Rc8 36. Be6 Rxc1+ 37. Bxc1 Bd5 38. Bxd5 Nxd5 39. f7 Nc3 40. Bg5 Na2 41. Bf6+ Bg7 42. Bxg7# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "38"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. Nf3 d5 2. g3 Nf6 3. d3 c5 4. Bf4 Nc6 5. a4 Bg4 6. Ne5 Nxe5 7. Bxe5 e6 8. h3 Bh5 9. Na3 Bd6 10. Bxd6 Qxd6 11. Bg2 O-O 12. Qd2 a6 13. O-O Rac8 14. a5 Nd7 15. Qg5 Bg6 16. c4 d4 17. Qd2 Rc7 18. f4 f5 19. Rfb1 e5 20. fxe5 Nxe5 21. b4 cxb4 22. Qxb4 Qf6 23. Qb6 Rc6 24. Bd5+ Kh8 25. Bxc6 bxc6 26. Qc7 f4 27. Rb8 Rg8 28. Rf1 f3 29. Nb5 fxe2 30. Rxg8+ Kxg8 31. Qc8+ Kf7 32. Rxf6+ gxf6 33. Nd6+ Ke7 34. Kf2 Bxd3 35. Qc7+ Ke6 36. Nc8 Bxc4 37. Qe7+ Kd5 38. Nb6+ Ke4 39. Qxf6 h5 40. Nxc4 e1=Q+ 41. Kxe1 Nxc4 42. Qg6+ Kd5 43. Qxh5+ Ke4 44. Qg6+ Ke3 45. Qc2 d3 46. Qc3 Nd2 47. Qxd2+ Kd4 48. Qb2+ Ke3 49. Qc3 c5 50. Qxc5+ Kf3 51. Qf5+ Kg2 52. Qxd3 Kxh3 53. Qf3 Kh2 54. Qe3 Kg2 55. Qd3 Kh3 56. Kf2 Kg4 57. Qg6+ Kh3 58. Qh5# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "39"]
+[White "Kibitzer"]
+[Black "Stockfish"]
+[Result "1-0"]
+[Termination "CHECKMATE"]
+
+1. Nf3 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 5. h4 Nc6 6. h5 gxh5 7. Rxh5 Nf6 8. Rh4 e5 9. d4 Be7 10. Bg5 Be6 11. dxe5 Nd5 12. Bxe7 Ncxe7 13. Nxd5 Qxd5 14. Qxd5 Bxd5 15. e4 Be6 16. Nd4 Ng6 17. Rh5 Bd7 18. g3 Rd8 19. Be2 Bg4 20. Bxg4 Nf4 21. gxf4 Rxd4 22. f3 Rc4 23. Rd1 Rg8 24. Rxh7 b6 25. f5 a6 26. e6 Rxe4+ 27. fxe4 Rf8 28. f6 c5 29. e7 Rg8 30. Rd8# 1-0
+
+[Event "Kibitzer PUCT vs Stockfish"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "40"]
+[White "Stockfish"]
+[Black "Kibitzer"]
+[Result "0-1"]
+[Termination "CHECKMATE"]
+
+1. Nf3 Nf6 2. c4 g6 3. Nc3 Bg7 4. e3 O-O 5. d4 d6 6. b4 c5 7. bxc5 dxc5 8. Rb1 cxd4 9. exd4 Nc6 10. d5 Na5 11. Ba3 Bg4 12. Be2 Bxf3 13. gxf3 Rc8 14. c5 Nh5 15. Qd2 Bxc3 16. Qxc3 Qxd5 17. Qxa5 Nf4 18. Rb3 Qe5 19. Qd2 Rfd8 20. Qb2 Qe6 21. h3 Qd5 22. Re3 Ng2+ 23. Kf1 Nxe3+ 24. fxe3 Qd2 25. Qb3 b6 26. Kf2 bxc5 27. Qc4 Qd6 28. h4 h5 29. Qc1 Qd2 30. Qc4 e6 31. f4 Qd5 32. Qxd5 Rxd5 33. Rc1 Rd2 34. Bxc5 Rxa2 35. Kf3 a5 36. Ba6 Rc6 37. Be2 a4 38. Bd1 a3 39. Bb3 Rb2 40. Bxe6 Rxe6 41. Rc3 a2 42. Bd4 Rb8 43. f5 a1=Q 44. Kg2 Rb2+ 45. Rc2 Rxc2+ 46. Kf3 Qf1+ 47. Kg3 Rg2+ 48. Kh3 Qh1# 0-1
+

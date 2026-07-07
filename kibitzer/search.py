@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import random
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -74,6 +75,8 @@ def puct_search(
     simulations: int,
     c_puct: float = 1.5,
     value_scale: float = 1.0,
+    dirichlet_alpha: float = 0.0,
+    dirichlet_epsilon: float = 0.0,
 ) -> SearchResult:
     if simulations < 1:
         raise ValueError("simulations must be at least 1")
@@ -84,6 +87,16 @@ def puct_search(
 
     root = SearchNode()
     _expand(root, evaluator.evaluate(board))
+
+    # alphazero root exploration: mix dirichlet noise into the root priors so
+    # self-play games diverge. off by default (epsilon=0) => inference unchanged.
+    if dirichlet_epsilon > 0.0 and dirichlet_alpha > 0.0 and root.children:
+        moves = list(root.children)
+        gammas = [random.gammavariate(dirichlet_alpha, 1.0) for _ in moves]
+        total = sum(gammas) or 1.0
+        for move, g in zip(moves, gammas):
+            child = root.children[move]
+            child.prior = (1.0 - dirichlet_epsilon) * child.prior + dirichlet_epsilon * (g / total)
 
     for _ in range(simulations):
         simulation_board = board.copy(stack=True)

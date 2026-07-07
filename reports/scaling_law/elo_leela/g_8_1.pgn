@@ -1,0 +1,120 @@
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-8"]
+[Result "0-1"]
+
+1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5 5. Ng3 Bg6 6. h4 h6 7. Nf3 Nd7 8. h5 Bh7 9. Bd3 Bxd3 10. Qxd3 e6 11. Bd2 Ngf6 12. O-O-O Be7 13. Kb1 O-O 14. Ne4 Nxe4 15. Qxe4 Nf6 16. Qe2 Qd5 17. Ne5 Rad8 18. g4 Qe4 19. Be3 Nd5 20. Rhe1 Bf6 21. Nd3 Bxd4 22. Bxd4 Qxd4 23. Ne5 Qb4 24. a3 Nc3+ 25. Ka1 Rxd1+ 26. Rxd1 Nxe2 27. axb4 f5 28. Ng6 Re8 29. gxf5 exf5 30. Rd7 b5 31. Rxa7 f4 32. Re7 Rxe7 33. Nxe7+ Kf7 34. Nxc6 Ke6 35. Na7 Ng3 36. Nxb5 Nxh5 37. c4 Nf6 38. Nd4+ Ke5 39. Nf3+ Ke4 40. Nh2 h5 41. b5 g5 42. c5 g4 43. b6 Nd7 44. b7 Nb8 45. b4 g3 46. fxg3 fxg3 47. Nf1 g2 48. Nd2+ Ke3 49. Nc4+ Ke2 50. c6 g1=Q+ 51. Kb2 Nxc6 52. b5 Qd4+ 53. Ka3 Qc3+ 54. Ka2 Nb4+ 55. Kb1 Qc2+ 56. Ka1 Qa2# 0-1
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-8"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 h6 6. Bh4 O-O 7. Nf3 b6 8. Rc1 Bb7 9. Bxf6 Bxf6 10. cxd5 exd5 11. g3 c5 12. Bg2 Nc6 13. O-O cxd4 14. exd4 Rc8 15. Re1 Qd6 16. h4 Rfe8 17. Qd2 Qd7 18. Qf4 Nb4 19. Bf1 a6 20. a3 Nc6 21. Bd3 Rxe1+ 22. Rxe1 Re8 23. Rxe8+ Qxe8 24. Nxd5 Bd8 25. Ne3 b5 26. d5 Ne7 27. Qe4 g6 28. h5 f5 29. Qe5 Qd7 30. hxg6 Nxg6 31. Qd4 Ne7 32. Bc2 Bxd5 33. Bb3 Bb6 34. Bxd5+ Nxd5 35. Qxd5+ Qxd5 36. Nxd5 Bc5 37. b4 Bd6 38. Nd4 Be5 39. Nxf5 Bb2 40. Kg2 Bxa3 41. Kf3 Kf7 42. Ke4 h5 43. Nd4 Bb2 44. f4 Kg6 45. Nf3 Kf7 46. f5 Kg7 47. Ne5 Kh6 48. f6 Kg5 49. f7 Ba3 50. f8=Q h4 51. Qe7+ Kh5 52. Qxh4# 1-0
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-8"]
+[Result "0-1"]
+
+1. e4 c5 2. Nf3 d6 3. d4 Nf6 4. Nc3 cxd4 5. Nxd4 a6 6. Be3 e5 7. Nb3 Be7 8. f3 Be6 9. Qd2 h5 10. h4 Nbd7 11. O-O-O b5 12. Nd5 Bxd5 13. exd5 Nb6 14. Kb1 Nfxd5 15. Bg5 Rc8 16. Bd3 O-O 17. g4 Nc4 18. Bxc4 bxc4 19. Qxd5 cxb3 20. axb3 hxg4 21. fxg4 Rc5 22. Qe4 Qd7 23. Bxe7 Qxe7 24. h5 Qe6 25. h6 g6 26. g5 d5 27. Qe3 Rfc8 28. h7+ Kh8 29. Rd2 d4 30. Qe4 Qc6 31. Qe1 e4 32. Qh4 d3 33. c3 Re8 34. Rf2 Qe6 35. Rhf1 Qxb3 36. Qh6 Ra5 37. Qh4 Qa2+ 38. Kc1 Qa1+ 39. Kd2 Qxb2+ 40. Ke3 Qb6+ 41. Kf4 e3 42. Rf3 Ra4+ 43. Kg3 Rxh4 44. Kxh4 e2 45. Re1 d2 46. Rxe2 Rxe2 47. Rxf7 Qd6 48. Rf6 d1=Q 49. Rxd6 Qxd6 50. Kg4 Qd3 51. Kf4 Re4# 0-1
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-8"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Be2 O-O 6. Nf3 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 Nd7 12. Nd2 Nc5 13. Nb3 Nxb3 14. Qxb3 b6 15. Bd2 f5 16. Nb5 Ra8 17. a5 fxe4 18. axb6 Rxa1 19. Rxa1 cxb6 20. g4 h5 21. h3 hxg4 22. hxg4 Rf4 23. Ra8 Rf7 24. Qa3 Bf8 25. Qxd6 Qd7 26. Be3 Nxd5 27. Qxd5 Bb7 28. Qxd7 Rxd7 29. Rb8 Kf7 30. g5 Bc6 31. Rxb6 Ba8 32. c5 Bd5 33. c6 Rd8 34. c7 Rc8 35. Bg4 Ra8 36. Rb8 Ra1+ 37. Kh2 Be7 38. c8=Q Rh1+ 39. Kxh1 Bxg5 40. Qf8# 1-0
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-8"]
+[Result "0-1"]
+
+1. c4 e5 2. Nc3 Nf6 3. Nf3 Nc6 4. e4 Bb4 5. d3 d6 6. a3 Bc5 7. b4 Bb6 8. Be3 Bg4 9. Be2 Bxf3 10. Bxf3 Nd4 11. Na4 Nxf3+ 12. Qxf3 Bxe3 13. fxe3 O-O 14. Nc3 c6 15. O-O Qe7 16. h3 a5 17. b5 Nd7 18. Rab1 Nc5 19. d4 exd4 20. exd4 Ne6 21. Qd3 Rae8 22. bxc6 bxc6 23. Rb6 Qc7 24. Rfb1 Rb8 25. Rxb8 Rxb8 26. Rxb8+ Qxb8 27. d5 Qb6+ 28. Kh2 cxd5 29. exd5 Nc5 30. Qe3 Qd8 31. Nb5 g6 32. Qf4 Nb7 33. Nd4 Kg7 34. Nc6 Qf6 35. Qxf6+ Kxf6 36. Kg3 Kg5 37. Kf3 f5 38. Ke3 Kf6 39. Kd4 g5 40. g4 f4 41. Ke4 Nc5+ 42. Kf3 a4 43. Nd4 Nb3 44. Ke4 Nxd4 45. Kxd4 Ke7 46. Kd3 Kd7 47. Ke4 Kc7 48. h4 h6 49. h5 Kb6 50. Kd4 f3 51. Ke3 Kc5 52. Kxf3 Kxc4 53. Ke4 Kb3 54. Kf5 Kxa3 55. Kg6 Kb3 56. Kxh6 a3 57. Kxg5 a2 58. h6 a1=Q 59. Kg6 Kc4 60. g5 Kxd5 61. Kh7 Ke6 62. g6 Qb1 63. Kg7 Qb7+ 64. Kg8 Kf6 65. g7 Kg6 66. Kh8 Qb2 67. Kg8 Qb8# 0-1
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-8"]
+[Black "Kibitzer"]
+[Result "0-1"]
+
+1. e4 c5 2. Nf3 Nc6 3. Bb5 g6 4. O-O Bg7 5. Re1 e5 6. Bxc6 dxc6 7. a4 Qe7 8. d3 Nf6 9. a5 O-O 10. Be3 Nd7 11. Nbd2 Re8 12. Nc4 Nf8 13. h3 f6 14. Nfd2 Ne6 15. Nb3 Bf8 16. Rf1 Rd8 17. Qd2 g5 18. h4 h6 19. f3 Nd4 20. hxg5 hxg5 21. Bxd4 cxd4 22. Kf2 Be6 23. Rh1 b5 24. axb6 axb6 25. Nxb6 Rxa1 26. Rxa1 Qh7 27. Kg1 g4 28. Qf2 Bh6 29. Kf1 Be3 30. Qg3 Bf4 31. Qf2 g3 32. Qg1 Be3 33. Nc5 Bxg1 34. Nxe6 Qh1 35. Re1 Bf2+ 36. Ke2 Qxe1# 0-1
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-8"]
+[Result "0-1"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 d6 4. Nf3 Nxe4 5. d4 d5 6. Bd3 Bb4+ 7. c3 Bd6 8. O-O O-O 9. Re1 Bf5 10. Qb3 Nc6 11. Qxd5 Bxh2+ 12. Nxh2 Qxd5 13. Ng4 Bxg4 14. Bxe4 Qh5 15. Bf4 Rae8 16. Nd2 f5 17. Bd5+ Kh8 18. f3 Qh4 19. g3 Qd8 20. Bxc6 bxc6 21. fxg4 fxg4 22. Nc4 Rxe1+ 23. Rxe1 c5 24. dxc5 h5 25. Kh2 Rxf4 26. gxf4 Qh4+ 27. Kg2 Qxe1 28. Ne5 g5 29. fxg5 Qxe5 30. Kf2 h4 31. g6 Qe4 32. g7+ Kxg7 33. c6 g3+ 34. Kg1 Qc2 35. Kf1 Qf2# 0-1
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-8"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 Nf6 3. d4 exd4 4. e5 Ne4 5. Qxd4 d5 6. exd6 Nxd6 7. Nc3 Nc6 8. Qf4 Be6 9. Bd2 Qf6 10. Qa4 O-O-O 11. Bg5 Qg6 12. Bxd8 Nxd8 13. Qxa7 Qxc2 14. Qa8+ Kd7 15. Ne5+ Ke7 16. Qa5 b6 17. Qb4 f6 18. Bd3 Qxb2 19. Qxb2 fxe5 20. O-O Kf7 21. f4 exf4 22. Rxf4+ Kg8 23. Raf1 Be7 24. Nd5 Bxd5 25. Qe5 g5 26. Qxe7 gxf4 27. Rxf4 N6f7 28. Rg4+ Ng5 29. Rxg5# 1-0
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-8"]
+[Result "0-1"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4 6. d4 b5 7. Bb3 d5 8. dxe5 Be6 9. Nbd2 Be7 10. c3 Nc5 11. Bc2 d4 12. Nb3 dxc3 13. Nxc5 Bxc5 14. Be4 Qd7 15. Qc2 Bd5 16. Bf5 Be6 17. Be4 Bd5 18. bxc3 Ne7 19. Rd1 Bxe4 20. Qxe4 Qxd1+ 21. Ne1 Rd8 22. Bg5 Qxa1 23. h4 O-O 24. h5 Rd1 25. h6 Rxe1+ 26. Qxe1 Qxe1+ 27. Kh2 Bxf2 28. hxg7 Rd8 29. Bxe7 Rd3 30. Bf6 Qg1# 0-1
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-8"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Be2 O-O 6. Nf3 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 Nd7 12. Nd2 Nc5 13. Nb3 Nxb3 14. Qxb3 b6 15. Bd2 f5 16. Nb5 Ra8 17. a5 fxe4 18. axb6 Rxa1 19. Rxa1 cxb6 20. g4 h5 21. h3 hxg4 22. hxg4 Rf4 23. Ra8 Rf7 24. Qa3 Bf8 25. Qxd6 Qd7 26. Qxd7 Bxd7 27. Nd6 Rg7 28. Bh6 Kh7 29. Bxg7 Bxg7 30. Ra7 Bf8 31. Rxd7 Kg7 32. Nxe4 Kf7 33. g5 Ke8 34. Bg4 Nf5 35. Nf6# 1-0
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-8"]
+[Result "0-1"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 c6 4. Nc3 e6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. O-O Nbd7 11. Ne5 Bg7 12. Nxf7 Kxf7 13. e5 Nd5 14. Bh5+ Kg8 15. Ne4 Rh7 16. Nd6 Qe7 17. Nxb7 Nxe5 18. dxe5 Qxb7 19. Qg4 Qe7 20. h4 Bf8 21. Bg6 Rg7 22. h5 Qd7 23. Rad1 Bc5 24. Qe4 Rf8 25. Qg4 Qe7 26. Qe4 Kh8 27. Qe2 a5 28. Qe4 a4 29. Qg4 a3 30. bxa3 Bxa3 31. Qe4 Bc5 32. a4 Nc3 33. Qxc6 Nxd1 34. Rxd1 bxa4 35. Qxa4 Qa7 36. Qxc4 Bxf2+ 37. Bxf2 Qxf2+ 38. Kh2 Ra7 39. Rd4 Ra1 40. Rd7 Qg1+ 41. Kg3 Qe3+ 42. Kh2 Qxe5+ 43. g3 g4 44. Qc2 Raf1 45. Kg2 Qf6 46. Rh7+ Kg8 47. Bf7+ Rxf7 48. Rxf7 Qxf7 49. Qc8+ Kg7 50. Qc3+ Rf6 51. Qd4 Qxh5 52. Qd7+ Qf7 53. Qd4 h5 54. Kh2 Qc7 55. Qd2 Qc5 56. Qd7+ Rf7 57. Qd2 Rf2+ 58. Kh1 Qc6+ 59. Kg1 Qg2# 0-1
+
+[Event "gauntlet vs Maia-8"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-8"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 h6 6. Bh4 O-O 7. Nf3 b6 8. Rc1 Bb7 9. Bxf6 Bxf6 10. cxd5 exd5 11. g3 c5 12. Bg2 Nc6 13. O-O cxd4 14. Nxd4 Nxd4 15. exd4 Rc8 16. Qd3 Qd7 17. Rfd1 Rfd8 18. h4 g6 19. Kh2 Rc4 20. Nxd5 Bxd5 21. Rxc4 Bxc4 22. Qxc4 Qd6 23. d5 Bxb2 24. h5 gxh5 25. Bf3 Qf6 26. Kg2 h4 27. Qg4+ Kf8 28. Qb4+ Kg7 29. Qg4+ Qg5 30. Qxh4 Qxh4 31. gxh4 Kf6 32. d6 Ke6 33. d7 f5 34. Bc6 Be5 35. Kf3 Bd6 36. Rg1 Kf6 37. h5 Ke5 38. Rg6 Rh8 39. Rxh6 Rxh6 40. d8=Q Rxh5 41. Qe8+ Kf6 42. Qxh5 Ke5 43. Qh8+ Ke6 44. Qh6+ Ke5 45. Qg6 Bc5 46. Ke2 Bd6 47. Kd3 Bc5 48. Bd7 Bxf2 49. Qxf5+ Kd6 50. Qe6+ Kc7 51. Bb5 Bc5 52. Qd7+ Kb8 53. Ba6 Ka8 54. Qc8# 1-0
+

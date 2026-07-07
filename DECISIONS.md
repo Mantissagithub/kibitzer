@@ -336,3 +336,154 @@ attempt (random 8-ply openings) gave a spurious ~1697 — random openings drop t
 positions and are not comparable; the fixed opening book is essential. Best 37 wins vs SF-2300/2500 saved to
 reports/scaling_law/elo_local/best_games.pgn. Method uses the repo's eval_search_vs_stockfish.py (opening book
 extended 5→20 lines). Cloud pod was terminated (~$0.30 spent).
+
+---
+
+## D45 — tactical mid-training is NEUTRAL for play strength
+
+Tested whether curated tactical mid-training lifts the 100M shaw model's measured Elo. Recipe: continue from
+S2_shaw_100M.pt on 20M positions, 30% Lichess puzzle-DB positions (solver moves, rating 1200-2400) / 70% elite
+game positions, LR 5e-5, **value_weight=0** (a 25k smoke showed the puzzle value=+1 targets spike value MSE
+0.65->0.96; value_weight=0 fixed it — final value MSE +0.012, top-1 -0.4pp). 150.8 min. Script:
+scripts/train_midtrain.py.
+
+Re-measured with the D44 protocol (160 games, 256 sims, SF-1900/2100/2300/2500 @ 40 each, iterative Elo):
+
+| opponent | tactical | base |
+|---|---|---|
+| SF-1900 | 0.887 | 0.938 |
+| SF-2100 | 0.875 | 0.850 |
+| SF-2300 | 0.600 | 0.700 |
+| SF-2500 | 0.637 | 0.525 |
+
+**Tactical Elo = 2464 (±~32) vs base 2483 (±~32) → Δ −19, NEUTRAL** (CIs overlap heavily). The model traded a
+little at SF-2300 for a little at SF-2500; net no change. Verdict: puzzle-based tactical mid-training does not
+move search play strength at this scale — consistent with D40/D35 (policy/value refinements don't shift play;
+the live levers remain arch + data + search depth). Best tactical wins vs SF-2300/2500 saved to
+reports/scaling_law/elo_tactical/best_games.pgn. Tactical checkpoint NOT pushed to HF (no improvement).
+
+---
+
+## D46 — honest calibrated strength: Maia sweep + the 2483 caveat
+
+The measured Elo (D44, 2483 vs Stockfish UCI_Elo) is on Stockfish's handicapped UCI_LimitStrength scale, which
+randomizes/weakens SF and is widely known to be softer than real Elo — so 2483 is INFLATED and relative-only,
+useful for ranking our own checkpoints but not a real-world rating.
+
+Re-measured vs Maia (lc0 + maia weights at nodes=1, calibrated to real Lichess blitz Elo, caps at 1900), same
+protocol (256 sims, 40 games/level, real opening book): **159W/1D/0L over 160 games (score 0.997)** —
+Maia-1300 1.000, Maia-1500 0.988, Maia-1700 1.000, Maia-1900 1.000. Total domination => the 100M shaw model is
+comfortably **>1900 Lichess blitz** (a real, honest lower bound); Maia cannot measure how far above because it
+caps at 1900. Next: Leela ceiling test (lc0 + t1-256x10-distilled net at 1/8/32 nodes ~2700/2850/2950) to
+bracket the true value. lc0 built from source (eigen CPU backend), persistent binary at data/leela/lc0.
+Methodology lesson: UCI_Elo Stockfish is NOT a real-Elo yardstick; use human-calibrated Maia / real engines.
+
+---
+
+## D47 — true strength bracketed at ~2500-2600 Elo (Leela ceiling test)
+
+Ran the 100M shaw model (256 sims) vs lc0 + Leela net (t1-256x10-distilled, eigen CPU) at 1/8/32 nodes to
+find the ceiling (Maia caps at 1900, couldn't measure it). 24 games/setting:
+
+| opponent | approx Elo | score | W/D/L |
+|---|---|---|---|
+| Leela @ 1 node | ~2700 | 0.354 | 3/11/10 |
+| Leela @ 8 nodes | ~2850 | 0.104 | 2/1/21 |
+| Leela @ 32 nodes | ~2950 | 0.042 | 0/2/22 |
+
+Implied Elo from the Leela@1node score: **~2596**. This CONVERGES with the Stockfish UCI_Elo number (2483) =>
+**honest strength ~2500-2600 Elo**. Maia's ">1900" (D46) was a loose floor; the UCI 2483 (D44) was NOT
+badly inflated after all (within ~100 of the Leela estimate). Hard ceiling <2700: the model loses almost
+every game once Leela gets even 8 nodes of search. Different rating pools (Lichess/UCI/Leela) won't agree
+exactly, but three independent measurements bracket ~2500-2600. Verdict: a genuinely strong ~2550 engine
+(expert/CM-ish), well short of the 3000+/beat-Stockfish goal. Best Kibitzer wins vs Leela saved to
+reports/scaling_law/elo_leela/best_games.pgn. 512-sim Maia-1900 retest: 29W/1D/0L (0.983), sweep robust to sims.
+
+---
+
+## D48 — self-play smoke: 1-iteration AZ-lite REGRESSED the model (negative)
+
+Tested the one untried lever — self-play from the strong 100M base (past self-play/RL failures were all on the
+weak base). AZ-lite smoke via scripts/selfplay_smoke.py: ~150 self-play games @64 sims from a varied opening
+book with temperature exploration (first 16 plies), recording (position, search-argmax-best move, game-outcome
+value z) => 14,089 positions. Behavioral-cloned the base toward those (policy CE to the search-best move +
+value MSE to z), lr 2e-5, 3 epochs (loss 0.98->0.85->0.76, stable, no collapse). Head-to-head vs the base,
+40 games @64 sims: **selfplay_v1 = 10W/11D/19L, score 0.388** => v1 LOST to its own parent.
+
+Verdict: **negative** — 1-iteration AZ-lite self-play did not improve and mildly regressed the model. It did NOT
+collapse (unlike the old weak-base attempts that hit 0), and this is a crude approximation of real AZ (hard
+argmax target not the visit distribution; only 14k positions; 1 iteration; self-play @64 sims produces
+~2500-level games that aren't clearly better than the 2500+ human-elite training data). So it doesn't rule out
+a proper multi-iteration AZ with soft policy targets + far more games/sims, but as a cheap smoke it says
+self-play is NOT an easy win here.
+
+This is the 4th fine-tuning/self-play negative (D35 value-repair, D40 TDLeaf, D45 tactical, D48 self-play).
+Consistent theme: the supervised base is a strong local optimum that cheap post-hoc methods degrade. The lever
+with actual evidence remains SCALE (params S3+ / more data), per D43. Artifacts: scripts/selfplay_smoke.py
+(gen/train/match modes), runs/selfplay_smoke/selfplay_v1.pt, reports/scaling_law/selfplay_smoke/.
+
+---
+
+## D49 — proper AlphaZero (1 iteration) regressed MORE than simple BC (negative)
+
+Followed up D48's crude BC smoke with a PROPER AZ setup: added optional Dirichlet root noise to
+kibitzer/search.py (puct_search, defaults off), and scripts/selfplay_az.py trains the policy toward the full
+MCTS VISIT DISTRIBUTION (soft cross-entropy over the 4672 actions) + value toward the game outcome. One
+iteration: ~120 self-play games @128 sims with Dirichlet noise (alpha 0.3, eps 0.25), 10,730 positions, lr 2e-5,
+4 epochs (policy 1.83->1.72, value 0.29->0.14, clean/no collapse). Head-to-head vs the 100M base, 40 games
+@128 sims: **az_v1 = 1W/13D/26L, A_score 0.1875** => regressed WORSE than the simple-BC smoke (0.388, D48).
+
+Likely mechanism: at 128 sims the visit distribution is DIFFUSE (not sharply peaked), so the soft target
+DILUTES the base's decisiveness — the base was trained on sharp one-hot human moves, and regressing toward a
+fuzzy self-generated distribution makes it play passively (13 draws) and weaker. The "more correct" AZ objective
+was more harmful than hard-argmax BC in this low-sim, single-iteration regime.
+
+Verdict: **negative** — 1-iteration self-play (both hard-BC and proper soft-target AZ) does not improve and
+regresses this strong supervised base. This is the 5th fine-tuning/self-play negative (D35, D40, D45, D48, D49).
+CAVEAT (fair): a single iteration is NOT how AZ works — real AZ needs MANY iterations with a growing replay
+buffer and progressively stronger self-play, plus much higher sims (800+) for sharp targets. That full campaign
+is untested here and a large, uncertain-payoff undertaking; and the ~2500-level self-play data (D47) caps how
+much new signal exists. Conclusion stands: the only lever with positive evidence is SCALE (params S3+/more data,
+D43); self-play/fine-tuning is not a quick win on this base. Artifacts: scripts/selfplay_az.py (gen/train/match),
+kibitzer/search.py dirichlet params, runs/selfplay_az/az_v1.pt, reports/scaling_law/selfplay_az/.
+
+---
+
+## D50 — search-axis lab: PUCT tuning neutral, classical alpha-beta collapses (value head is the bottleneck)
+
+Pivoted off the fine-tuning axis to the SEARCH axis: does a different search algorithm over the SAME 100M shaw
+net raise its cap? Built search_lab/ (variants.py + compare.py). Each variant is a picker(board, ev, budget)->
+move; compared at EQUAL net-eval budget (CountingEvaluator counts evaluate() calls, so mcts sims and alpha-beta
+nodes spend the same compute). Variants vs baseline_puct, ~20 games from a 12-line opening book, alternating
+colors, budget 128:
+
+CRITICAL calibration — baseline_puct vs an IDENTICAL baseline_puct scored **0.600** (7W/10D/3L). Same
+deterministic search on both sides => that 0.60 is the A-side/sample NOISE FLOOR (SE ~0.11 at n=20), NOT a real
+edge. Variants must clear ~0.65 to count as real, not 0.5.
+
+| variant                | budget | score  | W/D/L    | avg evals | read                         |
+|------------------------|--------|--------|----------|-----------|------------------------------|
+| baseline_puct (self)   | 128    | 0.600  | 7/10/3   | 123       | NOISE FLOOR (identical algo) |
+| puct_fpu               | 128    | 0.625  | 9/7/4    | 122       | within noise                 |
+| puct_prune             | 128    | 0.600  | 6/12/2   | 121       | within noise                 |
+| puct_stacked           | 128    | 0.5625 | 9/9/6    | 123       | within noise (no compounding)|
+| puct_stacked           | 256    | ~0.55  | 3/14/1*  | ~247      | within noise, more draws     |
+| alphabeta              | 128    | 0.075  | 0/3/17   | 146       | COLLAPSE                     |
+| alphabeta_quiescence   | 128    | 0.025  | 0/1/19   | 139       | COLLAPSE                     |
+
+(* stacked_256 ~n=20, near-final at report time.)
+
+Verdict: **PUCT tuning is neutral-within-noise.** FPU (-0.2), prior-threshold pruning (0.15), cpuct(s) visit-
+scaling, and all three STACKED all land within one SE of the 0.60 self-match floor — no tuning knob adds real
+strength, stacking does not compound, and 256 budget just adds draws (no scaling with compute). The ONLY signal
+far outside noise is that **classical alpha-beta CATASTROPHICALLY collapses** (0.075 / 0.025), and quiescence
+made it WORSE. Mechanism: alpha-beta trusts the value head as a minimax LEAF evaluator, while MCTS averages many
+policy-guided rollouts and leans on the strong policy. So the collapse localizes the bottleneck to the
+**weak/miscalibrated value head** (D35), not the search. Search is already near its cap for this net.
+
+This is the 6th negative on a non-scale lever (D35 value-repair, D40 TDLeaf, D45 tactical, D48 BC self-play,
+D49 proper AZ, D50 search). The search axis is now fenced off like the fine-tuning axis. Two levers survive
+with evidence: (1) SCALE (params/data, D43) — the through-line to the project goal; (2) a genuinely better
+VALUE HEAD, which would ALSO retroactively unlock alpha-beta/stacked-PUCT. Decision with user: scale on DATA
+more next. Artifacts: search_lab/variants.py, search_lab/compare.py, search_lab/results/*.json,
+kibitzer/search.py (optional dirichlet params, defaults off).

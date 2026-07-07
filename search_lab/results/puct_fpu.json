@@ -1,0 +1,12 @@
+{
+  "variant": "puct_fpu",
+  "baseline": "baseline_puct",
+  "budget": 128,
+  "games": 20,
+  "w": 9,
+  "d": 7,
+  "l": 4,
+  "score": 0.625,
+  "avg_evals_variant": 122.2,
+  "avg_evals_baseline": 123.1
+}

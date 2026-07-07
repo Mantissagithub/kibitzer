@@ -1,0 +1,15 @@
+{
+  "leela_ceiling": [
+    {"nodes": 1, "approx_elo": 2700, "score": 0.354, "wdl": "3W/11D/10L"},
+    {"nodes": 8, "approx_elo": 2850, "score": 0.104, "wdl": "2W/1D/21L"},
+    {"nodes": 32, "approx_elo": 2950, "score": 0.042, "wdl": "0W/2D/22L"}
+  ],
+  "implied_elo_from_leela1n": 2596,
+  "multi_scale": {
+    "Maia (Lichess, human)": ">1900 (swept 159.5/160, floor)",
+    "Stockfish UCI_Elo": 2483,
+    "Leela net (engine)": 2596
+  },
+  "honest_estimate": "~2500-2600 Elo",
+  "ceiling": "<2700 (loses badly to Leela at 8+ nodes)"
+}

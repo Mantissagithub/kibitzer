@@ -1,0 +1,12 @@
+{
+  "variant": "baseline_puct",
+  "baseline": "baseline_puct",
+  "budget": 128,
+  "games": 20,
+  "w": 7,
+  "d": 10,
+  "l": 3,
+  "score": 0.6,
+  "avg_evals_variant": 123.0,
+  "avg_evals_baseline": 123.5
+}
