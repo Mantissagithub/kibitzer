@@ -467,11 +467,10 @@ edge. Variants must clear ~0.65 to count as real, not 0.5.
 | puct_fpu               | 128    | 0.625  | 9/7/4    | 122       | within noise                 |
 | puct_prune             | 128    | 0.600  | 6/12/2   | 121       | within noise                 |
 | puct_stacked           | 128    | 0.5625 | 9/9/6    | 123       | within noise (no compounding)|
-| puct_stacked           | 256    | ~0.55  | 3/14/1*  | ~247      | within noise, more draws     |
+| puct_stacked           | 256    | 0.525  | 3/15/2   | 247       | within noise, 75% draws      |
 | alphabeta              | 128    | 0.075  | 0/3/17   | 146       | COLLAPSE                     |
 | alphabeta_quiescence   | 128    | 0.025  | 0/1/19   | 139       | COLLAPSE                     |
 
-(* stacked_256 ~n=20, near-final at report time.)
 
 Verdict: **PUCT tuning is neutral-within-noise.** FPU (-0.2), prior-threshold pruning (0.15), cpuct(s) visit-
 scaling, and all three STACKED all land within one SE of the 0.60 self-match floor — no tuning knob adds real

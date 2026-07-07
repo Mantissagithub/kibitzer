@@ -16,3 +16,6 @@ game 15: puct_stacked 3W/11D/1L score=0.567
 game 16: puct_stacked 3W/12D/1L score=0.562
 game 17: puct_stacked 3W/13D/1L score=0.559
 game 18: puct_stacked 3W/14D/1L score=0.556
+game 19: puct_stacked 3W/14D/2L score=0.526
+game 20: puct_stacked 3W/15D/2L score=0.525
+puct_stacked vs baseline_puct: 3W/15D/2L score=0.525 (avg evals 244 vs 250)

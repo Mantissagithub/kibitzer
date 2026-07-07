@@ -79,6 +79,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--out", default="reports/scaling_law/results.json")
     parser.add_argument("--ckpt-dir", default="runs/scaling")
+    # warm-start a rung from an existing checkpoint (data-scaling continuation).
+    parser.add_argument("--init-checkpoint", default=None, help="Load weights before training the rung.")
     parser.add_argument("--save-every", type=int, default=0, help="Interim checkpoint every N steps (0=off).")
     # in-loop play eval vs stockfish with early stopping (d42). eval-every=0 -> off.
     parser.add_argument("--eval-every", type=int, default=0, help="Play-eval vs Stockfish every N positions (0=off).")
@@ -201,6 +203,7 @@ def train_rung(
     ckpt_path: Path | None = None,
     save_every: int = 0,
     eval_cfg: dict[str, Any] | None = None,
+    init_checkpoint: Path | None = None,
 ) -> tuple[Kibitzer, int, float, list[dict[str, float]], int]:
     # trains one rung for a single pass over max_positions. returns
     # (model, params, wall_clock_s, eval_history, positions_trained); the last
@@ -208,6 +211,12 @@ def train_rung(
     cfg = build_config(tag, pos_encoding=pos_encoding)
     model = Kibitzer(cfg).to(device)
     params = model.num_params()
+
+    # warm-start: continue an existing rung on new data (data-scaling continuation).
+    if init_checkpoint is not None:
+        payload = torch.load(init_checkpoint, map_location=device, weights_only=False)
+        model.load_state_dict(payload["model"])
+        print(f"warm-started {tag} from {init_checkpoint}")
 
     dataset = StreamingPositionDataset(
         train_paths,
@@ -426,6 +435,7 @@ def main() -> None:
             ckpt_path=ckpt_path,
             save_every=args.save_every,
             eval_cfg=eval_cfg,
+            init_checkpoint=Path(args.init_checkpoint) if args.init_checkpoint else None,
         )
 
         torch.save(

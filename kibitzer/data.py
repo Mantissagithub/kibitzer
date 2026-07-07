@@ -52,6 +52,11 @@ def iter_pgn_samples(
                 result = game.headers.get("Result", "*")
                 board = game.board()
                 for move in game.mainline_moves():
+                    # null moves (uci "0000") appear in some pgns and aren't encodable
+                    # policy targets; push to keep the game going but don't train on them.
+                    if not move:
+                        board.push(move)
+                        continue
                     yield PositionSample(
                         fen=board.fen(),
                         move_uci=move.uci(),
