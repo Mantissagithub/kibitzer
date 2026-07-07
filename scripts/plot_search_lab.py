@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import math
 import os
 import tempfile
 from pathlib import Path
@@ -21,10 +20,10 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 plt.rcParams.update(
     {
-        "font.size": 10,
-        "axes.titlesize": 11,
-        "axes.labelsize": 10,
-        "legend.fontsize": 8,
+        "font.size": 11,
+        "axes.titlesize": 13,
+        "axes.labelsize": 11,
+        "legend.fontsize": 10,
         "figure.facecolor": "white",
         "axes.facecolor": "white",
         "axes.grid": True,
@@ -33,7 +32,7 @@ plt.rcParams.update(
         "axes.spines.top": False,
         "axes.spines.right": False,
         "axes.formatter.useoffset": False,
-        "savefig.dpi": 300,
+        "savefig.dpi": 320,
     }
 )
 
@@ -62,87 +61,93 @@ def load_rows(results_dir: Path) -> list[dict]:
     return ordered
 
 
-def wilson_half_width(score: float, games: int) -> float:
-    # Binomial SE is good enough for a visual error bar. Draws are folded into
-    # the score, so this is a rough read, not a formal confidence interval.
-    return 1.96 * math.sqrt(max(0.0, score * (1.0 - score)) / max(1, games))
-
-
 def plot_scores(ax: plt.Axes, rows: list[dict]) -> None:
-    xs = list(range(len(rows)))
+    ys = list(range(len(rows)))
     scores = [row["score"] for row in rows]
-    yerr = [wilson_half_width(row["score"], row["games"]) for row in rows]
     colors = [
         "#4e79a7" if row["variant"].startswith("puct") or row["variant"] == "baseline_puct" else "#e15759"
         for row in rows
     ]
 
-    ax.bar(xs, scores, yerr=yerr, capsize=3, color=colors, alpha=0.88, edgecolor="#333333", linewidth=0.4)
-    ax.axhline(0.5, color="#555555", linewidth=0.9, linestyle="--")
-    ax.axhline(0.6, color="#59a14f", linewidth=1.0, linestyle=":", label="baseline self-match noise floor")
-    ax.axhspan(0.5, 0.65, color="#59a14f", alpha=0.07, zorder=0)
+    ax.barh(ys, scores, color=colors, alpha=0.90, edgecolor="#333333", linewidth=0.5)
+    ax.axvline(0.5, color="#555555", linewidth=1.1, linestyle="--", label="even")
+    ax.axvline(0.6, color="#59a14f", linewidth=1.1, linestyle=":", label="baseline self-match")
+    ax.axvspan(0.5, 0.65, color="#59a14f", alpha=0.07, zorder=0)
 
-    for x, row in zip(xs, rows):
+    for y, row in zip(ys, rows):
         ax.text(
-            x,
-            row["score"] + 0.035,
-            f"{row['w']}/{row['d']}/{row['l']}",
-            ha="center",
-            va="bottom",
-            fontsize=7,
+            row["score"] + 0.015,
+            y,
+            f"{row['score']:.3f}   {row['w']}W/{row['d']}D/{row['l']}L",
+            ha="left",
+            va="center",
+            fontsize=10,
             color="#333333",
         )
 
-    ax.set_xticks(xs)
-    ax.set_xticklabels([row["label"] for row in rows])
-    ax.set_ylim(0.0, 0.78)
-    ax.set_ylabel("score vs baseline PUCT")
-    ax.set_title("Search variants at equal net-eval budget")
-    ax.legend(loc="upper right", framealpha=0.92)
+    ax.set_yticks(ys)
+    ax.set_yticklabels([row["label"].replace("\n", " ") for row in rows])
+    ax.invert_yaxis()
+    ax.set_xlim(0.0, 0.78)
+    ax.set_xlabel("score vs baseline PUCT")
+    ax.set_title("Match result by search method")
+    ax.legend(loc="lower right", framealpha=0.92)
 
 
 def plot_evals(ax: plt.Axes, rows: list[dict]) -> None:
-    xs = list(range(len(rows)))
+    ys = list(range(len(rows)))
     variant = [row["avg_evals_variant"] for row in rows]
     baseline = [row["avg_evals_baseline"] for row in rows]
+    offset = 0.18
 
-    ax.plot(xs, variant, marker="o", linewidth=1.8, color="#4e79a7", label="variant")
-    ax.plot(xs, baseline, marker="o", linewidth=1.2, color="#f28e2b", label="baseline PUCT")
-    for x, row in zip(xs, rows):
+    ax.barh([y - offset for y in ys], variant, height=0.32, color="#4e79a7", alpha=0.90, label="variant")
+    ax.barh([y + offset for y in ys], baseline, height=0.32, color="#f28e2b", alpha=0.85, label="baseline PUCT")
+    for y, row in zip(ys, rows):
         ax.text(
-            x,
-            row["avg_evals_variant"] + 7,
+            row["avg_evals_variant"] + 4,
+            y - offset,
             f"{row['avg_evals_variant']:.0f}",
-            ha="center",
-            va="bottom",
-            fontsize=7,
+            ha="left",
+            va="center",
+            fontsize=9,
+            color="#333333",
+        )
+        ax.text(
+            row["avg_evals_baseline"] + 4,
+            y + offset,
+            f"{row['avg_evals_baseline']:.0f}",
+            ha="left",
+            va="center",
+            fontsize=9,
             color="#333333",
         )
 
-    ax.set_xticks(xs)
-    ax.set_xticklabels([row["label"] for row in rows])
-    ax.set_ylabel("average model evaluations / move")
-    ax.set_title("Compute actually spent")
+    ax.set_yticks(ys)
+    ax.set_yticklabels([row["label"].replace("\n", " ") for row in rows])
+    ax.invert_yaxis()
+    ax.set_xlim(0, 285)
+    ax.set_xlabel("average model evaluations / move")
+    ax.set_title("Compute spent per move")
     ax.legend(loc="upper left", framealpha=0.92)
 
 
 def main() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     rows = load_rows(repo_root / "search_lab" / "results")
-    output_path = repo_root / "reports" / "scaling_law" / "fig_search_lab.png"
+    output_path = repo_root / "search_lab" / "fig_search_lab.png"
 
-    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(13, 5))
+    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(14, 7), width_ratios=(1.18, 1.0))
     plot_scores(ax_a, rows)
     plot_evals(ax_b, rows)
-    fig.suptitle("Search-axis lab: PUCT tweaks are noise; alpha-beta collapses", fontsize=12.5)
+    fig.suptitle("Search-axis lab: PUCT tweaks are noise; alpha-beta collapses", fontsize=15)
     fig.text(
         0.5,
         0.005,
-        "score is from the variant's side; labels above bars are W/D/L. "
-        "The 0.60 baseline-vs-baseline result is treated as the observed noise floor.",
+        "score = (wins + 0.5 × draws) / games from the variant side. "
+        "The 0.60 baseline-vs-baseline row is the observed sample/color/opening noise floor.",
         ha="center",
         va="bottom",
-        fontsize=8,
+        fontsize=9,
         color="#555555",
     )
     fig.tight_layout(rect=(0, 0.04, 1, 0.90))
