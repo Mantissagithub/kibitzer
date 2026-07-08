@@ -1,17 +1,12 @@
 # kibitzer
 
-> *a kibitzer is the guy who watches your chess game over your shoulder and tells you what to play. this model does the same thing, except it's actually useful.*
-
-a 15.2m-param attention-only chess model. reads a board, spits out a policy (which move) and a value (who's winning). trained on lichess elite games, refined with az self-play, td-leaf, and on-policy distillation from lc0.
+chess is one of the games i'm fascinated by, so i constrained myself to a laptop rtx 4060 and asked how far i could push a small chess model. this repo is that experiment: a 15.2m-param attention-only policy/value model trained on lichess elite games, evaluated with search, and iterated through a bunch of failed and useful ideas.
 
 (the codebase supports both attention-only and a transformer + selective-SSM hybrid, up to 32.5m params. the best trained checkpoint right now is 15.2m, attention-only, 142m positions -- that's what all the evals below use.)
 
 ## architecture
 
-```
-board -- [position encoder] -- [alternating trunk] -- policy (4672 moves)
-                                attention / SSM   \-- value (tanh, [-1, 1])
-```
+![anime explainer architecture](docs/kibitzer-architecture-anime-explainer.png)
 
 **current best checkpoint (all evals use this):**
 
@@ -34,8 +29,6 @@ board -- [position encoder] -- [alternating trunk] -- policy (4672 moves)
 | ssm state dim | 8 |
 | params | **32.5m** |
 
-![anime explainer architecture](docs/kibitzer-architecture-anime-explainer.png)
-
 the diagram is the current code path, with exact parameter counts written in the figure. the core idea: **attention is good at global reasoning, SSM is cheaper**. interleave them - every 3rd trunk block is attention, the rest are SSM. you get the benefits of both without paying full-attention cost across the whole sequence.
 
 ## published model
@@ -53,12 +46,7 @@ strongest checkpoint: **[`Pradheep1647/kibitzer-s2-shaw-142m-comp`](https://hugg
 
 given a board, run PUCT search (like alphazero) - the model provides priors for the search tree and evaluates leaf positions. the search returns the best move and visit counts.
 
-```
-                model (policy priors + value)
-                         │
-                         ▼
-board ──► [PUCT search, N sims] ──► best move + visit distribution
-```
+![what kibitzer does](docs/kibitzer-what-it-does-blackboard.png)
 
 ## current state
 
