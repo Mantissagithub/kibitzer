@@ -5,10 +5,18 @@ and writes two PNGs to reports/value_head/.
 """
 from __future__ import annotations
 
+import os
+import tempfile
+from pathlib import Path
+
+os.environ.setdefault(
+    "MPLCONFIGDIR",
+    str(Path(tempfile.gettempdir()) / "kibitzer-matplotlib"),
+)
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 import numpy as np
 
 OUT_DIR = "reports/value_head"
@@ -25,7 +33,7 @@ LEGACY_MARK = "#B0413E"   # muted red for legacy reference lines/bars
 plt.rcParams.update({
     "font.family": "sans-serif",
     "font.sans-serif": ["DejaVu Sans", "Arial", "Helvetica"],
-    "font.size": 11,
+    "font.size": 10.5,
     "axes.edgecolor": "#888888",
     "axes.linewidth": 0.8,
     "text.color": TEXT_COLOR,
@@ -56,67 +64,72 @@ pct_base = (best_base_mse - legacy_base_mse) / legacy_base_mse * 100
 pct_comp = (best_comp_mse - legacy_comp_mse) / legacy_comp_mse * 100
 
 # =====================================================================
-# Figure 1: before / after grouped bar chart
+# Figure 1: before / after horizontal bars
 # =====================================================================
-fig, ax = plt.subplots(figsize=(7.2, 5.2))
+fig, ax = plt.subplots(figsize=(10.8, 5.9))
 
-groups = ["100M base\n(online-elite)", "142M comp\n(competition-cont.)"]
-x = np.arange(len(groups))
-width = 0.32
+labels = [
+    "100M base · legacy",
+    "100M base · enlarged",
+    "142M comp · legacy",
+    "142M comp · enlarged",
+]
+values = [legacy_base_mse, best_base_mse, legacy_comp_mse, best_comp_mse]
+colors = [LEGACY_MARK, BASE_COLOR, LEGACY_MARK, COMP_COLOR]
+y = np.array([0.0, 0.42, 1.25, 1.67])
 
-legacy_vals = [legacy_base_mse, legacy_comp_mse]
-enlarged_vals = [best_base_mse, best_comp_mse]
+bars = ax.barh(y, values, height=0.30, color=colors, alpha=0.92, zorder=3)
+for rect, val in zip(bars, values):
+    ax.text(val + 0.0011, rect.get_y() + rect.get_height() / 2, f"{val:.4f}",
+            ha="left", va="center", fontsize=10.5, color=TEXT_COLOR)
 
-bars_legacy = ax.bar(x - width / 2, legacy_vals, width, label="Legacy head (33,025 params)",
-                      color=LEGACY_MARK, alpha=0.85, edgecolor="none", zorder=3)
-bars_enlarged = ax.bar(x + width / 2, enlarged_vals, width, label="Enlarged head (131,841 params, best epoch)",
-                        color=[BASE_COLOR, COMP_COLOR], alpha=0.95, edgecolor="none", zorder=3)
+ax.text(0.045, 0.21, f"{pct_base:.0f}% MSE", ha="left", va="center",
+        fontsize=11.5, fontweight="bold", color="#333333")
+ax.text(0.045, 1.46, f"{pct_comp:.0f}% MSE", ha="left", va="center",
+        fontsize=11.5, fontweight="bold", color="#333333")
 
-# value labels on bars
-for rect, val in zip(bars_legacy, legacy_vals):
-    ax.text(rect.get_x() + rect.get_width() / 2, val + 0.0009, f"{val:.4f}",
-            ha="center", va="bottom", fontsize=9.5, color=TEXT_COLOR)
-for rect, val in zip(bars_enlarged, enlarged_vals):
-    ax.text(rect.get_x() + rect.get_width() / 2, val + 0.0009, f"{val:.4f}",
-            ha="center", va="bottom", fontsize=9.5, color=TEXT_COLOR)
-
-# percent-reduction annotations, connecting legacy -> enlarged
-pct_labels = [f"-{abs(pct_base):.0f}%", f"-{abs(pct_comp):.0f}%"]
-for i, (lv, ev, pl) in enumerate(zip(legacy_vals, enlarged_vals, pct_labels)):
-    y_arrow = lv + 0.0035
-    ax.annotate(
-        "", xy=(x[i] + width / 2, ev + 0.0022), xytext=(x[i] - width / 2, lv + 0.0022),
-        arrowprops=dict(arrowstyle="-|>", color="#555555", lw=1.2,
-                         connectionstyle="arc3,rad=-0.25"),
-    )
-    ax.text(x[i], lv + 0.0075, pl, ha="center", va="bottom", fontsize=11,
-            fontweight="bold", color="#333333")
-
-ax.set_xticks(x)
-ax.set_xticklabels(groups)
-ax.set_ylabel("Held-out value MSE vs. Stockfish depth-14 labels\n(lower is better)")
-ax.set_ylim(0, max(legacy_vals) * 1.32)
-ax.grid(axis="y", color=GRID_COLOR, linewidth=0.7, zorder=0)
+ax.set_yticks(y)
+ax.set_yticklabels(labels)
+ax.invert_yaxis()
+ax.set_xlabel("held-out value MSE vs Stockfish depth-14 labels (lower is better)")
+ax.set_xlim(0.0, 0.064)
+ax.grid(axis="x", color=GRID_COLOR, linewidth=0.7, zorder=0)
 ax.set_axisbelow(True)
 for spine in ("top", "right"):
     ax.spines[spine].set_visible(False)
 
-ax.legend(loc="upper right", frameon=False, fontsize=9.5)
+legend_handles = [
+    plt.Rectangle((0, 0), 1, 1, color=LEGACY_MARK, alpha=0.92),
+    plt.Rectangle((0, 0), 1, 1, color=BASE_COLOR, alpha=0.92),
+    plt.Rectangle((0, 0), 1, 1, color=COMP_COLOR, alpha=0.92),
+]
+ax.legend(
+    legend_handles,
+    ["legacy head", "enlarged head on 100M base", "enlarged head on 142M comp"],
+    loc="lower right",
+    frameon=False,
+    fontsize=9.5,
+)
+ax.set_title("Value-head capacity: offline value error drops, play impact untested",
+             fontsize=14, fontweight="bold", pad=14)
+fig.text(
+    0.5,
+    0.02,
+    "trunk/policy frozen; 250k Stockfish-label cache; 25,010-position game-disjoint eval; best enlarged-head epoch shown",
+    ha="center",
+    va="bottom",
+    fontsize=9,
+    color="#555555",
+)
 
-ax.set_title("A larger value head halves held-out value error (offline)", fontsize=13.5, fontweight="bold", pad=32)
-fig.text(0.5, 0.93,
-          "Value-head capacity 33k → 132k params, trunk/policy frozen, 250k-position Stockfish-label cache, 25,010-position game-disjoint eval.\n"
-          "Offline value-MSE gain only — impact on search/play strength is untested.",
-          ha="center", va="top", fontsize=8.8, color="#555555", style="italic")
-
-fig.tight_layout(rect=[0, 0, 1, 0.90])
+fig.tight_layout(rect=[0.03, 0.07, 0.99, 0.94])
 fig.savefig(f"{OUT_DIR}/fig_valuehead_beforeafter.png", bbox_inches="tight")
 plt.close(fig)
 
 # =====================================================================
 # Figure 2: eval MSE vs epoch, both models, legacy reference lines
 # =====================================================================
-fig, ax = plt.subplots(figsize=(7.6, 5.2))
+fig, ax = plt.subplots(figsize=(10.6, 5.8))
 
 ax.plot(base_epochs, base_eval_mse, marker="o", color=BASE_COLOR, lw=2.0, ms=5.5,
         label="100M base — eval MSE (enlarged head)", zorder=4)
@@ -136,8 +149,8 @@ ax.text(8.05, legacy_comp_mse, "legacy head\n(142M comp)", fontsize=8, color=COM
 # mark best epoch for each
 ax.scatter([best_base_epoch], [best_base_mse], s=90, facecolors="none", edgecolors=BASE_COLOR, lw=1.8, zorder=5)
 ax.scatter([best_comp_epoch], [best_comp_mse], s=90, facecolors="none", edgecolors=COMP_COLOR, lw=1.8, zorder=5)
-ax.annotate("best epoch (2)", xy=(best_base_epoch, best_base_mse), xytext=(3.1, 0.0155),
-            fontsize=8.5, color="#333333",
+ax.annotate("best eval epoch = 2", xy=(best_base_epoch, best_base_mse), xytext=(3.2, 0.0144),
+            fontsize=9, color="#333333",
             arrowprops=dict(arrowstyle="-", color="#999999", lw=0.8))
 
 ax.set_xlabel("Epoch")
@@ -150,16 +163,24 @@ ax.set_axisbelow(True)
 for spine in ("top", "right"):
     ax.spines[spine].set_visible(False)
 
-ax.legend(loc="upper left", frameon=False, fontsize=8.5, ncol=1)
+ax.legend(loc="upper left", frameon=False, fontsize=9, ncol=2)
 
-ax.set_title("Enlarged value head overfits the 250k-position cache after ~2 epochs",
-              fontsize=13, fontweight="bold", pad=32)
+ax.set_title("Enlarged value head overfits after ~2 epochs",
+              fontsize=14, fontweight="bold", pad=14)
 fig.text(0.5, 0.93,
-          "Eval MSE bottoms out at epoch 2 for both bases while train MSE keeps falling (overfitting gap widens); "
-          "dashed lines are the legacy 33k-head eval MSE. Offline metric only — play/search effect untested.",
+          "",
           ha="center", va="top", fontsize=8.6, color="#555555", style="italic")
+fig.text(
+    0.5,
+    0.02,
+    "eval MSE bottoms at epoch 2 while train MSE keeps falling; dashed lines are legacy-head eval MSE. offline metric only.",
+    ha="center",
+    va="bottom",
+    fontsize=9,
+    color="#555555",
+)
 
-fig.tight_layout(rect=[0, 0, 1, 0.90])
+fig.tight_layout(rect=[0.03, 0.07, 0.99, 0.94])
 fig.savefig(f"{OUT_DIR}/fig_valuehead_epochs.png", bbox_inches="tight")
 plt.close(fig)
 
