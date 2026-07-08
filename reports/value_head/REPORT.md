@@ -70,6 +70,12 @@ value-head engineering.
 
 ## Figures
 
+**Figure 0 -- architecture with scaled value head**
+![architecture with scaled value head](fig_valuehead_architecture.png)
+Shows the shared encoder/trunk/policy path and the D52-only value-head change: legacy `320 -> 160 -> 1`
+(33k params) versus scaled `320 -> 256 -> 256 -> 1` (132k params). The training protocol froze the encoder,
+trunk, and policy head, then retrained only the scaled value head.
+
 **Figure 1 -- offline MSE before/after, both models**
 ![offline MSE before/after](fig_valuehead_beforeafter.png)
 Held-out value MSE for the legacy vs. enlarged head on both trunks, at the best enlarged-head
