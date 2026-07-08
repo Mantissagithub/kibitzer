@@ -55,32 +55,41 @@ def sample_move(visits: dict[chess.Move, int], rng: random.Random, temp: float) 
 
 
 def gen(args: argparse.Namespace) -> None:
+    import time
+
     rng = random.Random(args.seed)
     torch.manual_seed(args.seed)
-    random.seed(args.seed)  # search.py uses the global rng for dirichlet noise
+    random.seed(args.seed)
     evaluator = ModelEvaluator.from_checkpoint(args.checkpoint, device=args.device)
     args.out_jsonl.parent.mkdir(parents=True, exist_ok=True)
-    out = args.out_jsonl.open("w", encoding="utf-8")
-    for _ in range(args.games):
-        board = book_board(rng)
-        records = []  # (fen, visits{uci:count}, turn)
-        plies = 0
-        while not board.is_game_over(claim_draw=True) and plies < args.max_plies:
-            res = puct_search(
-                board, evaluator, simulations=args.sims,
-                dirichlet_alpha=args.dirichlet_alpha, dirichlet_epsilon=args.dirichlet_epsilon,
-            )
-            visits = {m.uci(): c for m, c in res.visits.items()}
-            records.append((board.fen(), visits, board.turn))
-            temp = 1.0 if plies < args.temp_plies else 0.0
-            board.push(sample_move(res.visits, rng, temp))
-            plies += 1
-        outcome = board.outcome(claim_draw=True)
-        result = outcome.result() if outcome is not None else "1/2-1/2"
-        for fen, visits, turn in records:
-            out.write(json.dumps({"fen": fen, "visits": visits, "value": result_to_value(result, turn)}) + "\n")
-        out.flush()
-    out.close()
+    start = time.monotonic()
+    total_positions = 0
+    with args.out_jsonl.open("w", encoding="utf-8") as out:
+        for g in range(args.games):
+            board = book_board(rng)
+            records = []
+            plies = 0
+            while not board.is_game_over(claim_draw=True) and plies < args.max_plies:
+                res = puct_search(
+                    board, evaluator, simulations=args.sims,
+                    dirichlet_alpha=args.dirichlet_alpha, dirichlet_epsilon=args.dirichlet_epsilon,
+                )
+                visits = {m.uci(): c for m, c in res.visits.items()}
+                records.append((board.fen(), visits, board.turn))
+                temp = 1.0 if plies < args.temp_plies else 0.0
+                board.push(sample_move(res.visits, rng, temp))
+                plies += 1
+            outcome = board.outcome(claim_draw=True)
+            result = outcome.result() if outcome is not None else "1/2-1/2"
+            for fen, visits, turn in records:
+                out.write(json.dumps({"fen": fen, "visits": visits, "value": result_to_value(result, turn)}) + "\n")
+            out.flush()
+            total_positions += len(records)
+            elapsed = time.monotonic() - start
+            eta = (elapsed / (g + 1)) * (args.games - g - 1)
+            print(f"[gen {g+1}/{args.games}] {plies} plies  {len(records)} pos  total {total_positions} pos  result {result}  {elapsed/60:.1f}m elapsed  ~{eta/60:.1f}m left", flush=True)
+    elapsed = time.monotonic() - start
+    print(f"[gen] done: {args.games} games, {total_positions} positions, {elapsed/60:.1f} min")
 
 
 # az targets: dense visit-count distribution over the action space + value.

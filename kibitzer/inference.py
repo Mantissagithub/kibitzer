@@ -54,3 +54,30 @@ class ModelEvaluator:
             priors=dict(zip(legal_moves, probabilities, strict=True)),
             value=float(value[0, -1, 0].item()),
         )
+
+    @torch.inference_mode()
+    def evaluate_batch(self, boards: list[chess.Board]) -> list[PositionEvaluation]:
+        b = len(boards)
+        pieces = []
+        auxes = []
+        for board in boards:
+            e = board_to_tensor(board)
+            pieces.append(e["piece_idx"])
+            auxes.append(e["aux"])
+        piece_idx = torch.stack(pieces).unsqueeze(1).to(self.device)  # [B, 1, n_squares]
+        aux = torch.stack(auxes).unsqueeze(1).to(self.device)  # [B, 1, n_aux]
+        logits_all, values_all = self.model(piece_idx, aux)  # [B, 1, A], [B, 1, 1]
+
+        results = []
+        for i, board in enumerate(boards):
+            legal_moves = list(board.legal_moves)
+            indices = torch.tensor(
+                [move_to_index(move, board) for move in legal_moves],
+                device=self.device,
+            )
+            probs = torch.softmax(logits_all[i, -1, indices].float(), dim=0).cpu().tolist()
+            results.append(PositionEvaluation(
+                priors=dict(zip(legal_moves, probs, strict=True)),
+                value=float(values_all[i, -1, 0].item()),
+            ))
+        return results

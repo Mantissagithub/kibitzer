@@ -1,0 +1,8 @@
+{
+  "model_a": "runs/az/az_iter_1.pt",
+  "model_b": "runs/scaling_shaw_comp/S2_shaw_142M_comp.pt",
+  "w": 9,
+  "d": 7,
+  "l": 4,
+  "a_score": 0.625
+}
