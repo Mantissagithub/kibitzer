@@ -1,0 +1,30 @@
+{
+  "runs": [
+    {
+      "tag": "S2",
+      "d_model": 256,
+      "trunk_layers": 10,
+      "n_heads": 8,
+      "attention_every": 1,
+      "pos_encoding": "shaw",
+      "params": 15223105,
+      "train_positions": 44000000,
+      "lr": 8e-05,
+      "eval_policy_ce": 1.5372377949523925,
+      "eval_value_mse": 0.4017956751346588,
+      "eval_top1": 0.49844,
+      "play_eval_history": [
+        {
+          "positions": 20000000,
+          "score": 0.7
+        },
+        {
+          "positions": 40000000,
+          "score": 0.775
+        }
+      ],
+      "wall_clock_s": 22813.332588613994,
+      "peak_vram_gb": 1.193107968
+    }
+  ]
+}

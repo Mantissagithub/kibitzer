@@ -1,0 +1,11 @@
+{
+  "checkpoint": "runs/scaling_shaw_comp/S2_shaw_142M_comp.pt",
+  "games": 10,
+  "simulations": 64,
+  "value_scale": 1.0,
+  "stockfish_elo": 1900,
+  "wins": 8,
+  "draws": 2,
+  "losses": 0,
+  "score": 0.9
+}

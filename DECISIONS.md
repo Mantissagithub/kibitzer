@@ -486,3 +486,41 @@ with evidence: (1) SCALE (params/data, D43) — the through-line to the project 
 VALUE HEAD, which would ALSO retroactively unlock alpha-beta/stacked-PUCT. Decision with user: scale on DATA
 more next. Artifacts: search_lab/variants.py, search_lab/compare.py, search_lab/results/*.json,
 kibitzer/search.py (optional dirichlet params, defaults off).
+
+---
+
+## D51 — competition-data continuation (TWIC 2400+) HELD vs the online base (neutral)
+
+Tested a DATA-QUALITY bet: does swapping training fuel from online-elite (lichess) to elite COMPETITION games
+(OTB tournaments) lift strength? Pulled TWIC issues 920-1652 (732 files, 3.49M games), filtered to both players
+2400+ (570,268 games = 16.3%, ~49M positions, 86.5 avg plies) into 12 shards. Continued the online 100M base
+(warm-start via new scripts/scaling_sweep.py --init-checkpoint) on 11 shards / eval on the 12th, base-lr 8e-5,
+eval-every 20M vs SF-1900. Data fix: TWIC mainlines contain null moves ("--") that move_to_index can't encode and
+crashed the DataLoader at 39%; added a null-move skip to kibitzer/data.py iter_pgn_samples (push to keep board
+states, don't yield as a target) — isolated to the pgn reader, online-elite data was unaffected. The 11 fresh
+shards held ~41.6M positions, so training exhausted them at 41.6M (clean cap, NO repetition) => ~142M cumulative
+(100M online + 41.6M competition). Snapshot runs/scaling_shaw_comp/S2_shaw_142M_comp.pt. Wall clock 6.3h local.
+
+Results (all vs the online 100M base):
+- HEAD-TO-HEAD (comp vs base, puct @128 sims), 30 games: 11W/14D/5L = **0.600**. Net +6 wins but ~1.1 sigma over
+  30 games => a mild, NON-significant lean toward the competition model.
+- vs SF-1900 @64 sims, SAME eval harness (apples-to-apples): base 14W/3D/3L = **0.775**, comp 21W/5D/4L (30g) =
+  **0.783** => DEAD EVEN. (An earlier comp number of 0.900 vs the base's in-loop 0.825 was a harness mismatch —
+  different opening books; matched, both are ~0.78.)
+- In-loop SF-1900 curve during the continuation: 20M=0.700, 40M=0.775 — it DIPPED below the base early
+  (distribution shift) and recovered by the end. A mid-training checkpoint (~30M) lost the head-to-head 0W/6D/4L
+  (0.300); the FINISHED model recovered fully to 0.600 => the dip was transient adaptation, not damage.
+- Offline (competition-shard eval, NOT comparable to the online arm's lichess eval): eval_top1 0.4984,
+  eval_value_mse 0.402.
+
+Verdict: **HELD (neutral)** — the competition-data continuation produced a model statistically indistinguishable
+from the online base: a mild non-significant h2h lean (0.600, 11W-5L/30) and dead-even vs Stockfish
+(0.783 vs 0.775). NOT the 7th negative — unlike the six prior fine-tuning attempts (D35/D40/D45/D48/D49/D50) that
+REGRESSED or were neutral-worse, competition data did NOT degrade the strong base despite being a distribution
+shift AND scarcer data (~42M vs the online 100M). Mildly informative: elite-competition data is at least as good
+as online-elite fuel and the base tolerated the swap without collapse. But it is not a breakthrough — no clear
+strength gain, and pure competition data caps at ~42M positions (14 years of TWIC), too little to scale further
+on its own. SCALE (more data of the same distribution, or bigger params) remains the only lever with a positive
+slope (D43). Artifacts: reports/scaling_law_2/ (comp_arm.json, comp_train.log, h2h_vs_base*.json,
+sf1900_*.json), runs/scaling_shaw_comp/S2_shaw_142M_comp.pt, scripts/scaling_sweep.py --init-checkpoint,
+kibitzer/data.py null-move skip.

@@ -1,0 +1,8 @@
+{
+  "model_a": "runs/scaling_shaw_comp/S2_shaw_142M_comp.pt",
+  "model_b": "runs/scaling_shaw_data/checkpoints/S2_shaw_100M.pt",
+  "w": 3,
+  "d": 6,
+  "l": 1,
+  "a_score": 0.6
+}
