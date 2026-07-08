@@ -2,26 +2,37 @@
 
 > *a kibitzer is the guy who watches your chess game over your shoulder and tells you what to play. this model does the same thing, except it's actually useful.*
 
-a 32.5m-param hybrid transformer + selective-SSM chess model. reads a board, spits out a policy (which move) and a value (who's winning). trained on lichess elite games, refined with az self-play, td-leaf, and on-policy distillation from lc0.
+a 15.2m-param attention-only chess model. reads a board, spits out a policy (which move) and a value (who's winning). trained on lichess elite games, refined with az self-play, td-leaf, and on-policy distillation from lc0.
+
+(the codebase supports both attention-only and a transformer + selective-SSM hybrid, up to 32.5m params. the best trained checkpoint right now is 15.2m, attention-only, 142m positions -- that's what all the evals below use.)
 
 ## architecture
 
 ```
-board ──► [position encoder] ──► [alternating trunk] ──► policy (4672 moves)
-                                attention / SSM   \──► value (tanh, [-1, 1])
+board -- [position encoder] -- [alternating trunk] -- policy (4672 moves)
+                                attention / SSM   \-- value (tanh, [-1, 1])
 ```
+
+**current best checkpoint (all evals use this):**
+
+| thing | value |
+|---|---|
+| d_model | 256 |
+| trunk layers | 10 (all causal attention) |
+| attention heads | 8 |
+| position encoding | 3-layer cross-attention (shaw) |
+| max sequence | 128 (plies of history) |
+| params | **15.2m** |
+| training data | 142m lichess elite positions |
+
+**default config (code design, not yet trained at this size):**
 
 | thing | value |
 |---|---|
 | d_model | 320 |
-| trunk layers | 10 (4 causal attention, 6 selective SSM) |
-| attention heads | 8 |
+| trunk layers | 10 (4 attention, 6 selective SSM) |
 | ssm state dim | 8 |
-| position encoding | 3-layer cross-attention (shaw) |
-| max sequence | 128 (plies of history) |
 | params | **32.5m** |
-| value head | tanh-bounded, configurable depth |
-| loss | policy CE + mse(value) |
 
 ![architecture](docs/kibitzer-architecture.png)
 
@@ -101,9 +112,25 @@ crushed 1320-1700 easily, hit a wall at 1900 (rolling score ~0.35-0.45, never ma
 
 ### value head experiments
 
+two separate experiments, same conclusion: the value head is not the bottleneck.
+
+**joint-scratch (D30-D35):** trained policy + value together from a random init instead of the two-phase policy-then-value approach. the decisive-sign metric improved +6.67pp (65.95% → 72.62%). in actual play? tied-to-worse vs stockfish-1320 within the ±0.09 noise of a 20-game match.
+
+**scaled value head (D52):** the value head is suspiciously thin: 33,025 params bolted onto a 15m trunk. enlarged it 4× to 131,841 params, froze the trunk, retrained against stockfish depth-14 labels.
+
+| metric | legacy (33k) | enlarged (132k) | direction |
+|---|---|---|---|
+| offline mse (100m base) | 0.0403 | 0.0196 | **-51%, improved** |
+| offline mse (142m comp) | 0.0569 | 0.0178 | **-69%, improved** |
+| PUCT vs sf-1900 (100m) | 0.775 | 0.625 | **-15pp, regressed** |
+| PUCT vs sf-1900 (142m comp) | 0.783 | 0.650 | **-13pp, regressed** |
+| PUCT vs leela ~2700 | 0.225 | 0.150 | **-7.5pp, regressed** |
+
+both experiments converged: offline metrics don't predict play. the value head is now a closed lever.
+
 ![value head](reports/value_head/fig_valuehead_play_summary.png)
 
-tl;dr: **offline metrics are liars**. the joint-from-scratch model won the value-decisive metric by +6.67pp, then tied/lost in actual games. blasting parameter count through the value head didn't budge play strength. [reports/value_head/REPORT.md](reports/value_head/REPORT.md)
+[full D52 report](reports/value_head/REPORT.md)
 
 ## the messy part
 
