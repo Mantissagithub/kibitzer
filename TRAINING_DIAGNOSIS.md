@@ -56,7 +56,7 @@ No single scalar establishes chess strength. Each metric below answers a
 different question, and its value is useful only when compared on the same data,
 model contract, and evaluation settings.
 
-### M1 — Policy and value training loss
+### M1 , Policy and value training loss
 
 #### Why this metric matters
 
@@ -112,7 +112,7 @@ while playing almost randomly. Optimization worked in both cases; target quality
 and transfer did not. Training loss alone was therefore not a valid promotion
 metric.
 
-### M2 — Relative parameter drift
+### M2 , Relative parameter drift
 
 #### Why this metric matters
 
@@ -155,7 +155,7 @@ obtain module-specific drift.
 - SFT 50k drifted `23.9%` from SFT 14k while retaining `95.3%` top-move
   agreement. Parameter drift alone would have overstated the behavioral change.
 
-### M3 — Policy entropy, normalized entropy, and effective move count
+### M3 , Policy entropy, normalized entropy, and effective move count
 
 #### Why this metric matters
 
@@ -203,7 +203,7 @@ $$
 - Failed action-value run: `H≈2.79`, `N_eff≈16`. This matched its nearly uniform
   training targets and explained the random-looking move selection.
 
-### M4 — Top-1 probability, margin, target accuracy, and negative log-likelihood
+### M4 , Top-1 probability, margin, target accuracy, and negative log-likelihood
 
 #### Why this metric matters
 
@@ -260,7 +260,7 @@ SFT 50k was not behaviorally worse on this narrow set despite its lower
 Because this suite contains known openings, the absolute accuracies are not a
 generalization estimate; their value is in same-suite checkpoint comparison.
 
-### M5 — Jensen-Shannon divergence and top-move agreement
+### M5 , Jensen-Shannon divergence and top-move agreement
 
 #### Why this metric matters
 
@@ -305,7 +305,7 @@ $$
 - Full history versus standalone position for SFT 14k: `JSD=0.360`, agreement
   `35.3%`. History removal fundamentally changed the model's decisions.
 
-### M6 — Value spread, material sensitivity, and ordering
+### M6 , Value spread, material sensitivity, and ordering
 
 #### Why this metric matters
 
@@ -368,7 +368,7 @@ AZ iteration 5 shifted the mean opening value to `-0.241` and changed the value
 head by `26.9%`. This was not improved calibration; it was a large biased rewrite
 of an already weak head.
 
-### M7 — Adam moment SNR proxy
+### M7 , Adam moment SNR proxy
 
 #### Why this metric matters
 
@@ -421,7 +421,7 @@ $$
   samples. The high value indicates repetition and alignment, not demonstrated
   chess improvement.
 
-### M8 — Consecutive update cosine similarity
+### M8 , Consecutive update cosine similarity
 
 #### Why this metric matters
 
@@ -457,7 +457,7 @@ The SFT trajectory had little persistent long-range direction even though its
 training loss continued to fall. This is consistent with fitting noisy targets
 without reliable strength improvement.
 
-### M9 — Exact unchanged fraction and BF16 quantization
+### M9 , Exact unchanged fraction and BF16 quantization
 
 #### Why this metric matters
 
@@ -489,7 +489,7 @@ All 32 trainable RMSNorm scale tensors were exactly unchanged from SFT step
 2,000 to step 14,000. Combined with BF16 parameters and BF16 Adam moments, this
 is strong evidence that low-precision rounding froze those scales.
 
-### M10 — Match score, Elo estimate, confidence interval, and significance
+### M10 , Match score, Elo estimate, confidence interval, and significance
 
 #### Why this metric matters
 
@@ -547,7 +547,7 @@ SFT 14k scored `7/20` with a 95% Wilson interval of `18%–57%`. SFT 50k scored
 gave `p≈0.27`. The data did not establish that SFT 14k was truly stronger than
 SFT 50k.
 
-### M11 — Input-contract and batch-invariance metrics
+### M11 , Input-contract and batch-invariance metrics
 
 #### Why this metric matters
 

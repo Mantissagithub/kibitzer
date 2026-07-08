@@ -41,7 +41,7 @@ Mean/p90/p95 move regret (centipawns lost vs. the depth-20 best move) and near-b
 
 ![Match WDL and score (noisy, separate panel)](fig5_match_wdl_score_noisy.png)
 
-Full-game win/draw/loss results vs. Stockfish-1320 from the small local cutechess-style matches. Each bar is a single 10-game match — explicitly labeled as noisy and kept out of the metric-based figures above so it cannot be mistaken for a precise Elo comparison.
+Full-game win/draw/loss results vs. Stockfish-1320 from the small local cutechess-style matches. Each bar is a single 10-game match , explicitly labeled as noisy and kept out of the metric-based figures above so it cannot be mistaken for a precise Elo comparison.
 
 ## Evidence inventory
 

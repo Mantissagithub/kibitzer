@@ -1,11 +1,11 @@
-# scaling study — why
+# scaling study , why
 
 the case for stopping point-experiments and measuring the scaling curve instead.
 
 ## the evidence that forced this
 
 thirty-five point-experiments (D1–D35), none beat the supervised ~1320 baseline, every one run on a single fixed
-~32M model. the failure is not any single trick — it is the method: guessing one lever at a time on one model size,
+~32M model. the failure is not any single trick , it is the method: guessing one lever at a time on one model size,
 graded by a noisy expensive signal.
 
 D35 made the confound explicit:
@@ -26,10 +26,10 @@ full numbers: `reports/search_depth/results.json`, figures in `reports/joint_scr
 instead of anecdotes, a prediction. fit policy cross-entropy `L(N, D)` over model size `N` and positions seen `D`,
 then extrapolate to the one question that actually matters:
 
-> what `N` and `D` reach a target move-match (an elo proxy), and is that reachable on the 8gb 4060 — or is this
+> what `N` and `D` reach a target move-match (an elo proxy), and is that reachable on the 8gb 4060 , or is this
 > fundamentally a cloud-scale problem?
 
-policy cross-entropy is the right anchor because it is cheap, smooth, and low-variance — the opposite of match play.
+policy cross-entropy is the right anchor because it is cheap, smooth, and low-variance , the opposite of match play.
 this is the chinchilla / kaplan method (arXiv:2001.08361, 2203.15556). the scale reference is deepmind's
 searchless-chess (arXiv:2402.04494): 2895 lichess elo with 270M params on ~15b positions, no search. locating
 ourselves against that curve tells us honestly whether the laptop can ever get there.

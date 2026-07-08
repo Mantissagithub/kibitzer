@@ -19,8 +19,8 @@ the value target changed from cp-regression to ±1 game-result, R²/MSE/MAE are
 not directly comparable between the two models and are reported separately,
 clearly labeled.
 
-The decisive test — whether this value head actually helps PUCT search beat
-the baseline — is a search gate, run separately (not included here).
+The decisive test , whether this value head actually helps PUCT search beat
+the baseline , is a search gate, run separately (not included here).
 
 ## Figures
 
@@ -30,7 +30,7 @@ the baseline — is a search gate, run separately (not included here).
 
 End-of-epoch streamed total/policy/value loss over 3 epochs of joint
 from-scratch training. Epoch 3 rises for both policy and value relative to
-epoch 2 — shown honestly rather than smoothed; likely an LR or overfit
+epoch 2 , shown honestly rather than smoothed; likely an LR or overfit
 wobble.
 
 ### Value gate: scale-invariant metrics
@@ -39,7 +39,7 @@ wobble.
 
 Decisive/won/overall sign accuracy and Pearson r, baseline vs. joint_scratch,
 on the same held-out Stockfish depth-14 split (25,010 positions). These are
-scale-invariant and directly comparable — decisive and won sign accuracy
+scale-invariant and directly comparable , decisive and won sign accuracy
 improve, overall sign accuracy and Pearson r regress slightly.
 
 ### Value gate: scale-dependent metrics

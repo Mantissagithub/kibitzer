@@ -3,8 +3,8 @@
 ## Motivation
 
 The value head has been a suspiciously thin component throughout this project: a 33,025-parameter
-MLP bolted onto trunks of 100M (base) and 142M (comp) parameters. D50's alpha-beta diagnostic —
-using the value head directly as a minimax leaf evaluator at 128 net-evals — collapsed to a ~0.075
+MLP bolted onto trunks of 100M (base) and 142M (comp) parameters. D50's alpha-beta diagnostic ,
+using the value head directly as a minimax leaf evaluator at 128 net-evals , collapsed to a ~0.075
 win-rate, far below what a usable leaf value should produce. That result flagged the value head as
 a plausible bottleneck: maybe it's simply too small to represent position value accurately, and a
 larger head would fix both the offline fit and the downstream search/play behavior.
