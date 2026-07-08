@@ -524,3 +524,39 @@ on its own. SCALE (more data of the same distribution, or bigger params) remains
 slope (D43). Artifacts: reports/scaling_law_2/ (comp_arm.json, comp_train.log, h2h_vs_base*.json,
 sf1900_*.json), runs/scaling_shaw_comp/S2_shaw_142M_comp.pt, scripts/scaling_sweep.py --init-checkpoint,
 kibitzer/data.py null-move skip.
+
+---
+
+## D52 — enlarged value head: big offline win, consistently HURTS play (negative)
+
+Tested the one untested structural lever: the value head was only 33,025 params (2-layer d_model//2 MLP) and is
+the diagnosed weak link (D50 alpha-beta collapse). Made it config-driven (kibitzer/model.py build_value_head +
+KibitzerConfig.value_hidden/value_layers, backward-compatible: hidden<=0 reproduces the legacy head bit-for-bit
+so every existing checkpoint loads unchanged and ModelEvaluator/search_lab rebuild the enlarged head from the
+saved config). Enlarged to 131,841 params (hidden=256, 3 layers) and retrained ONLY the value head (trunk/
+encoder/policy frozen) on the Stockfish depth-14 label cache (250k positions, game-disjoint eval), on BOTH the
+100M online base and the 142M competition model. Script scripts/train_value_head_big.py.
+
+Offline: the enlarged head roughly HALVED held-out value MSE — base 0.0403->0.0196 (-51%), comp 0.0569->0.0178
+(-69%), Pearson 0.84/0.85 -> 0.90/0.91. Best at epoch 2 (overfits the 250k cache after that). The competition
+trunk supported the better head (0.0178 < 0.0196).
+
+Play (the decision): the offline win did NOT transfer — it consistently REGRESSED strength.
+- PUCT vs SF-1900 @64 sims, 20g: base 0.775 -> 0.625 (enlarged), comp 0.783 -> 0.65. Both DOWN ~0.13-0.15
+  (~1.3 sigma each individually, but the SAME direction on two independent models => a real small regression).
+- vs Leela t1-256x10-distilled @ nodes=1 (~2700, lowest-ceiling tactical yardstick), 20g: legacy comp 0.225
+  (3W/3D/14L) vs enlarged 0.150 (1W/4D/15L) => worse tactically, not better.
+- alpha-beta diagnostic @128 (search_lab, uses the value head directly as a minimax leaf): still collapses at
+  ~0.19 (vs D50's ~0.075 with the weak head) — better offline value is STILL not a usable leaf evaluator.
+
+Verdict: **negative** — enlarging + retraining the value head is a large OFFLINE metric win (halved MSE) that
+consistently DEGRADES real play on both models and both opponents, and does not rescue alpha-beta. Mechanism:
+hard-fitting Stockfish evals recalibrates the value to the narrow depth-14-cache distribution, giving worse
+backup signal during MCTS on real-play positions (D35 confirmed and sharpened). The value head is now a CLOSED
+lever for strength: value-target ACCURACY is not the bottleneck; the bottleneck is that offline value quality
+does not equal play value. This is the 7th non-scale attempt (D35, D40, D45, D48, D49, D50, D52; D51 competition
+data was neutral). SCALE (params/data, D43) remains the only lever with a positive slope. Artifacts:
+scripts/train_value_head_big.py, kibitzer/model.py (build_value_head + config fields), runs/value_big/
+value_big_{base,comp}.pt, reports/scaling_law_2/ (value_big_sf1900*, leela_*), reports/value_head/ figures.
+Next step: stop tuning the fixed-scale model; the blog's ceiling story is complete — pursue scale (S3+ params
+and/or more same-distribution data) as the only remaining lever, or write up the ceiling result.
