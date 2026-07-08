@@ -28,6 +28,27 @@ class KibitzerConfig:
     n_squares: int = 64
     vocab_pieces: int = NUM_PIECE_TOKENS
     pos_encoding: str = "shaw"
+    # value head capacity: hidden<=0 keeps the legacy d_model//2 two-layer head;
+    # hidden>0 builds a deeper/wider head (value-capacity experiments, D52).
+    value_hidden: int = 0
+    value_layers: int = 2
+
+
+def build_value_head(d_model: int, hidden: int = 0, layers: int = 2) -> nn.Sequential:
+    # hidden<=0 reproduces the legacy 2-layer d_model//2 head exactly so existing
+    # checkpoints stay bit-identical; hidden>0 gives a bigger head with `layers`
+    # linear layers (the 33k-param head is the known weak link, D50).
+    if hidden <= 0:
+        return nn.Sequential(
+            nn.Linear(d_model, d_model // 2),
+            nn.GELU(),
+            nn.Linear(d_model // 2, 1),
+        )
+    modules: list[nn.Module] = [nn.Linear(d_model, hidden), nn.GELU()]
+    for _ in range(max(0, layers - 2)):
+        modules.extend([nn.Linear(hidden, hidden), nn.GELU()])
+    modules.append(nn.Linear(hidden, 1))
+    return nn.Sequential(*modules)
 
 
 class Kibitzer(nn.Module):
@@ -53,10 +74,11 @@ class Kibitzer(nn.Module):
         self.trunk = nn.ModuleList(blocks)
         self.norm = RMSNorm(cfg.d_model)
         self.policy_head = nn.Linear(cfg.d_model, cfg.n_moves)
-        self.value_head = nn.Sequential(
-            nn.Linear(cfg.d_model, cfg.d_model // 2),
-            nn.GELU(),
-            nn.Linear(cfg.d_model // 2, 1),
+        # getattr keeps old pickled configs (which lack these fields) on the legacy head.
+        self.value_head = build_value_head(
+            cfg.d_model,
+            getattr(cfg, "value_hidden", 0),
+            getattr(cfg, "value_layers", 2),
         )
 
     def forward(
