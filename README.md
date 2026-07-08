@@ -34,11 +34,20 @@ board -- [position encoder] -- [alternating trunk] -- policy (4672 moves)
 | ssm state dim | 8 |
 | params | **32.5m** |
 
-![current code architecture](docs/kibitzer-current-architecture-blackboard.png)
-
 ![anime explainer architecture](docs/kibitzer-architecture-anime-explainer.png)
 
-the first diagram is the current code architecture; the second is the same path explained more plainly. the core idea: **attention is good at global reasoning, SSM is cheaper**. interleave them - every 3rd trunk block is attention, the rest are SSM. you get the benefits of both without paying full-attention cost across the whole sequence.
+the diagram is the current code path, with exact parameter counts written in the figure. the core idea: **attention is good at global reasoning, SSM is cheaper**. interleave them - every 3rd trunk block is attention, the rest are SSM. you get the benefits of both without paying full-attention cost across the whole sequence.
+
+## published model
+
+strongest checkpoint: **[`Pradheep1647/kibitzer-s2-shaw-142m-comp`](https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-142m-comp)**.
+
+| artifact | value |
+|---|---|
+| checkpoint | `S2_shaw_142M_comp.pt` |
+| local path | `runs/scaling_shaw_comp/S2_shaw_142M_comp.pt` |
+| training objective | `policy_value_competition_continuation` |
+| eval setup | 64-sim PUCT unless stated otherwise |
 
 ## what it does
 
@@ -59,6 +68,8 @@ assessed against stockfish ladder, 64 sims PUCT:
 
 ![elo](reports/scaling_law/fig_elo.png)
 
+protocol: Stockfish was run with `UCI_LimitStrength` at fixed Elo settings; Kibitzer used the S2 Shaw 142m checkpoint plus 64 PUCT simulations per move. Score is `(wins + 0.5 * draws) / games` from Kibitzer's side. The Elo estimate is a fit over the ladder, not a raw-policy rating.
+
 | opponent (sf elo) | score | result |
 |---|---|---|
 | 1900 | 0.938 | 37W / 1D / 2L |
@@ -67,6 +78,8 @@ assessed against stockfish ladder, 64 sims PUCT:
 | 2500 | 0.525 | 13W / 16D / 11L |
 
 estimated elo: **2483 ± 32** (search-based, 64 sims)
+
+read this as: with search enabled, the model is roughly even with the 2500 Stockfish setting under this specific ladder, and clearly above the 1900-2300 settings. it is not a standalone no-search rating, and it is not a claim about tournament engine strength outside this protocol. PGNs and JSON summaries live under `reports/scaling_law/elo_local/`.
 
 ### scaling study
 
@@ -134,11 +147,20 @@ both experiments converged: offline metrics don't predict play. the value head i
 
 [full D52 report](reports/value_head/REPORT.md)
 
-## the messy part
+## experiment log
 
-thirty-five point-experiments (D1–D35) chasing one tweak at a time on one model size. none beat the 1320 baseline. every "improvement" measured offline. most of them didn't translate to actual play.
+this repo is closer to a lab notebook than a clean model release. the short version:
 
-the full saga of bad decisions, dead ends, and what we learned: **[decision.md](decision.md)** and **[docs/scaling_study/README.md](docs/scaling_study/README.md)**
+| line | result |
+|---|---|
+| scaling/data | worked best; data mattered more than more params past ~15m |
+| search depth | helped play, but mostly as an inference-time crutch |
+| az self-play | beat its own base, regressed vs maia/leela-style opponents |
+| td-leaf | fixed easy curriculum rungs, stalled around 1900 |
+| value-head repair | improved offline value metrics, regressed real play |
+| joint scratch / point tweaks | mostly negative or inconclusive |
+
+the longer failure log is in **[decision.md](decision.md)**; the scaling summary is in **[docs/scaling_study/README.md](docs/scaling_study/README.md)**.
 
 ## roadmap
 
@@ -168,7 +190,7 @@ uv run python scripts/train_bc.py -h  # supervised training
 | `runs/scaling_shaw_comp/S2_shaw_142M_comp.pt` | best supervised model (14.9m, 142m pos) | scaling sweep |
 | `runs/az/az_iter_1.pt` | az iter 1 (one pass of self-play) | 2026-07-08 |
 
-generated checkpoints are gitignored. hf push available via `scripts/eval_and_rename_hf.py`.
+generated checkpoints are gitignored. the strongest published checkpoint is on [Hugging Face](https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-142m-comp); hf push support lives in `kibitzer/hf_utils.py`.
 
 ## citations
 
@@ -177,3 +199,9 @@ beyond the typical alphazero/deepmind stuff:
 - [chinchilla scaling laws](https://arxiv.org/abs/2203.15556) - compute-optimal training
 - [lc0](https://github.com/LeelaChessZero/lc0) - teacher for opd, eval opponent
 - [maia](https://arxiv.org/abs/2006.01855) - human-like chess engine, used for eval
+- [maia-2](https://arxiv.org/abs/2409.20553) - unified human-aligned chess model across skill levels
+- [allie](https://arxiv.org/abs/2410.03893) - human-aligned chess with time-adaptive search
+- [maia4all](https://arxiv.org/abs/2507.21488) - efficient individual human-behavior adaptation
+- [unimaia](https://arxiv.org/abs/2605.27767) - language-steered human-like chess policy control
+- [chessmimic](https://arxiv.org/abs/2606.04473) - recent per-rating transformers; compares against maia-3
+- [elo-disentangled style embeddings](https://arxiv.org/abs/2606.25176) - player-style modeling using maia-3 policy logits
