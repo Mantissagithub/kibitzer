@@ -34,9 +34,11 @@ board -- [position encoder] -- [alternating trunk] -- policy (4672 moves)
 | ssm state dim | 8 |
 | params | **32.5m** |
 
-![architecture](docs/kibitzer-architecture.png)
+![current code architecture](docs/kibitzer-current-architecture-blackboard.png)
 
-the core idea: **attention is good at global reasoning, SSM is cheaper**. interleave them - every 3rd trunk block is attention, the rest are SSM. you get the benefits of both without paying full-attention cost across the whole sequence.
+![anime explainer architecture](docs/kibitzer-architecture-anime-explainer.png)
+
+the first diagram is the current code architecture; the second is the same path explained more plainly. the core idea: **attention is good at global reasoning, SSM is cheaper**. interleave them - every 3rd trunk block is attention, the rest are SSM. you get the benefits of both without paying full-attention cost across the whole sequence.
 
 ## what it does
 
