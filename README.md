@@ -104,6 +104,13 @@ paired 80-game gates vs the Leela/Maia-2700 proxy at 128 sims:
 
 takeaway: tactical R1 is the current best local branch. tactical R2 passed the held-out top-1 gate but failed the external gate, so it should not be promoted.
 
+folder-level plots:
+- [repair eval rollup](reports/repair_eval/README.md)
+- [tactical repair plots](reports/tactical_repair/README.md)
+- [regret repair plots](reports/regret/README.md)
+- [regret-start plots](reports/regret_start/README.md)
+- [az eval plots](reports/az/README.md)
+
 ### az self-play
 
 alphazero-style self-play: the model plays against itself using PUCT search with dirichlet root noise, trains on the visit distribution + game outcome, then we match the new model vs the old one.
