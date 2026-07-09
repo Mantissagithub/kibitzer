@@ -329,3 +329,110 @@ Conclusion: reject R2. The held-out tactical/game top-1 gate was not enough;
 external play regressed by about -0.069 score rate / -63 Elo relative to R1 on
 the same seed. Keep `runs/tactical/tactical_repair.pt` as the current best local
 base and stop simply scaling tactical mid-training in this form.
+
+## 2026-07-10: Add teacher-preference repair branch
+
+The next RL-style branch should not be PPO, pure AZ, or another scalar value
+repair. The recent evidence points the other way:
+
+- plain AZ beat its sibling but regressed vs the Leela/Maia external yardstick
+- regret-start self-play also fell back to the comp-base score band
+- tactical R1 is the current best checkpoint
+- tactical R2 passed held-out top-1 but failed the external match
+
+Implemented a DPO/AWAC-style preference repair path:
+
+```bash
+bash scripts/run_preference_repair.sh
+```
+
+Default shape:
+
+- reference/init checkpoint: `runs/tactical/tactical_repair.pt`
+- preference buffer: `runs/preference/r1_teacher_pairs_sf12.jsonl`
+- output checkpoint: `runs/preference/preference_repair.pt`
+- teacher: Stockfish depth 12, MultiPV 8
+- sources: policy-regret buffers plus the held-out elite PGN slice
+- objective: DPO pair loss + small teacher CE + frozen-reference KL
+- trainable scope: policy head + final norm by default
+- no value loss and no learned Q/value critic in the first pass
+
+The labels are intentionally model-mistake pairs: for each position, keep the
+teacher's best move as `good_move` and the current policy's highest-probability
+clearly-worse move as `bad_move`. If the policy mistake is outside MultiPV, use
+the teacher's worst labeled score as a floor so the pair still trains away from
+the tempting move.
+
+Promotion rule stays external. Offline pair accuracy and CE are sanity checks
+only. Promote `preference_repair.pt` only if the paired Leela/Maia-2700 gate at
+128 sims beats tactical R1 by at least +0.03 score rate or about +25 Elo:
+
+```bash
+CANDIDATE_NAME=preference_repair \
+CANDIDATE_CHECKPOINT=runs/preference/preference_repair.pt \
+CANDIDATE_REPORT_DIR=reports/preference_repair \
+SEED=31 \
+bash scripts/run_repair_eval_gate.sh
+```
+
+### Preference repair result
+
+The first preference repair checkpoint failed externally and should not be
+promoted:
+
+| checkpoint | gate | W/D/L | score rate | implied Elo |
+|---|---:|---:|---:|---:|
+| `preference_repair.pt` | 62/80 stopped | 3 / 13 / 46 | 0.153 | 2403 |
+| `tactical_repair.pt` reference | 80/80 seed 23 | 12 / 23 / 45 | 0.294 | 2548 |
+
+Offline checkpoint metrics looked superficially acceptable:
+
+```text
+dpo_loss=0.6934 ce_loss=2.2871 anchor_kl=0.0009
+pair_acc=0.6070 pair_margin=0.7716
+```
+
+But the external curve collapsed after the first few games. The preference
+buffer had 52,250 pairs, mean teacher margin 0.236, and 21,217 pairs where the
+bad move used the MultiPV floor. That floor-heavy label shape is probably too
+noisy/aggressive for this small policy.
+
+Conclusion: reject this checkpoint. If this branch is retried, use a much lower
+step size, much stronger anchor, and a single epoch. Do not run another full
+gate unless the cheap early gate is clearly above tactical R1's band. The plots
+and report live in `reports/preference_repair/`.
+
+### Conservative preference retry result
+
+Tried the conservative anchor-heavy salvage pass:
+
+```bash
+ACTION=train \
+PREFERENCE_JSONL=runs/preference/r1_teacher_pairs_sf12.jsonl \
+OUTPUT_CHECKPOINT=runs/preference/preference_repair_anchor_r1.pt \
+LEARNING_RATE=3e-6 \
+EPOCHS=1 \
+BETA=0.03 \
+CE_WEIGHT=0.5 \
+ANCHOR_WEIGHT=0.5 \
+bash scripts/run_preference_repair.sh
+```
+
+Then started the same Leela/Maia-2700 external gate and stopped it early:
+
+| checkpoint | gate | W/D/L | score rate | implied Elo |
+|---|---:|---:|---:|---:|
+| `preference_repair_anchor_r1.pt` | 62/80 stopped | 4 / 17 / 41 | 0.202 | 2461 |
+| `tactical_repair.pt` reference | 80/80 seed 23 | 12 / 23 / 45 | 0.294 | 2548 |
+
+Conclusion: reject the conservative retry too. The stronger anchor reduced the
+damage compared with the first preference checkpoint, but it still sits around
+policy-regret/comp-base territory and does not threaten tactical R1. Close the
+teacher-preference branch for now. Any future version needs cleaner labels
+before training, not more tuning of this same buffer.
+
+Saved stopped-run evidence:
+
+- `reports/preference_repair/preference_repair_anchor_r1_vs2700_s128_g80_seed31_stopped62.jsonl`
+- `reports/preference_repair/preference_repair_anchor_r1_vs2700_s128_g80_seed31_stopped62.log`
+- `reports/preference_repair/preference_repair_anchor_r1_vs2700_s128_g80_seed31_stopped62.pgn`

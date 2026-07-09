@@ -104,6 +104,25 @@ paired 80-game gates vs the Leela/Maia-2700 proxy at 128 sims:
 
 takeaway: tactical R1 is the current best local branch. tactical R2 passed the held-out top-1 gate but failed the external gate, so it should not be promoted.
 
+next branch: **teacher-preference repair**. this is the current RL-ish path:
+use Stockfish/LC0-style rankings as pairwise feedback, train DPO/AWAC-style
+policy improvement from `tactical_repair.pt`, and keep the external gate as the
+only promotion signal.
+
+```bash
+bash scripts/run_preference_repair.sh
+```
+
+then gate it against tactical R1:
+
+```bash
+CANDIDATE_NAME=preference_repair \
+CANDIDATE_CHECKPOINT=runs/preference/preference_repair.pt \
+CANDIDATE_REPORT_DIR=reports/preference_repair \
+SEED=31 \
+bash scripts/run_repair_eval_gate.sh
+```
+
 ![repair eval external scores](reports/repair_eval/fig1_external_gate_scores.png)
 
 ![repair eval implied elo](reports/repair_eval/fig5_implied_elo.png)
@@ -113,6 +132,7 @@ takeaway: tactical R1 is the current best local branch. tactical R2 passed the h
 folder-level plots:
 - [repair eval rollup](reports/repair_eval/README.md)
 - [tactical repair plots](reports/tactical_repair/README.md)
+- [preference repair plots](reports/preference_repair/README.md)
 - [regret repair plots](reports/regret/README.md)
 - [regret-start plots](reports/regret_start/README.md)
 - [az eval plots](reports/az/README.md)
@@ -178,6 +198,7 @@ this repo is closer to a lab notebook than a clean model release. the short vers
 | td-leaf | fixed easy curriculum rungs, stalled around 1900 |
 | value-head repair | improved offline value metrics, regressed real play |
 | tactical repair | small external gain; R1 kept, R2 rejected |
+| teacher-preference repair | first DPO-style attempt rejected; offline pair metrics did not transfer |
 | joint scratch / point tweaks | mostly negative or inconclusive |
 
 the longer failure log is in **[decision.md](decision.md)**; the scaling summary is in **[docs/scaling_study/README.md](docs/scaling_study/README.md)**.
@@ -190,9 +211,9 @@ what we know works:
 - **[more search sims](reports/search_depth/)** (= stronger play, but it's an inference crutch)
 
 what we're trying next:
-- **[az self-play](scripts/az_run.sh)** - 200 games @ 200 sims across 3 iterations, bigger data buffer
-- **[td-leaf](scripts/train_tdleaf.py)** - needs more games or a different opponent (lc0? maia?)
-- **bigger value head** - the 33k-param head is the known weak link, but the architecture experiments showed it's not that simple
+- **[teacher-preference repair](scripts/run_preference_repair.sh)** - DPO-style move-pair repair from Stockfish-ranked hard positions
+- **[az self-play](scripts/az_run.sh)** - parked unless generated states get external teacher labels
+- **[td-leaf](scripts/train_tdleaf.py)** - parked; value-only gains did not transfer cleanly to play
 
 ## setup
 
@@ -200,6 +221,7 @@ what we're trying next:
 uv sync
 uv run pytest                    # 80 tests
 bash scripts/az_run.sh           # start az self-play loop
+bash scripts/run_preference_repair.sh  # current repair branch
 uv run python scripts/train_bc.py -h  # supervised training
 ```
 
