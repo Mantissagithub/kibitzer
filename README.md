@@ -104,6 +104,12 @@ paired 80-game gates vs the Leela/Maia-2700 proxy at 128 sims:
 
 takeaway: tactical R1 is the current best local branch. tactical R2 passed the held-out top-1 gate but failed the external gate, so it should not be promoted.
 
+![repair eval external scores](reports/repair_eval/fig1_external_gate_scores.png)
+
+![repair eval implied elo](reports/repair_eval/fig5_implied_elo.png)
+
+![tactical repair wdl](reports/tactical_repair/fig_wdl_breakdown.png)
+
 folder-level plots:
 - [repair eval rollup](reports/repair_eval/README.md)
 - [tactical repair plots](reports/tactical_repair/README.md)
