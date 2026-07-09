@@ -179,18 +179,38 @@ def main() -> None:
         if not pth.is_file():
             raise SystemExit(f"missing: {pth}")
 
+    print("[1/5] TACTICAL REPAIR CONFIG", flush=True)
+    print(f"  checkpoint:      {args.checkpoint}")
+    print(f"  puzzle csv:      {args.puzzle_csv}")
+    print(f"  game pgns:       {len(game_paths)}")
+    print(f"  eval pgn:        {args.eval_pgn}")
+    print(f"  max positions:   {args.max_positions:,}")
+    print(f"  mix ratio:       {args.mix_ratio:g} puzzle / {1.0 - args.mix_ratio:g} game")
+    print(f"  puzzle rating:   {args.rating_min}-{args.rating_max}")
+    print(f"  lr/value weight: {args.lr:g} / {args.value_weight:g}")
+    print(f"  batch/workers:   {args.batch_size} / {args.num_workers}")
+    print(f"  output:          {args.out}")
+
     # rebuild the base from its saved config, then load its weights.
+    print("\n[2/5] LOAD CHECKPOINT", flush=True)
     payload = torch.load(args.checkpoint, map_location=args.device, weights_only=False)
     model = Kibitzer(payload["config"]).to(args.device)
     model.load_state_dict(payload["model"])
-    print(f"loaded base {args.checkpoint} ({model.num_params():,} params)")
+    print(f"  params:          {model.num_params():,}")
+    print(f"  objective:       {payload.get('training_objective', 'unknown')}")
+    if payload.get("eval_metrics"):
+        print(f"  prior eval:      {payload['eval_metrics']}")
 
     # baseline top-1 before touching anything, so the gate is honest.
+    print("\n[3/5] BASELINE HELD-OUT GATE", flush=True)
     base_metrics = eval_top1(
         model, Path(args.eval_pgn), positions=args.eval_positions, batch_size=args.batch_size, device=args.device
     )
-    print(f"base held-out: top1={base_metrics['top1']:.4f} value_mse={base_metrics['value_mse']:.4f}")
+    print(f"  positions:       {args.eval_positions:,}")
+    print(f"  base top1:       {base_metrics['top1']:.4f}")
+    print(f"  base value mse:  {base_metrics['value_mse']:.4f}")
 
+    print("\n[4/5] TRAIN", flush=True)
     dataset = MixedDataset(
         args.puzzle_csv,
         game_paths,
@@ -211,6 +231,7 @@ def main() -> None:
     from tqdm import tqdm
 
     progress = tqdm(loader, total=total_steps, desc="midtrain")
+    policy_sum = loss_sum = 0.0
     for step, batch in enumerate(progress, start=1):
         batch = {k: v.to(args.device) for k, v in batch.items()}
         loss, metrics = model.loss(**batch, value_weight=args.value_weight)
@@ -219,16 +240,59 @@ def main() -> None:
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step()
         scheduler.step()
+        loss_sum += float(metrics["loss"].item())
+        policy_sum += float(metrics["policy_loss"].item())
         progress.set_postfix(loss=f"{metrics['loss'].item():.3f}", policy=f"{metrics['policy_loss'].item():.3f}")
+        if step == 1 or step % 500 == 0:
+            print(
+                f"  step {step:,}/{total_steps:,}: "
+                f"avg_loss={loss_sum/step:.4f} avg_policy={policy_sum/step:.4f} "
+                f"lr={scheduler.get_last_lr()[0]:.2e}",
+                flush=True,
+        )
         if args.save_every and step % args.save_every == 0:
-            torch.save({"model": model.state_dict(), "config": model.config, "step": step}, args.out)
-
-    torch.save({"model": model.state_dict(), "config": model.config, "training_objective": "tactical_midtrain"}, args.out)
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(
+                {
+                    "model": model.state_dict(),
+                    "config": model.config,
+                    "step": step,
+                    "training_objective": "tactical_midtrain_partial",
+                },
+                args.out,
+            )
     elapsed = time.perf_counter() - start
 
     # gate: held-out top-1 must not regress (play eval is a separate command).
+    print("\n[5/5] FINAL HELD-OUT GATE", flush=True)
     post = eval_top1(
         model, Path(args.eval_pgn), positions=args.eval_positions, batch_size=args.batch_size, device=args.device
+    )
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "model": model.state_dict(),
+            "config": model.config,
+            "training_objective": "tactical_midtrain",
+            "base_eval_metrics": base_metrics,
+            "eval_metrics": post,
+            "training_config": {
+                "checkpoint": str(args.checkpoint),
+                "puzzle_csv": str(args.puzzle_csv),
+                "game_pgn": [str(path) for path in game_paths],
+                "eval_pgn": args.eval_pgn,
+                "max_positions": args.max_positions,
+                "mix_ratio": args.mix_ratio,
+                "rating_min": args.rating_min,
+                "rating_max": args.rating_max,
+                "lr": args.lr,
+                "value_weight": args.value_weight,
+                "batch_size": args.batch_size,
+                "num_workers": args.num_workers,
+                "eval_positions": args.eval_positions,
+            },
+        },
+        args.out,
     )
     print(f"\ndone in {elapsed/60:.1f} min -> {args.out}")
     print(f"base  : top1={base_metrics['top1']:.4f} value_mse={base_metrics['value_mse']:.4f}")
@@ -236,6 +300,10 @@ def main() -> None:
     print(f"delta : top1={post['top1']-base_metrics['top1']:+.4f} value_mse={post['value_mse']-base_metrics['value_mse']:+.4f}")
     if post["top1"] < base_metrics["top1"] - 0.005:
         print("WARNING: top-1 regressed >0.5pp -> forgetting; lower mix-ratio or lr, or shorten the pass.")
+        print("GATE: REJECT_FOR_FORGETTING")
+    else:
+        print("GATE: PASS_HELDOUT_TOP1")
+        print("NEXT: run Leela/Maia proxy eval before promoting.")
 
 
 if __name__ == "__main__":

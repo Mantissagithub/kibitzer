@@ -9,7 +9,9 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import math
 import random
+import time
 from pathlib import Path
 
 import chess
@@ -66,6 +68,20 @@ def play_game(*, evaluator, engine, network_color, opening, simulations, maia_no
     return game, (outcome.result() if outcome is not None else "1/2-1/2")
 
 
+def elo_delta_from_score(score_rate: float) -> float:
+    if score_rate <= 0.0:
+        return float("-inf")
+    if score_rate >= 1.0:
+        return float("inf")
+    return 400.0 * math.log10(score_rate / (1.0 - score_rate))
+
+
+def format_elo(value: float) -> str:
+    if math.isinf(value):
+        return "+inf" if value > 0 else "-inf"
+    return f"{value:.0f}"
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--checkpoint", type=Path, required=True)
@@ -92,6 +108,21 @@ def main() -> None:
     jl = args.out_jsonl.open("w", encoding="utf-8")
     pgn_fh = args.out_pgn.open("w", encoding="utf-8")
     engine = open_maia(args.lc0_path, str(args.maia_weights), args.backend)
+    wins = 0
+    draws = 0
+    losses = 0
+    score_sum = 0.0
+    started = time.time()
+    print("============================================================", flush=True)
+    print(" KIBITZER MAIA/LEELA EXTERNAL GATE", flush=True)
+    print("============================================================", flush=True)
+    print(f"checkpoint:       {args.checkpoint}", flush=True)
+    print(f"maia weights:     {args.maia_weights}", flush=True)
+    print(f"lc0:              {args.lc0_path} backend={args.backend} nodes={args.maia_nodes}", flush=True)
+    print(f"games/sims/seed:  {args.games} / {args.simulations} / {args.seed}", flush=True)
+    print(f"jsonl:            {args.out_jsonl}", flush=True)
+    print(f"pgn:              {args.out_pgn}", flush=True)
+    print("", flush=True)
     try:
         for i in range(args.games):
             opening = book_board(rng)
@@ -107,6 +138,13 @@ def main() -> None:
                 score = 0.5
             else:
                 score = 1.0 if (result == "1-0") == (network_color == chess.WHITE) else 0.0
+            if score == 1.0:
+                wins += 1
+            elif score == 0.5:
+                draws += 1
+            else:
+                losses += 1
+            score_sum += score
             game.headers["Event"] = f"gauntlet vs Maia-{args.maia_elo}"
             game.headers["White"] = "Kibitzer" if network_color == chess.WHITE else f"Maia-{args.maia_elo}"
             game.headers["Black"] = f"Maia-{args.maia_elo}" if network_color == chess.WHITE else "Kibitzer"
@@ -114,6 +152,28 @@ def main() -> None:
             pgn_fh.write(str(game) + "\n\n"); pgn_fh.flush()
             jl.write(json.dumps({"maia_elo": args.maia_elo, "network_white": network_color == chess.WHITE,
                                  "result": result, "score": score}) + "\n"); jl.flush()
+            played = wins + draws + losses
+            elapsed = (time.time() - started) / 60.0
+            eta = elapsed / played * (args.games - played) if played else 0.0
+            color = "white" if network_color == chess.WHITE else "black"
+            rate = score_sum / played
+            elo_delta = elo_delta_from_score(rate)
+            print(
+                f"[gate {played}/{args.games}] as {color:<5} result={result:<7} "
+                f"W/D/L={wins}/{draws}/{losses} score={score_sum:.1f} "
+                f"rate={rate:.3f} elo_delta={format_elo(elo_delta)} "
+                f"elo={format_elo(args.maia_elo + elo_delta)} elapsed={elapsed:.1f}m eta={eta:.1f}m",
+                flush=True,
+            )
+        print("", flush=True)
+        final_rate = score_sum / max(wins + draws + losses, 1)
+        final_delta = elo_delta_from_score(final_rate)
+        print(
+            f"done: {wins}W/{draws}D/{losses}L score={score_sum:.1f}/{args.games} "
+            f"rate={final_rate:.3f} elo_delta={format_elo(final_delta)} "
+            f"elo={format_elo(args.maia_elo + final_delta)}",
+            flush=True,
+        )
     finally:
         engine.quit(); jl.close(); pgn_fh.close()
 

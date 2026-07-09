@@ -86,6 +86,21 @@ the raw policy ce keeps dropping with scale, but top-1 move match is flattening 
 
 the production model (S2 shaw comp, 14.9m params) was trained on **142m positions** and is the one used in all gameplay evaluations below.
 
+### current repair branch
+
+the strongest local checkpoint right now is **`runs/tactical/tactical_repair.pt`**. it is not a new published base yet; it is a tactical supervised repair on top of `policy_regret_repair.pt`.
+
+paired 80-game gates vs the Leela/Maia-2700 proxy at 128 sims:
+
+| checkpoint | W/D/L | score | implied elo |
+|---|---:|---:|---:|
+| `tactical_repair.pt` seed 17 | 7W / 25D / 48L | 0.244 | 2503 |
+| `tactical_repair.pt` seed 23 | 12W / 23D / 45L | 0.294 | 2548 |
+| `tactical_repair_r2.pt` seed 23 | 9W / 18D / 53L | 0.225 | 2485 |
+| `policy_regret_repair.pt` seed 23 | 8W / 16D / 56L | 0.200 | 2459 |
+
+takeaway: tactical R1 is the current best local branch. tactical R2 passed the held-out top-1 gate but failed the external gate, so it should not be promoted.
+
 ### az self-play
 
 alphazero-style self-play: the model plays against itself using PUCT search with dirichlet root noise, trains on the visit distribution + game outcome, then we match the new model vs the old one.
@@ -146,6 +161,7 @@ this repo is closer to a lab notebook than a clean model release. the short vers
 | az self-play | beat its own base, regressed vs maia/leela-style opponents |
 | td-leaf | fixed easy curriculum rungs, stalled around 1900 |
 | value-head repair | improved offline value metrics, regressed real play |
+| tactical repair | small external gain; R1 kept, R2 rejected |
 | joint scratch / point tweaks | mostly negative or inconclusive |
 
 the longer failure log is in **[decision.md](decision.md)**; the scaling summary is in **[docs/scaling_study/README.md](docs/scaling_study/README.md)**.
@@ -177,6 +193,8 @@ uv run python scripts/train_bc.py -h  # supervised training
 |---|---|---|
 | `runs/scaling_shaw_comp/S2_shaw_142M_comp.pt` | best supervised model (14.9m, 142m pos) | scaling sweep |
 | `runs/az/az_iter_1.pt` | az iter 1 (one pass of self-play) | 2026-07-08 |
+| `runs/tactical/tactical_repair.pt` | best local repair branch; tactical R1 | 2026-07-09 |
+| `runs/tactical/tactical_repair_r2.pt` | rejected tactical R2; worse external gate | 2026-07-09 |
 
 generated checkpoints are gitignored. the strongest published checkpoint is on [Hugging Face](https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-142m-comp); hf push support lives in `kibitzer/hf_utils.py`.
 

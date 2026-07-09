@@ -1,0 +1,800 @@
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. c4 Nf6 2. Nc3 e6 3. e4 d5 4. cxd5 exd5 5. e5 d4 6. exf6 dxc3 7. Bb5+ Nc6 8. Qe2+ Be6 9. dxc3 Qxf6 10. Nf3 Bd6 11. Ng5 O-O 12. Nxe6 Rae8 13. Nxf8 Rxe2+ 14. Bxe2 Kxf8 15. Be3 Qe6 16. O-O h5 17. Rfd1 h4 18. h3 Qe5 19. Kf1 Qh2 20. Bf3 Ne5 21. Bxb7 Nc4 22. Bxa7 Nxb2 23. Bd4 Nxd1 24. Rxd1 Qf4 25. a4 c5 26. Be3 Qxa4 27. Rxd6 Qb5+ 28. Kg1 Qxb7 29. Bxc5 Kg8 30. Rd8+ Kh7 31. Bd4 f6 32. Be3 Qb1+ 33. Kh2 Qb7 34. Rd4 g5 35. c4 Qb8+ 36. Kg1 Qb1+ 37. Kh2 Qb8+ 38. Kg1 Qb1+ 39. Kh2 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. Nf3 e6 3. c4 d5 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. f5 exf5 18. Qxf5 g6 19. Qf3 Nf6 20. Ne5 Rd6 21. b4 Nd7 22. Nc4 Rf6 23. Qg3 Bxb4 24. Ne4 Qxg3 25. Nxf6+ Nxf6 26. hxg3 Nd5 27. a3 Be7 28. Ne5 Rc8 29. Bxd5 cxd5 30. Rxc8+ Bxc8 31. Rc1 Be6 32. a4 Bd6 33. Nc6 a6 34. Rb1 Bc7 35. Nb4 a5 36. Rc1 Bd6 37. Na6 Bd7 38. Rb1 Bxa4 39. Rxb6 Bf8 40. Nc7 Bd7 41. Nxd5 Be6 42. e4 a4 43. Nf6+ Kg7 44. Ne8+ Kh6 45. d5 Bd7 46. Nf6 Bc5 47. Rb8 Bh3 48. Kh2 Bf1 49. e5 a3 50. d6 a2 51. Ra8 Bc4 52. d7 Bb6 53. f4 Bd8 54. g4 Bxf6 55. exf6 Be6 56. d8=Q Bxg4 57. Qf8+ Kh5 58. Kg3 Be6 59. Qg7 h6 60. Rh8 a1=Q 61. Qxh6# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. d4 d5 2. c4 e6 3. Nc3 c6 4. e4 dxe4 5. Nxe4 Bb4+ 6. Bd2 Qxd4 7. Bxb4 Qxe4+ 8. Be2 Na6 9. Ba5 b6 10. Qd6 e5 11. O-O-O Qf4+ 12. Rd2 Qf6 13. Bc3 Qxd6 14. Rxd6 f6 15. f4 e4 16. Rxc6 Kd7 17. Rxc8 Kxc8 18. Bg4+ Kc7 19. Ne2 Nh6 20. Bh3 Nc5 21. Nd4 Nd3+ 22. Kc2 Nxf4 23. Nb5+ Kc6 24. Nd4+ Kb7 25. Bd7 Kc7 26. Bc6 Nf5 27. Bxa8 Nxd4+ 28. Bxd4 Rxa8 29. Re1 Re8 30. g3 Nd3 31. Re3 h5 32. Kc3 Kd6 33. b4 f5 34. Bxg7 Rc8 35. Bh6 Ne5 36. Bf4 Rxc4+ 37. Kb3 Rd4 38. Rc3 Kd5 39. Rc8 Rd3+ 40. Ka4 e3 41. Rd8+ Kc4 42. Rc8+ Kd4 43. Rd8+ Ke4 44. Re8 Rd5 45. Re7 e2 46. Re6 e1=Q 47. Bxe5 Qd1+ 48. Ka3 Rxe5 49. Rxe5+ Kxe5 50. Kb2 Kd4 51. Ka3 Kc3 52. b5 Qb1 53. Ka4 Qb4# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 Bb4+ 5. Nd2 O-O 6. Nf3 b6 7. O-O Bb7 8. Ne5 Nbd7 9. Qa4 Bd6 10. cxd5 exd5 11. Ndc4 Bxe5 12. Nxe5 Nxe5 13. dxe5 Nd7 14. f4 Nc5 15. Qc2 d4 16. Bxb7 Nxb7 17. Qc6 Na5 18. Qe4 c5 19. Bd2 Nc4 20. Bc1 Qd7 21. b3 Na5 22. e3 Nc6 23. Bb2 Rad8 24. Rad1 Rfe8 25. exd4 cxd4 26. Rc1 Nb4 27. Rc4 Nxa2 28. Rxd4 Qb5 29. e6 Rxd4 30. exf7+ Kxf7 31. Qxd4 Rg8 32. Ra1 Qxb3 33. Qd7+ Kg6 34. Re1 Qxb2 35. Qg4+ Kf7 36. Qe6+ Kf8 37. Qe8# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. d4 d5 2. c4 e6 3. Nc3 c6 4. e4 dxe4 5. Nxe4 Bb4+ 6. Bd2 Qxd4 7. Bxb4 Qxe4+ 8. Be2 Na6 9. Ba5 b6 10. Qd6 e5 11. O-O-O Qf4+ 12. Rd2 Qf6 13. Bc3 Qxd6 14. Rxd6 f6 15. f4 e4 16. Rxc6 Kd7 17. Rxc8 Kxc8 18. Bg4+ Kc7 19. Ne2 Nh6 20. Bh3 Nc5 21. Nd4 Nd3+ 22. Kc2 Nxf4 23. Nb5+ Kc6 24. Nd4+ Kb7 25. Bd7 Kc7 26. Bc6 Nf5 27. Bxa8 Nxd4+ 28. Bxd4 Rxa8 29. Re1 Re8 30. g3 Nd3 31. Re3 h5 32. Kc3 Kd6 33. b4 f5 34. Bxg7 Rc8 35. Bh6 Ne5 36. Bf4 Rxc4+ 37. Kb3 Rd4 38. Rc3 Kd5 39. Rc8 Rd3+ 40. Ka4 e3 41. Rd8+ Kc4 42. Rc8+ Kd4 43. Rd8+ Ke4 44. Re8 Rd5 45. Re7 e2 46. Re6 e1=Q 47. Bxe5 Qd1+ 48. Ka3 Rxe5 49. Rxe5+ Kxe5 50. Kb2 Kd4 51. Ka3 Kc3 52. b5 Qb1 53. Ka4 Qb4# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4 5. Nxd4 Bg7 6. Be3 Nf6 7. Bc4 O-O 8. Bb3 d6 9. f3 Bd7 10. Qd2 Nxd4 11. Bxd4 b5 12. a3 a5 13. O-O Bc6 14. Rfd1 Qb8 15. Ne2 a4 16. Ba2 Rc8 17. c3 e6 18. Qg5 e5 19. Bf2 Qc7 20. Rd2 h6 21. Qxg6 Bxe4 22. fxe4 Kh8 23. Qf5 Rab8 24. Ng3 Rd8 25. Nh5 Nxh5 26. Qxh5 Rd7 27. Be3 Kh7 28. Rf1 Rf8 29. Rf6 Bxf6 30. Qxh6+ Kg8 31. Qxf6 Qd8 32. Qg6+ Kh8 33. Qh6+ Kg8 34. Bg5 Re8 35. Bf6 Qb6+ 36. Kh1 Qe3 37. Qg7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 dxc4 4. e3 a6 5. Bxc4 c5 6. O-O e6 7. dxc5 Bxc5 8. Qxd8+ Kxd8 9. Ne5 Ke7 10. Be2 Nbd7 11. Nd3 Bd6 12. Nd2 b5 13. a4 Bb7 14. axb5 axb5 15. Rxa8 Rxa8 16. Nb3 Bd5 17. Nd4 Bc4 18. Rd1 Nc5 19. Nc6+ Ke8 20. Nxc5 Bxc5 21. Bxc4 bxc4 22. Kf1 Ne4 23. f3 Nd6 24. Bd2 Ra2 25. Bc3 f6 26. e4 Nb5 27. Rd8+ Kf7 28. Rd7+ Kg6 29. h4 Nxc3 30. bxc3 Rf2+ 31. Ke1 Rxg2 32. Nd8 e5 33. Ne6 Rg1+ 34. Ke2 Rg2+ 35. Kd1 Rg1+ 36. Ke2 Rg2+ 37. Kd1 Rg1+ 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 g6 2. d4 Bg7 3. Nf3 d6 4. Be3 Nf6 5. Nc3 O-O 6. Qd2 c6 7. Bh6 b5 8. a3 Bg4 9. h4 Bxf3 10. gxf3 e5 11. O-O-O Nbd7 12. h5 Nxh5 13. d5 b4 14. axb4 c5 15. b5 Bxh6 16. Qxh6 Qf6 17. Bh3 Nb6 18. Bf5 Qg7 19. Rxh5 gxh5 20. Qxd6 c4 21. Kb1 Kh8 22. Rh1 Rad8 23. Qc7 f6 24. Qc5 Rg8 25. Rxh5 Qg1+ 26. Ka2 Rg7 27. Qc6 Rf8 28. Qd6 Rff7 29. Be6 Qxf2 30. Bxf7 Rxf7 31. Qe6 Kg7 32. Rxh7+ Kxh7 33. Qxf7+ Kh6 34. Qxf6+ Kh7 35. d6 Qxc2 36. d7 Qb3+ 37. Kb1 Nxd7 38. Qf7+ Kh6 39. Qxd7 Qxc3 40. bxc3 Kg5 41. Qf5+ Kh4 42. Qg4# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. e4 c5 2. Nf3 d6 3. d4 Nf6 4. Nc3 cxd4 5. Nxd4 a6 6. Be3 e5 7. Nb3 Be7 8. f3 Be6 9. Qd2 h5 10. h4 Nbd7 11. O-O-O b5 12. Kb1 Qc7 13. Nd5 Bxd5 14. exd5 Nb6 15. Bxb6 Qxb6 16. Na5 Rc8 17. Nc6 Nxd5 18. Nxe7 Nxe7 19. Qxd6 Qxd6 20. Rxd6 Rc6 21. Rxc6 Nxc6 22. a4 bxa4 23. Bxa6 Ke7 24. Bb5 Nd4 25. Bxa4 Ra8 26. b3 Rc8 27. c4 Rg8 28. Kb2 g5 29. hxg5 Rxg5 30. Rh2 f5 31. b4 Kd6 32. c5+ Kd5 33. Be8 Kc4 34. c6 Rg7 35. Bd7 Nb5 36. Bxf5 Kxb4 37. Bd7 Kc5 38. Kc2 Nd4+ 39. Kd3 Nxc6 40. Bxc6 Kxc6 41. Ke4 Rg5 42. g4 hxg4 43. Rh6+ Kd7 44. fxg4 Rxg4+ 45. Kxe5 Rg2 46. Rh7+ Kc6 47. Rh6+ Kc5 48. Rh8 Rg5+ 49. Kf4 Rg2 50. Rd8 Rg6 51. Kf5 Rb6 52. Ke5 Rh6 53. Rc8+ Kb5 54. Kd5 Kb6 55. Rb8+ Kc7 56. Rg8 Kd7 57. Rg7+ Kd8 58. Ke5 Kc8 59. Kd5 Kb8 60. Kc5 Kc8 61. Kb5 Kd8 62. Kc5 Kc8 63. Kb5 Kd8 64. Kc5 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. h3 Bb7 9. d3 d5 10. exd5 Nxd5 11. Nxe5 Nxe5 12. Rxe5 Qd6 13. Re1 Rae8 14. Nd2 c5 15. Ne4 Qc6 16. c4 bxc4 17. Ba4 f5 18. Bxc6 Bxc6 19. dxc4 fxe4 20. cxd5 Bb5 21. Rxe4 Bf6 22. Rxe8 Rxe8 23. d6 Re1+ 24. Qxe1 Kf7 25. Qe4 Bd7 26. Bf4 Be6 27. Re1 Bd7 28. Qb7 Kg6 29. Qxd7 h5 30. g4 h4 31. Qf5+ Kf7 32. Re7+ Kg8 33. Re8+ Kf7 34. Qe6+ Kg6 35. Rh8 c4 36. Qe8# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5 5. Ng3 Bg6 6. h4 h6 7. Nf3 Nd7 8. h5 Bh7 9. Bd3 Bxd3 10. Qxd3 e6 11. Bd2 Ngf6 12. O-O-O Be7 13. Kb1 O-O 14. Ne4 Nxe4 15. Qxe4 Nf6 16. Qe2 Qd5 17. Ne5 Rad8 18. g4 Qe4 19. Qxe4 Nxe4 20. Be3 Bg5 21. f4 Be7 22. c4 Bd6 23. Kc2 f5 24. gxf5 Rxf5 25. Rdg1 Nf6 26. Rg6 Re8 27. Rhg1 Nxh5 28. Rxh6 Nxf4 29. Bxf4 Rxf4 30. Nd7 Re7 31. Nf6+ Kf7 32. Nh5 gxh6 33. Nxf4 Bxf4 34. Rf1 Kg6 35. Rxf4 h5 36. Kd3 Rh7 37. Ke4 h4 38. Rg4+ Kf6 39. Rf4+ Ke7 40. Rf1 h3 41. Rh1 h2 42. Kf4 Kd6 43. Kg3 e5 44. dxe5+ Kxe5 45. b3 Kd4 46. Rxh2 Rxh2 47. Kxh2 Kc3 48. Kg3 Kb2 49. Kf4 Kxa2 50. Ke5 Kxb3 51. c5 a5 52. Kd6 a4 53. Kc7 a3 54. Kxb7 a2 55. Kxc6 a1=Q 56. Kb7 Qg7+ 57. Kb6 Kc4 58. c6 Qb2+ 59. Ka7 Kc5 60. c7 Qb6+ 61. Ka8 Qc6+ 62. Kb8 Kb6 63. c8=Q Qd6+ 64. Ka8 Qa3+ 65. Kb8 Qa7# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Be2 O-O 6. Nf3 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 Ra8 12. a5 c5 13. Qa4 Bd7 14. Qa3 Nh5 15. Bd2 Nf4 16. Rfb1 Nxe2+ 17. Nxe2 f5 18. Rxb7 Bc8 19. Rb3 fxe4 20. Ng5 Nf5 21. Nxe4 Ba6 22. Qa4 Nd4 23. Nxd4 exd4 24. Re1 Be5 25. Rb6 Qh4 26. g3 Qh3 27. f4 Bg7 28. Rxd6 d3 29. Be3 Rae8 30. Re6 Rxe6 31. Ng5 Rxe3 32. Rxe3 Qf5 33. Ne6 Bd4 34. Nxd4 cxd4 35. Re5 Qg4 36. Qb4 Qd1+ 37. Re1 Qc2 38. Qe7 d2 39. Qe6+ Kh8 40. Qe5+ Kg8 41. Qe6+ Rf7 42. Qe8+ Kg7 43. Qe5+ Kh6 44. Qg5+ Kg7 45. Qe5+ Kg8 46. Qe8+ Kg7 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. d4 Nf6 2. Nf3 e6 3. c4 d5 4. Nc3 c6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 cxd4 19. Qxd4 Rd8 20. Qxa7 b3 21. O-O Bg7 22. Bxg7 Rxg7 23. axb3 f5 24. Qb6 Rd6 25. Qe3 Nd2 26. Bxb7 Qxb7 27. f3 Nxf1 28. Rxf1 Qe7 29. Qxh6 Rh7 30. Qg6+ Kf8 31. Nc5 Qxh4 32. Nxe6+ Ke7 33. Qxf5 Qh2+ 34. Kf2 Rxe6 35. Qc5+ Qd6 36. Qa7+ Qd7 37. Ra1 Kf6 38. Qxd7 Rxd7 39. g4 Rd3 40. b4 Ree3 41. Ra6+ Ke7 42. Ra7+ Ke6 43. Ra6+ Ke5 44. Ra5+ Kd4 45. Rd5+ Kxc4 46. Rf5 Kd4 47. Rf4+ Ke5 48. Rf5+ Ke6 49. Rf8 Ke7 50. Rf5 Re6 51. Kg3 Rf6 52. Re5+ Kd6 53. Re4 Rfxf3+ 54. Kh4 Rf8 55. g5 Rd1 56. Kh5 Rg8 57. g6 Rg1 58. Rg4 Rxg4 59. Kxg4 Rxg6+ 60. Kf5 Re6 61. b5 Re5+ 62. Kf4 Rxb5 63. Ke4 Rb4+ 64. Kd3 Kd5 65. Kc3 Rd4 66. Kc2 Kc4 67. Kb2 Rd2+ 68. Kc1 Kc3 69. Kb1 Rd1+ 70. Ka2 Re1 71. Ka3 Ra1# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 g6 2. d4 Bg7 3. Nf3 d6 4. Be3 Nf6 5. Nc3 O-O 6. Qd2 c6 7. Bh6 b5 8. a3 Bg4 9. h4 Bxf3 10. gxf3 e5 11. O-O-O Nbd7 12. h5 Nxh5 13. d5 b4 14. axb4 c5 15. b5 Bxh6 16. Qxh6 Qf6 17. Bh3 Nb6 18. Bf5 Qg7 19. Rxh5 gxh5 20. Qxd6 c4 21. Kb1 Kh8 22. Rh1 Rad8 23. Qc7 f6 24. Qc5 Rg8 25. Rxh5 Qg1+ 26. Ka2 Rg7 27. Qc6 Rf8 28. Qd6 Rff7 29. Be6 Qxf2 30. Bxf7 Rxf7 31. Qe6 Kg7 32. Rxh7+ Kxh7 33. Qxf7+ Kh6 34. Qxf6+ Kh7 35. d6 Qxc2 36. d7 Qb3+ 37. Kb1 Nxd7 38. Qf7+ Kh6 39. Qxd7 Qxc3 40. bxc3 Kg5 41. Qf5+ Kh4 42. Qg4# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. c4 Nf6 2. Nc3 e6 3. e4 d5 4. cxd5 exd5 5. e5 d4 6. exf6 dxc3 7. Bb5+ Nc6 8. Qe2+ Be6 9. dxc3 Qxf6 10. Nf3 Bd6 11. Ng5 O-O 12. Nxe6 Rae8 13. Nxf8 Rxe2+ 14. Bxe2 Kxf8 15. Be3 Qe6 16. O-O h5 17. Rfd1 h4 18. h3 Qe5 19. Kf1 Qh2 20. Bf3 Ne5 21. Bxb7 Nc4 22. Bxa7 Nxb2 23. Bd4 Nxd1 24. Rxd1 Qf4 25. a4 c5 26. Be3 Qxa4 27. Rxd6 Qb5+ 28. Kg1 Qxb7 29. Bxc5 Kg8 30. Rd8+ Kh7 31. Bd4 f6 32. Be3 Qb1+ 33. Kh2 Qb7 34. Rd4 g5 35. c4 Qb8+ 36. Kg1 Qb1+ 37. Kh2 Qb8+ 38. Kg1 Qb1+ 39. Kh2 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "0-1"]
+
+1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. e3 Bf5 5. Nh4 Be4 6. Nc3 e6 7. f3 Bg6 8. Bd2 Be7 9. Nxg6 hxg6 10. Qc2 Nbd7 11. O-O-O a6 12. Kb1 dxc4 13. Bxc4 b5 14. Be2 c5 15. dxc5 Bxc5 16. g4 Rc8 17. g5 Nh5 18. Ne4 O-O 19. Nxc5 Rxc5 20. Qd3 Rd5 21. Qa3 Qxg5 22. e4 Rxd2 23. Rxd2 Qxd2 24. Qd3 Qxd3+ 25. Bxd3 Ne5 26. Be2 Nf4 27. Bd1 Rd8 28. Bb3 Nxf3 29. Rd1 Rxd1+ 30. Bxd1 Nd2+ 31. Kc2 Nxe4 32. Bf3 Nd6 33. Kc3 Nd5+ 34. Kd4 Nf5+ 35. Kc5 Nfe7 36. Kd6 Kf8 37. a3 Ke8 38. b3 Nf5+ 39. Kc5 Kd7 40. a4 bxa4 41. bxa4 Nd6 42. a5 Nb7+ 43. Kd4 Nxa5 44. Kd3 Nc6 45. Bd1 Kd6 46. Kd2 Kc5 47. h4 f5 48. Ba4 e5 49. Bb3 e4 50. Bxd5 Kxd5 51. Ke3 Ne5 52. Kd2 Kd4 53. Ke2 f4 54. Kd2 e3+ 55. Kc2 f3 56. h5 f2 57. h6 gxh6 58. Kb3 f1=Q 59. Kb2 e2 60. Kb3 e1=Q 61. Ka3 Qa1+ 62. Kb3 Qfb1# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 5. e4 Nxc3 6. bxc3 Bg7 7. Nf3 c5 8. Bb5+ Nc6 9. O-O O-O 10. Bxc6 bxc6 11. Qc2 cxd4 12. cxd4 Bg4 13. Ne5 Qxd4 14. Bb2 Qb6 15. Rab1 Be6 16. Nxc6 Qc7 17. Bxg7 Kxg7 18. Rfc1 Rfc8 19. Qb2+ f6 20. h3 Qd7 21. Qb7 Kf8 22. a4 a5 23. e5 Qxb7 24. Rxb7 Ra6 25. Rb8 Rxb8 26. Nxb8 Rb6 27. Nc6 Bd7 28. Nxa5 Bxa4 29. exf6 exf6 30. Rc7 h5 31. f4 Rb4 32. Nc4 Rb1+ 33. Kh2 Rc1 34. Rc8+ Ke7 35. Nb6 Rxc8 36. Nxc8+ Ke6 37. Kg3 Bb5 38. Na7 Bd7 39. Kh4 Kf5 40. Kg3 Ke4 41. h4 Ke3 42. f5 gxf5 43. Kh2 f4 44. Kg1 f3 45. gxf3 Kxf3 46. Kh2 f5 47. Kg1 f4 48. Kf1 Kg3 49. Kg1 f3 50. Kf1 f2 51. Ke2 Kg2 52. Ke3 f1=Q 53. Kd4 Qa6 54. Nb5 Qxb5 55. Ke4 Qc5 56. Kf4 Kf2 57. Ke4 Bf5+ 58. Kf4 Bc2 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "0-1"]
+
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 e5 6. Ndb5 d6 7. Bg5 a6 8. Na3 b5 9. Bxf6 gxf6 10. Nd5 f5 11. exf5 Bxf5 12. c3 Bg7 13. Nc2 O-O 14. Nce3 Be6 15. g3 f5 16. Bh3 Ne7 17. O-O Kh8 18. a4 bxa4 19. Rxa4 Nxd5 20. Nxd5 a5 21. Qd2 Rb8 22. Rfa1 Rb5 23. c4 Rc5 24. Rxa5 Rxc4 25. Ra8 Qxa8 26. Rxa8 Rxa8 27. Ne3 Rd4 28. Qc2 Rc8 29. Qb1 Rf8 30. Bxf5 Bg8 31. b4 Rb8 32. b5 d5 33. Bd7 e4 34. Nf5 Rd3 35. Nxg7 Kxg7 36. Qa1+ d4 37. Qa7 Rf8 38. Bf5+ Rf7 39. Qc5 Rd1+ 40. Kg2 e3 41. fxe3 dxe3 42. Qe5+ Kf8 43. Bg4 Rf2+ 44. Kh3 Rh1 45. Qc5+ Kg7 46. Qd4+ Kf8 47. Qd6+ Kg7 48. Qe5+ Kf8 49. Qc5+ Kg7 50. Qc3+ Kf7 51. Bh5+ Kf8 52. Qc5+ Kg7 53. Qe5+ Kf8 54. Kg4 e2 55. Qc5+ Kg7 56. Qd4+ Rf6 57. Kg5 h6+ 58. Kh4 Rxh2+ 59. Kg4 Be6# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 e6 4. Nc3 c6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 cxd4 19. Qxd4 Rd8 20. Qxa7 b3 21. O-O Bg7 22. Bxg7 Rxg7 23. axb3 f5 24. Qb6 Rd6 25. Qe3 Nd2 26. Bxb7 Qxb7 27. f3 Nxf1 28. Rxf1 Qe7 29. Qxh6 Rh7 30. Qg6+ Kf8 31. Nc5 Qxh4 32. Nxe6+ Ke7 33. Qxf5 Qh2+ 34. Kf2 Rxe6 35. Qc5+ Qd6 36. Qa7+ Qd7 37. Ra1 Kf6 38. Qxd7 Rxd7 39. g4 Rd3 40. b4 Ree3 41. Ra6+ Ke7 42. Ra7+ Ke6 43. Ra6+ Ke5 44. Ra5+ Kd4 45. Rd5+ Kxc4 46. Rf5 Kd4 47. Rf4+ Ke5 48. Rf5+ Ke6 49. Rf8 Ke7 50. Rf5 Re6 51. Kg3 Rf6 52. Re5+ Kd6 53. Re4 Rfxf3+ 54. Kh4 Rf8 55. g5 Rd1 56. Kh5 Rg8 57. g6 Rg1 58. Rg4 Rxg4 59. Kxg4 Rxg6+ 60. Kf5 Re6 61. b5 Re5+ 62. Kf4 Rxb5 63. Ke4 Rb4+ 64. Kd3 Kd5 65. Kc3 Rd4 66. Kc2 Kc4 67. Kb2 Rd2+ 68. Kc1 Kc3 69. Kb1 Rd1+ 70. Ka2 Re1 71. Ka3 Ra1# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Na5 6. Bb5+ c6 7. dxc6 bxc6 8. Bd3 Nd5 9. Nf3 Bd6 10. O-O O-O 11. Re1 f5 12. Nxe5 Qf6 13. Nf3 g5 14. g3 g4 15. Nh4 f4 16. Qe2 f3 17. Qe4 Rf7 18. Qa4 Nf4 19. Bf1 Ne2+ 20. Bxe2 fxe2 21. Rxe2 Bc5 22. Qf4 Qxf4 23. gxf4 Rxf4 24. d3 Rf8 25. Nc3 Bd4 26. Bh6 Rf6 27. Bd2 Be6 28. Ne4 h5 29. Nxf6+ Bxf6 30. Rxe6 Bxh4 31. Bxa5 Rf8 32. Bc3 Bxf2+ 33. Kg2 h4 34. Rg6+ Kf7 35. Rf6+ Ke7 36. Rxf8 h3+ 37. Kxf2 Kxf8 38. Kg3 Ke7 39. Kxg4 Ke6 40. Re1+ Kd5 41. Kf5 c5 42. Re6 c4 43. d4 a5 44. a4 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. e4 c5 2. Nf3 Nc6 3. Bb5 e6 4. O-O Nge7 5. Re1 a6 6. Bf1 d5 7. exd5 Nxd5 8. d4 cxd4 9. Nxd4 Bd7 10. c4 Nf6 11. Nc3 Nxd4 12. Qxd4 Bc6 13. Qe3 Bd6 14. h3 O-O 15. Bd2 Qc7 16. Rad1 Rfd8 17. Bc1 h6 18. b3 Bh2+ 19. Kh1 Bd6 20. Bb2 Bf4 21. Qe2 Qa5 22. a3 Qg5 23. Kg1 Bd2 24. h4 Qf4 25. Nd5 exd5 26. Rxd2 Re8 27. Qd1 Rxe1 28. Qxe1 Re8 29. Re2 Rxe2 30. Qxe2 Qxh4 31. Qe7 dxc4 32. Bxc4 Qh5 33. Bxf6 gxf6 34. Qxf6 Qd1+ 35. Kh2 Qh5+ 36. Kg3 a5 37. f4 Be4 38. Kf2 Qc5+ 39. Kf1 Qh5 40. Qd8+ Kh7 41. Qe7 Qd1+ 42. Kf2 Qd2+ 43. Kf1 Qxf4+ 44. Kg1 Kg7 45. Bxf7 Qe3+ 46. Kh2 Qf4+ 47. Kg1 Qe3+ 48. Kh2 Qf4+ 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 6. Nf3 Nc6 7. Be3 a6 8. a3 b5 9. Bd3 Qb6 10. Bf2 cxd4 11. Ne2 Bc5 12. b4 Be7 13. O-O a5 14. Nexd4 Nxd4 15. Nxd4 axb4 16. axb4 Rxa1 17. Qxa1 O-O 18. Nf5 Qd8 19. Nxe7+ Qxe7 20. Qa5 Bb7 21. Qxb5 Rb8 22. Ba7 Ra8 23. Qxb7 Qd8 24. Bb5 Nf8 25. Bc6 Rc8 26. b5 Rc7 27. Qb6 Qc8 28. Ra1 Ng6 29. Bb8 Rxc6 30. bxc6 Nxf4 31. Qb7 Ne2+ 32. Kf2 Qd8 33. c7 Qh4+ 34. Kxe2 Qe4+ 35. Kd1 Qd4+ 36. Kc1 Qxa1+ 37. Qb1 Qa3+ 38. Kd1 Qa6 39. Qb4 Qf1+ 40. Kd2 Qf2+ 41. Kc1 Qf1+ 42. Kb2 Qa6 43. Ba7 Qc8 44. Qb8 Kf8 45. Qxc8+ Ke7 46. Qd8# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. e4 c5 2. Nf3 Nc6 3. Bb5 e6 4. O-O Nge7 5. Re1 a6 6. Bf1 d5 7. exd5 Nxd5 8. d4 cxd4 9. Nxd4 Bd7 10. c4 Nf6 11. Nc3 Nxd4 12. Qxd4 Bc6 13. Qe3 Bd6 14. h3 O-O 15. Bd2 Qc7 16. Rad1 Rfd8 17. Bc1 h6 18. b3 Bh2+ 19. Kh1 Bd6 20. Bb2 Bf4 21. Qe2 Qa5 22. a3 Qg5 23. Kg1 Bd2 24. h4 Qf4 25. Nd5 exd5 26. Rxd2 Re8 27. Qd1 Rxe1 28. Qxe1 Re8 29. Re2 Rxe2 30. Qxe2 Qxh4 31. Qe7 dxc4 32. Bxc4 Qh5 33. Bxf6 gxf6 34. Qxf6 Qd1+ 35. Kh2 Qh5+ 36. Kg3 a5 37. f4 Be4 38. Kf2 Qc5+ 39. Kf1 Qh5 40. Qd8+ Kh7 41. Qe7 Qd1+ 42. Kf2 Qd2+ 43. Kf1 Qxf4+ 44. Kg1 Kg7 45. Bxf7 Qe3+ 46. Kh2 Qf4+ 47. Kg1 Qc1+ 48. Kh2 Qf4+ 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 e6 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. f5 exf5 18. Qxf5 g6 19. Qf3 Nf6 20. Ne5 Rd6 21. b4 Nd7 22. Nc4 Rf6 23. Qg3 Bxb4 24. Ne4 Qxg3 25. Nxf6+ Nxf6 26. hxg3 Nd5 27. a3 Be7 28. Ne5 Rc8 29. Bxd5 cxd5 30. Rxc8+ Bxc8 31. Rc1 Be6 32. a4 Bd6 33. Nc6 a6 34. Rb1 Bc7 35. Nb4 a5 36. Rc1 Bd6 37. Na6 Bd7 38. Rb1 Bxa4 39. Rxb6 Bf8 40. Nc7 Bd7 41. Nxd5 Be6 42. e4 a4 43. Nf6+ Kg7 44. Ne8+ Kh6 45. d5 Bd7 46. Nf6 Bc5 47. Rb8 Bh3 48. Kh2 Bf1 49. e5 a3 50. d6 a2 51. Ra8 Bc4 52. d7 Bb6 53. f4 Bd8 54. g4 Bxf6 55. exf6 Be6 56. d8=Q Bxg4 57. Qf8+ Kh5 58. Kg3 Be6 59. Qg7 h6 60. Rh8 a1=Q 61. Qxh6# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 c6 4. Nc3 e6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 cxd4 19. Qxd4 Rd8 20. Qxa7 b3 21. O-O Bg7 22. Bxg7 Rxg7 23. axb3 f5 24. Qb6 Rd6 25. Qe3 Nd2 26. Bxb7 Qxb7 27. f3 Nxf1 28. Rxf1 Qe7 29. Qxh6 Rh7 30. Qg6+ Kf8 31. Nc5 Qxh4 32. Nxe6+ Ke7 33. Qxf5 Rxe6 34. Qc5+ Kf7 35. Qf5+ Rf6 36. Qd7+ Kg8 37. Qd8+ Rf8 38. Qd5+ Rff7 39. Rd1 Rg7 40. c5 Rg5 41. Qe6 Kg7 42. Rd7 Qf4 43. c6 Qxf3 44. Rxf7+ Qxf7 45. g4 Qxe6 46. c7 Qxg4+ 47. Kf2 Re5 48. c8=Q Qxc8 49. Kf3 Qc3+ 50. Kf4 Qe3+ 51. Kg4 Rg5+ 52. Kh4 Qg3# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 6. Nf3 Nc6 7. Be3 a6 8. a3 b5 9. Bd3 Qb6 10. Bf2 cxd4 11. Ne2 Bc5 12. b4 Be7 13. O-O a5 14. Nexd4 Nxd4 15. Nxd4 axb4 16. axb4 Rxa1 17. Qxa1 O-O 18. Nf5 Qd8 19. Nxe7+ Qxe7 20. Qa5 Bb7 21. Qxb5 Rb8 22. Ba7 Ra8 23. Qxb7 Qd8 24. Bb5 Nf8 25. Bc6 Rc8 26. b5 Rc7 27. Qb6 Qc8 28. Ra1 Ng6 29. Bb8 Rxc6 30. bxc6 Nxf4 31. Qb7 Ne2+ 32. Kf2 Qd8 33. c7 Qh4+ 34. Kxe2 Qe4+ 35. Kd1 Qd4+ 36. Kc1 Qxa1+ 37. Qb1 Qa3+ 38. Kd1 Qa6 39. Qb4 Qf1+ 40. Kd2 Qf2+ 41. Kc1 Qf1+ 42. Kb2 Qa6 43. Ba7 Qc8 44. Qb8 Kf8 45. Qxc8+ Ke7 46. Qd8# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qd8 14. Bxg4 Rg8 15. Bf3 Nd7 16. Bf4 e5 17. Be3 exd4 18. Qxd4 Bc5 19. Qd2 Qe7 20. O-O-O O-O-O 21. Be2 Ne5 22. Bxc5 Qxc5 23. Qf4 Rde8 24. g3 b4 25. Na4 Qa5 26. b3 Ba6 27. Kb1 Bb5 28. Qf5+ Kb8 29. Nc5 c3 30. Bxb5 Qxb5 31. Nd7+ Ka8 32. Nxe5 Rxe5 33. Qxf7 Rb8 34. Rd7 Qa6 35. Rhd1 Ra5 36. Qc4 Qxc4 37. bxc4 b3 38. axb3 Rxb3+ 39. Kc2 Raa3 40. Rb1 Rxb1 41. Kxb1 Rb3+ 42. Kc2 Rb2+ 43. Kxc3 Rxf2 44. e5 Re2 45. Re7 a5 46. e6 h5 47. Kd3 Re1 48. Kd2 Re4 49. Kd3 Re1 50. Kd4 a4 51. Rh7 Rxe6 52. Rxh5 Rg6 53. Rg5 c5+ 54. Kc3 Rb6 55. Rxc5 Rb3+ 56. Kd4 Rxg3 57. h5 Kb7 58. Ra5 a3 59. h6 Rh3 60. h7 Rxh7 61. Rxa3 Rh1 62. Kd5 Rh5+ 63. Kd6 Rh6+ 64. Kd5 Rh1 65. Rb3+ Kc7 66. c5 Rg1 67. Rb6 Rh1 68. Rg6 Rd1+ 69. Kc4 Rh1 70. Kb5 Rb1+ 71. Kc4 Kb7 72. Rh6 Rg1 73. Kb5 Rb1+ 74. Kc4 Rf1 75. Kb5 Rb1+ 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 e6 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. Bf4 Nbd7 9. O-O b6 10. cxd5 cxd5 11. Rc1 Bb7 12. Qa4 a6 13. Nbd2 b5 14. Qd1 Rc8 15. Rxc8 Qxc8 16. Rc1 Qa8 17. Nb3 Rc8 18. Ne5 Nxe5 19. Bxe5 Nd7 20. Bc7 h6 21. e3 Nf6 22. Bf1 Ne4 23. Bd3 Nd6 24. Bxd6 Bxd6 25. Nc5 Bxc5 26. Rxc5 Rxc5 27. dxc5 d4 28. exd4 Bf3 29. Be2 Bd5 30. a3 Qc6 31. b4 Kf8 32. Qd2 Be4 33. Qf4 Ke7 34. f3 Bd5 35. Kf2 g5 36. Qb8 Bc4 37. Qa7+ Kf6 38. Qb8 Qd5 39. Qe5+ Qxe5 40. dxe5+ Kxe5 41. Bxc4 bxc4 42. Ke3 Kd5 43. Kd2 f5 44. f4 gxf4 45. gxf4 e5 46. fxe5 Kxe5 47. Kc3 Kd5 48. c6 Kxc6 49. Kxc4 f4 50. a4 f3 51. Kd3 Kd5 52. b5 axb5 53. axb5 Kc5 54. Ke3 Kxb5 55. Kxf3 Kc6 56. Kg4 Kd6 57. Kh5 Ke7 58. Kxh6 Kf7 59. Kh7 Kf8 60. h4 Kf7 61. h5 Kf8 62. Kh8 Kf7 63. Kh7 Kf8 64. Kh8 Kf7 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. e4 c5 2. Nf3 d6 3. d4 Nf6 4. Nc3 cxd4 5. Nxd4 a6 6. Be3 e5 7. Nb3 Be7 8. f3 Be6 9. Qd2 h5 10. h4 Nbd7 11. O-O-O b5 12. Kb1 Qc7 13. Nd5 Bxd5 14. exd5 Nb6 15. Bxb6 Qxb6 16. Na5 Rc8 17. Nc6 Nxd5 18. Nxe7 Nxe7 19. Qxd6 Qxd6 20. Rxd6 Rc6 21. Rxc6 Nxc6 22. a4 bxa4 23. Bxa6 Ke7 24. Bb5 Nd4 25. Bxa4 Ra8 26. b3 Rc8 27. c4 Rg8 28. Kb2 g5 29. hxg5 Rxg5 30. Rh2 f5 31. b4 Kd6 32. c5+ Kd5 33. Be8 Kc4 34. c6 Rg7 35. Bd7 Nb5 36. Bxf5 Kxb4 37. Bd7 Kc5 38. Kc2 Nd4+ 39. Kd3 Nxc6 40. Bxc6 Kxc6 41. Ke4 Rg5 42. g4 hxg4 43. Rh6+ Kd7 44. fxg4 Rxg4+ 45. Kxe5 Rg2 46. Rh7+ Kc6 47. Rh6+ Kc5 48. Rh8 Rg5+ 49. Kf4 Rg2 50. Rd8 Rg6 51. Kf5 Rb6 52. Ke5 Rh6 53. Rc8+ Kb5 54. Kd5 Kb6 55. Rb8+ Kc7 56. Rg8 Kd7 57. Rg7+ Kd8 58. Ke5 Kc8 59. Kd5 Kb8 60. Kc5 Kc8 61. Kb5 Kd8 62. Kc5 Kc8 63. Kb5 Rh1 64. Kc6 Rh6+ 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 Nf6 3. d4 exd4 4. e5 Ne4 5. Qxd4 d5 6. exd6 Nxd6 7. Nc3 Nc6 8. Qf4 Bf5 9. Bb5 Nxb5 10. Nxb5 Bb4+ 11. c3 Qd3 12. Nxc7+ Kd7 13. cxb4 Rhe8+ 14. Be3 Re4 15. Qxf5+ Kxc7 16. Qxf7+ Kb8 17. Rd1 Qxe3+ 18. fxe3 Rxe3+ 19. Kf2 Re7 20. Qf4+ Kc8 21. Rhe1 Rxe1 22. Nxe1 g5 23. Qf7 Ne5 24. Qe7 Ng4+ 25. Kg1 Nf6 26. Rd8# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. d4 d5 2. c4 e6 3. Nc3 c6 4. e4 dxe4 5. Nxe4 Bb4+ 6. Bd2 Qxd4 7. Bxb4 Qxe4+ 8. Be2 Na6 9. Ba5 b6 10. Qd6 e5 11. O-O-O Qf4+ 12. Rd2 Qf6 13. Bc3 Qxd6 14. Rxd6 f6 15. f4 e4 16. Rxc6 Kd7 17. Rxc8 Kxc8 18. Bg4+ Kc7 19. Ne2 Nh6 20. Bh3 Nc5 21. Nd4 Nd3+ 22. Kc2 Nxf4 23. Nb5+ Kc6 24. Nd4+ Kb7 25. Bd7 Rad8 26. Bc6+ Kc8 27. Bxe4 Rhe8 28. Bf3 Rd7 29. Bc6 Nxg2 30. Bxg2 Rxd4 31. Bxd4 Re2+ 32. Kd3 Rxg2 33. b4 Nf5 34. a4 Ra2 35. a5 bxa5 36. b5 Nxd4 37. Kxd4 a4 38. Re1 a3 39. Re8+ Kd7 40. Ra8 Kc7 41. Rxa7+ Kb8 42. b6 f5 43. c5 Rd2+ 44. Ke5 a2 45. c6 Rc2 46. Kd6 Rd2+ 47. Ke6 Rc2 48. Kd7 Rd2+ 49. Ke7 Rc2 50. Kd7 Rd2+ 51. Ke7 Rc2 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. Nf3 e6 3. c4 d5 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. f5 exf5 18. Qxf5 g6 19. Qf3 Nf6 20. Ne5 Rd6 21. b4 Nd7 22. Nc4 Rf6 23. Qg3 Bxb4 24. Ne4 Qxg3 25. Nxf6+ Nxf6 26. hxg3 Nd5 27. a3 Be7 28. Ne5 Rc8 29. Bxd5 cxd5 30. Rxc8+ Bxc8 31. Rc1 Be6 32. a4 Bd6 33. Nc6 a6 34. Rb1 Bc7 35. Nb4 a5 36. Rc1 Bd6 37. Na6 Bd7 38. Rb1 Bxa4 39. Rxb6 Bf8 40. Nc7 Bd7 41. Nxd5 Be6 42. e4 a4 43. Nf6+ Kg7 44. Ne8+ Kh6 45. d5 Bd7 46. Nf6 Bc5 47. Ra6 Bb5 48. Ra5 a3 49. Rxb5 a2 50. Ra5 Bd4 51. Rxa2 Bxf6 52. f4 Bd4+ 53. Kg2 Kg7 54. e5 Kf8 55. Kf3 h5 56. Ke4 Bc5 57. d6 Ke8 58. Kd5 Bb4 59. Ra8+ Kd7 60. Ra7+ Ke8 61. e6 fxe6+ 62. Kxe6 Kd8 63. Ra8# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. e4 e5 2. Nf3 Nf6 3. Nxe5 d6 4. Nf3 Nxe4 5. d4 d5 6. Bd3 Bb4+ 7. c3 Bd6 8. O-O O-O 9. Re1 Bf5 10. Qb3 Nc6 11. Qxb7 Ne7 12. Qa6 Ng6 13. Nbd2 Re8 14. Nf1 Rb8 15. Ng3 Nh4 16. Nxf5 Nxf5 17. Qc6 Re6 18. Qxd5 Bxh2+ 19. Nxh2 Qxd5 20. Bc4 Qxc4 21. b3 Qxc3 22. Bf4 Qxd4 23. Nf3 Qxf2+ 24. Kh2 Rg6 25. Rxe4 Qxg2# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. c4 Nf6 2. Nc3 e6 3. e4 Nc6 4. d4 e5 5. dxe5 Nxe5 6. f4 Nc6 7. e5 Ng8 8. Nf3 d6 9. Be3 Bg4 10. h3 Bxf3 11. Qxf3 dxe5 12. Rd1 Nd4 13. Qxb7 Rb8 14. Qe4 f5 15. Qxe5+ Qe7 16. Bxd4 Rxb2 17. Be2 Qxe5 18. fxe5 Bb4 19. a3 Bxc3+ 20. Bxc3 Rc2 21. Bb4 Ne7 22. e6 Nc6 23. Bc5 f4 24. Rf1 g5 25. Bh5# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. c4 e5 2. Nc3 Nf6 3. Nf3 Nc6 4. e4 Bb4 5. d3 d6 6. a3 Bc5 7. b4 Bb6 8. Na4 Bd4 9. Rb1 a6 10. Be2 b5 11. Nb2 O-O 12. O-O Bg4 13. Nxd4 Nxd4 14. Bxg4 a5 15. cxb5 Nxb5 16. Bd2 Nxa3 17. Ra1 axb4 18. Bxb4 Nb5 19. Rxa8 Qxa8 20. Nc4 Rb8 21. Bh3 Qa2 22. Ba5 Nxe4 23. Qa1 Qxa1 24. Rxa1 Nc5 25. Rb1 Rb7 26. Bc8 Rb8 27. Bf5 Rb7 28. Be4 Nxe4 29. dxe4 c6 30. f3 f6 31. Rd1 Rd7 32. Bb4 d5 33. exd5 cxd5 34. Nb6 Rb7 35. Nxd5 Nd4 36. Bc5 Rb5 37. Ne7+ Kf7 38. Bxd4 Kxe7 39. Bf2 Kf7 40. g4 Kg6 41. Rd7 h5 42. gxh5+ Kh6 43. Be3+ Kxh5 44. Rxg7 Rb3 45. Kf2 Rb2+ 46. Kg3 Rb3 47. Bf2 e4 48. h4 Rxf3+ 49. Kg2 Ra3 50. Rg8 Ra2 51. Kg3 Ra3+ 52. Kg2 Ra2 53. Rg3 Rb2 54. Kf1 Rb1+ 55. Ke2 Rb2+ 56. Ke3 Kxh4 57. Rg6+ Kh5 58. Rxf6 Kg5 59. Rf8 Kg6 60. Kxe4 Rb7 61. Bd4 Re7+ 62. Be5 Ra7 63. Rf6+ Kg5 64. Rf8 Kg6 65. Rf6+ Kg5 66. Rd6 Rf7 67. Rd8 Rf1 68. Rg8+ Kh6 69. Bf4+ Kh7 70. Rg4 Ra1 71. Kf5 Rb1 72. Be5 Rf1+ 73. Ke6 Kh6 74. Bf6 Kh5 75. Rg5+ Kh6 76. Kf7 Rb1 77. Rg4 Rb5 78. Rh4+ Rh5 79. Rg4 Rb5 80. Rg8 Kh5 81. Rg1 Ra5 82. Kg7 Ra7+ 83. Kg8 Rb7 84. Rg5+ Kh6 85. Rg1 Kh5 86. Rg5+ Kh6 87. Re5 Kg6 88. Bd8 Rb8 89. Rg5+ Kh6 90. Rd5 Kg6 91. Rg5+ Kh6 92. Rd5 Kg6 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 d5 2. Nf3 Nf6 3. c4 e6 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. f5 exf5 18. Qxf5 g6 19. Qf3 Nf6 20. Ne5 Rd6 21. b4 Nd7 22. Nd3 Nf6 23. b5 Ba8 24. Ne5 cxb5 25. Qxa8 Qxa8 26. Bxa8 Rxa8 27. Nxb5 Rdd8 28. Nc6 Rd7 29. Nxe7+ Rxe7 30. Rc6 Kg7 31. Kg2 Nd5 32. Rd6 Nf6 33. Rc1 a6 34. Nc7 Rc8 35. Rdc6 a5 36. Ne6+ Rxe6 37. Rxc8 Nd5 38. R1c6 f5 39. Rxe6 Kf7 40. Rd6 Ne7 41. Rc7 b5 42. d5 Ke8 43. Rdd7 Kf7 44. Rxe7+ Kf6 45. f4 b4 46. Rf7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. e4 c5 2. Nf3 Nc6 3. Bb5 e6 4. O-O Nge7 5. Re1 a6 6. Bf1 d5 7. exd5 Nxd5 8. d4 Nf6 9. Be3 cxd4 10. Nxd4 Bd7 11. c4 Qc7 12. Nc3 Be7 13. Rc1 O-O 14. h3 Rfd8 15. Nf3 Be8 16. Qb3 Nd7 17. Nd5 exd5 18. cxd5 Na5 19. Rxc7 Nxb3 20. axb3 b5 21. Nd4 Bd6 22. Rcc1 Nf6 23. Nc6 Rd7 24. Red1 Bf8 25. g4 Nxd5 26. Bg2 Nxe3 27. fxe3 Rxd1+ 28. Rxd1 Rc8 29. Nd4 a5 30. Ra1 Bb4 31. Kf2 g6 32. Bf1 Rc5 33. Bd3 Re5 34. Rc1 Bd2 35. Rc8 Bxe3+ 36. Kf3 Bxd4 37. Be4 Kg7 38. Rd8 Bxb2 39. Ra8 Rxe4 40. Kxe4 Bc6+ 41. Kd3 Bxa8 42. Kc2 Be5 43. Kd3 a4 44. bxa4 bxa4 45. Kc4 a3 46. Kb3 Bb2 47. Ka2 Bd5+ 48. Kb1 Bb3 49. h4 f5 50. gxf5 gxf5 51. h5 Kf6 52. h6 Bd4 53. Kc1 a2 54. Kd2 a1=Q 55. Kd3 Qd1# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. Nf3 e6 3. c4 d5 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. f5 exf5 18. Qxf5 g6 19. Qf3 Nf6 20. Ne5 Rd6 21. b4 Nd7 22. Nc4 Rf6 23. Qg3 Bxb4 24. Ne4 Qxg3 25. Nxf6+ Nxf6 26. hxg3 Nd5 27. a3 Be7 28. Ne5 Rc8 29. Bxd5 cxd5 30. Rxc8+ Bxc8 31. Rc1 Be6 32. a4 Bd6 33. Nc6 a6 34. Rb1 Bc7 35. Nb4 a5 36. Rc1 Bd6 37. Na6 Bd7 38. Rb1 Bxa4 39. Rxb6 Bf8 40. Nc7 Bd7 41. Nxd5 Be6 42. e4 a4 43. Nf6+ Kg7 44. Ne8+ Kh6 45. d5 Bd7 46. Nd6 Kg7 47. e5 a3 48. Ra6 Bxd6 49. exd6 Bb5 50. Rxa3 Kf6 51. f4 Bd7 52. Kf2 h5 53. Ke3 Kf5 54. Ra7 Kf6 55. Rxd7 g5 56. Re7 h4 57. fxg5+ Kg6 58. d7 h3 59. d8=Q h2 60. Qg8+ Kf5 61. Rxf7+ Kg4 62. Qh7 Kxg3 63. Rf3+ Kg2 64. Qh3+ Kg1 65. Rf1# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. c4 Nf6 2. Nc3 e6 3. e4 d5 4. cxd5 exd5 5. e5 d4 6. exf6 dxc3 7. Bb5+ Nc6 8. Qe2+ Be6 9. dxc3 Qxf6 10. Nf3 Bd6 11. Ng5 O-O 12. Nxe6 Rae8 13. Nxf8 Rxe2+ 14. Bxe2 Kxf8 15. Be3 Qe6 16. O-O h5 17. Rfd1 h4 18. h3 Qe5 19. Kf1 Qh2 20. Bf3 Ne5 21. Bxb7 Nc4 22. Bxa7 Nxb2 23. Bd4 Nxd1 24. Rxd1 Qf4 25. a4 c5 26. Be3 Qxa4 27. Rxd6 Qb5+ 28. Kg1 Qb1+ 29. Kh2 Qxb7 30. Bxc5 Qc7 31. Bb4 Kg8 32. Kg1 f6 33. Rd4 g5 34. Rd5 Qf4 35. Rd4 Qe5 36. Kf1 Kf7 37. Rd7+ Kg6 38. Re7 Qh2 39. f3 Qf4 40. Re4 Qc1+ 41. Kf2 f5 42. Re6+ Kf7 43. Re7+ Kg6 44. Re6+ Kf7 45. Re7+ Kf6 46. Re6+ 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+
+1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. e3 Nbd7 6. Qc2 Bd6 7. Bd3 O-O 8. O-O dxc4 9. Bxc4 b5 10. Bd3 Bb7 11. e4 e5 12. h3 Re8 13. dxe5 Nxe5 14. Nxe5 Bxe5 15. Be3 a6 16. f4 Bd4 17. Bxd4 Qxd4+ 18. Kh2 Rad8 19. Rad1 c5 20. Bxb5 axb5 21. Rxd4 cxd4 22. e5 dxc3 23. exf6 Rd2 24. Rf2 Rxc2 25. Rxc2 cxb2 26. Rxb2 Bc6 27. Rc2 Bd5 28. Rc5 Bxa2 29. Rxb5 gxf6 30. g4 Be6 31. f5 Bc4 32. Rb4 Bd5 33. Rd4 Bc6 34. Rd6 Bb5 35. Rxf6 Re3 36. Rb6 Bf1 37. h4 Rh3+ 38. Kg1 Bc4 39. Kg2 Rxh4 40. Kg3 Rh1 41. g5 Rg1+ 42. Kf4 Rf1+ 43. Ke5 Kg7 44. Rd6 Rg1 45. Kf4 Rf1+ 46. Ke5 Rg1 47. Kf4 Re1 48. Rd8 Rf1+ 49. Ke5 Rg1 50. Kf4 Bf1 51. Rd1 h6 52. gxh6+ Kxh6 53. Ke5 Kg5 54. Rc1 Kg4 55. Kf6 Rh1 56. Kxf7 Kxf5 57. Ke7 Rh7+ 58. Kd6 Bd3 59. Rc5+ Kf6 60. Rc8 Bf5 61. Rf8+ Kg5 62. Ke5 Re7+ 63. Kd4 Re4+ 64. Kc5 Re5+ 65. Kd4 Re4+ 66. Kc5 Rf4 67. Ra8 Kf6 68. Kd6 Rd4+ 69. Kc5 Rd1 70. Kb4 Ke5 71. Ra5+ Ke4 72. Rc5 Rb1+ 73. Kc3 Rc1+ 74. Kb4 Rb1+ 75. Kc3 Be6 76. Ra5 Rb3+ 77. Kc2 Rb7 78. Kc3 Bd5 79. Ra4+ Ke3 80. Rh4 Rb3+ 81. Kc2 Rb8 82. Kc3 Rc8+ 83. Kb4 Be4 84. Rh6 Kd4 85. Rh4 Rb8+ 86. Ka5 Kd5 87. Ka4 Bd3 88. Rb4 Ra8+ 89. Kb3 Kc5 90. Rh4 Kb5 91. Rh5+ Kc6 92. Kc3 Be4 93. Rg5 Bd5 94. Rh5 Kc5 95. Rh4 Ra3+ 96. Kd2 Bc4 97. Rf4 Kd5 98. Rh4 Rd3+ 99. Kc2 Rf3 100. Kd2 Rf2+ 101. Kc3 Rf3+ 102. Kd2 Kc5 103. Rg4 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4 6. d4 b5 7. Bb3 d5 8. dxe5 Be6 9. c3 Be7 10. Nbd2 Nc5 11. Bc2 d4 12. Nb3 dxc3 13. Nxc5 Bxc5 14. Be4 Qd7 15. Qc2 Bd5 16. Bf5 Be6 17. Be4 Bd5 18. Bf5 Be6 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. Nf3 e6 3. c4 d5 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. f5 exf5 18. Qxf5 g6 19. Qf3 Nf6 20. Ne5 Rd6 21. b4 Nd7 22. Nd3 Nf6 23. b5 Ba8 24. Ne5 cxb5 25. Qxa8 Qxa8 26. Bxa8 Rxa8 27. Nxb5 Rdd8 28. Nc6 Rd7 29. Nxe7+ Rxe7 30. Rc6 Kg7 31. Kg2 Nd5 32. Rd6 Nf6 33. Rc1 a6 34. Nc7 Rc8 35. Rdc6 a5 36. Ne6+ Rxe6 37. Rxc8 Nd5 38. R1c6 f5 39. Rxe6 Kf7 40. Rd6 Ne7 41. Rc7 b5 42. d5 Ke8 43. Rdd7 Kf7 44. Rxe7+ Kf6 45. f4 b4 46. Rf7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1-0"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 cxd4 19. Qxd4 Rd8 20. Qxa7 b3 21. O-O Ba8 22. Qb6 Bg7 23. Bxg7 Rxg7 24. axb3 Qxh4 25. Nc5 Nd2 26. Bxa8 Nxf1 27. Bc6+ Kf8 28. Kxf1 Rg4 29. g3 Qf6 30. Nd7+ Rxd7 31. Ra8+ Kg7 32. Bxd7 Qf3 33. Bc6 Qd1+ 34. Kg2 Rh4 35. gxh4 Qg4+ 36. Kf1 Qd1+ 37. Kg2 Qg4+ 38. Kh2 Qxh4+ 39. Kg1 Qg4+ 40. Bg2 Qd1+ 41. Kh2 Qh5+ 42. Kg1 Qd1+ 43. Kh2 Qh5+ 44. Kg3 Qg6+ 45. Kf3 Qf5+ 46. Ke2 Qc2+ 47. Kf3 Qf5+ 48. Ke3 Qg5+ 49. Ke2 Qxg2 50. Qd4+ e5 51. Qxe5+ f6 52. Qe7+ Kg6 53. Rg8+ Kf5 54. Rxg2 Kf4 55. Qe3+ Kf5 56. Kf3 h5 57. Qe4# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+
+1. Nf3 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. d4 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 Ra8 12. a5 c5 13. Qa4 Bd7 14. Qa3 Nh5 15. Bd2 Nf4 16. Rfb1 Nxe2+ 17. Nxe2 f5 18. Rxb7 Bc8 19. Rb3 fxe4 20. Ng5 Nf5 21. Nxe4 Ba6 22. Qa4 Nd4 23. Nxd4 exd4 24. Re1 Be5 25. Rb6 Qh4 26. g3 Qh3 27. f4 Bg7 28. Rxd6 d3 29. Be3 Rae8 30. Re6 Rxe6 31. Ng5 Rxe3 32. Rxe3 Qf5 33. Ne6 Bd4 34. Nxd4 cxd4 35. Re5 Qg4 36. Qb4 Qd1+ 37. Re1 Qc2 38. Qe7 d2 39. Qe6+ Kh8 40. Qe5+ Kg8 41. Qe6+ Rf7 42. Qe8+ Kg7 43. Qe5+ Kh6 44. Qg5+ Kg7 45. Qe5+ Kg8 46. Qe8+ Kg7 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d3 d6 6. O-O h6 7. Re1 O-O 8. h3 Bb6 9. Nbd2 Be6 10. Bxe6 fxe6 11. b4 a6 12. a4 Qe8 13. Nc4 Ba7 14. Be3 Bxe3 15. Nxe3 Qg6 16. b5 Ne7 17. Rb1 axb5 18. axb5 Nh5 19. Nh4 Qf7 20. Rf1 Nf4 21. Kh2 Ra2 22. g3 Ne2 23. Qb3 Rd2 24. Rb2 Nc1 25. Qd1 Rxd1 26. Rxd1 Nb3 27. Rxb3 Qxf2+ 28. Nhg2 Rf3 29. Ng4 Qxg3+ 30. Kg1 Ng6 31. Nh2 Rf2 32. Ng4 Qxg2# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. a3 c5 18. d5 exd5 19. Nxd5 Bxd5 20. Rxd5 Nf6 21. Rxd8 Rxd8 22. Ne5 Qc7 23. b4 Bd6 24. Nc6 Re8 25. b5 Bxf4 26. exf4 Qxf4 27. h3 h5 28. Rd1 h4 29. Nxa7 g5 30. Qd2 Qf5 31. Re1 Rxe1+ 32. Qxe1 g4 33. Nc6 gxh3 34. Ne7+ Kf8 35. Nxf5 hxg2 36. Qe7+ Kg8 37. Qxf6 h3 38. Qg7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d3 d6 6. O-O h6 7. Re1 O-O 8. h3 Bb6 9. Nbd2 Be6 10. Bxe6 fxe6 11. b4 a6 12. a4 Qe8 13. Nc4 Ba7 14. Be3 Bxe3 15. Nxe3 Qg6 16. b5 Ne7 17. Rb1 axb5 18. axb5 Nh5 19. Nh4 Qf7 20. Rf1 Nf4 21. Kh2 Ra2 22. g3 Ne2 23. Qb3 Rd2 24. Rb2 Nc1 25. Qd1 Rxd1 26. Rxd1 Nb3 27. Rxb3 Qxf2+ 28. Nhg2 Rf3 29. Ng4 Qxg3+ 30. Kg1 Ng6 31. Nh2 Rf2 32. Ng4 Qxg2# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+
+1. c4 e5 2. Nc3 Nf6 3. d4 exd4 4. Qxd4 Nc6 5. Qd1 Bb4 6. Bd2 O-O 7. Nf3 Re8 8. e3 d6 9. Be2 Bf5 10. O-O a6 11. a3 Bxc3 12. Bxc3 Ne4 13. Rc1 Nxc3 14. Rxc3 Qf6 15. Qd2 Rad8 16. Rd1 Be4 17. Ne1 Ne5 18. f3 Bc6 19. Nc2 h5 20. Nb4 h4 21. Nd5 Bxd5 22. cxd5 Re7 23. f4 Nd7 24. Rxc7 Rde8 25. Rxb7 Rxe3 26. Bf1 Nc5 27. Rb8 Rxb8 28. Qxe3 Rxb2 29. Qd4 Qxd4+ 30. Rxd4 Ra2 31. Rb4 Rxa3 32. Rb6 Ra1 33. Rxd6 Rd1 34. Rd8+ Kh7 35. Kf2 Ne4+ 36. Ke3 Re1+ 37. Be2 Nc3 38. Kd2 Rxe2+ 39. Kxc3 Rxg2 40. d6 Rg1 41. Kd4 Rd1+ 42. Kc5 Kg6 43. Kc6 Rc1+ 44. Kd7 Rc2 45. h3 Rc3 46. Rc8 Rxh3 47. Rc5 Rd3 48. Ke7 h3 49. d7 h2 50. Rc1 Re3+ 51. Kf8 Rd3 52. Ke7 Re3+ 53. Kf8 Rd3 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 O-O-O 19. Qe2 f5 20. dxc5 Bg7 21. Bxg7 Qxg7 22. O-O Bc6 23. Rad1 Bxa4 24. Rxd8+ Rxd8 25. Bxe4 fxe4 26. Qxe4 Kc7 27. Qf4+ e5 28. Qe4 Bc6 29. Qe3 Qxg2# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "0-1"]
+
+1. Nf3 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. d4 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 Ra8 12. a5 c5 13. Qa4 Bd7 14. Qa3 Nh5 15. Bd2 Nf4 16. Rfb1 Nxe2+ 17. Nxe2 f5 18. Rxb7 Bc8 19. Rb3 fxe4 20. Ng5 Nf5 21. Nxe4 Ba6 22. Qa4 Nd4 23. Nxd4 exd4 24. Re1 Be5 25. Rb6 Qh4 26. g3 Qh3 27. f4 Bg7 28. Rxd6 d3 29. Be3 Rae8 30. Bf2 d2 31. Nxd2 Rxe1+ 32. Bxe1 Bd4+ 33. Bf2 Bxf2+ 34. Kxf2 Qxh2+ 35. Ke1 Qxg3+ 36. Kd1 Bc8 37. Re6 Bxe6 38. dxe6 Qg4+ 39. Kc1 Qxe6 40. a6 Ra8 41. a7 Qe7 42. Qc6 Rxa7 43. Ne4 Kg7 44. Qxc5 Qxc5 45. Nxc5 h5 46. Kd2 h4 47. Ke3 h3 48. Kf2 Ra2+ 49. Kg1 Kf6 50. Ne4+ Kf5 51. Nf2 h2+ 52. Kxh2 Rxf2+ 53. Kg3 Rxf4 54. c5 Rc4 55. Kf3 Rxc5 56. Ke3 g5 57. Kd4 Rc1 58. Ke3 g4 59. Kd2 Ra1 60. Kd3 Kf4 61. Kd4 g3 62. Kd5 g2 63. Kc4 g1=Q 64. Kc3 Qc1+ 65. Kb4 Qa3+ 66. Kc4 Rc1+ 67. Kb5 Rc5+ 68. Kb6 Qb4+ 69. Ka6 Ra5# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4 6. d4 b5 7. Bb3 d5 8. dxe5 Be6 9. c3 Be7 10. Nbd2 Nc5 11. Bc2 d4 12. Nb3 dxc3 13. Nxc5 Bxc5 14. Be4 Qd7 15. Qc2 Bd5 16. Bf5 Be6 17. Be4 Bd5 18. Bf5 Be6 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 Ra8 12. a5 c5 13. Qa4 Bd7 14. Qa3 Nh5 15. Bd2 Nf4 16. Rfb1 Nxe2+ 17. Nxe2 f5 18. Rxb7 Bc8 19. Rb3 fxe4 20. Ng5 Nf5 21. Nxe4 Ba6 22. Qa4 Nd4 23. Nxd4 exd4 24. Re1 Be5 25. Rb6 Qh4 26. g3 Qh3 27. f4 Bg7 28. Rxd6 d3 29. Be3 Rae8 30. Nf2 Rxe3 31. Rxe3 Bd4 32. Nxh3 Bxe3+ 33. Kg2 d2 34. Rxa6 d1=Q 35. Qxd1 Re8 36. Ng5 h6 37. Rxg6+ Kf8 38. Qh5 hxg5 39. Qh8+ Kf7 40. Qg7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5 5. Ng3 Bg6 6. h4 h6 7. Nf3 Nd7 8. h5 Bh7 9. Bd3 Bxd3 10. Qxd3 e6 11. Bd2 Ngf6 12. O-O-O Be7 13. Kb1 O-O 14. Ne4 Nxe4 15. Qxe4 Nf6 16. Qe2 Qd5 17. Ne5 Rad8 18. g4 Qe4 19. Qxe4 Nxe4 20. Be3 Bg5 21. f4 Be7 22. c4 Bd6 23. Kc2 f5 24. gxf5 Rxf5 25. Rdg1 Nf6 26. Rg6 Re8 27. Rhg1 Nxh5 28. Rxh6 Nxf4 29. Bxf4 Rxf4 30. Nd7 Re7 31. Nf6+ Kf7 32. Nh5 gxh6 33. Nxf4 Bxf4 34. Rf1 Kg6 35. Rxf4 h5 36. Kd3 Rh7 37. Ke4 h4 38. Rg4+ Kf6 39. Rf4+ Ke7 40. Rf1 h3 41. Rh1 h2 42. Kf4 Kd6 43. Kg3 e5 44. dxe5+ Kxe5 45. b3 Kd4 46. Rxh2 Rxh2 47. Kxh2 Kc3 48. Kg3 Kb2 49. Kf4 Kxa2 50. Ke5 Kxb3 51. c5 a5 52. Kd6 a4 53. Kc7 a3 54. Kxb7 a2 55. Kxc6 a1=Q 56. Kb7 Qg7+ 57. Kb6 Kc4 58. c6 Qb2+ 59. Ka7 Kc5 60. c7 Qb6+ 61. Ka8 Qc6+ 62. Kb8 Kb6 63. c8=Q Qd6+ 64. Ka8 Qa3+ 65. Kb8 Qa7# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be3 e5 7. Nb3 Be6 8. f3 h5 9. Nd5 Bxd5 10. exd5 Nbd7 11. Qd2 g6 12. O-O-O Bg7 13. Kb1 Qc7 14. Be2 O-O 15. g4 hxg4 16. fxg4 Ne4 17. Qd3 Nec5 18. Qd2 Ne4 19. Qb4 Nec5 20. h4 a5 21. Qb5 a4 22. Nxc5 Nxc5 23. a3 Ne4 24. h5 Rfc8 25. Bd3 Nc3+ 26. bxc3 Qxc3 27. Bd2 Qxa3 28. Bb4 f5 29. Bxa3 e4 30. Qd7 exd3 31. Qe6+ Kh8 32. hxg6+ Bh6 33. Rxh6+ Kg7 34. Rh7+ Kf8 35. Qf7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 c6 4. Nc3 e6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 O-O-O 19. Qe2 f5 20. dxc5 Bg7 21. Bxg7 Qxg7 22. O-O Bc6 23. Rad1 Bxa4 24. Rxd8+ Rxd8 25. Bxe4 fxe4 26. Qxe4 Kc7 27. Qf4+ e5 28. Qe4 Bc6 29. Qe3 Qxg2# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 6. Nf3 Nc6 7. Be3 a6 8. a3 b5 9. Bd3 Qb6 10. Bf2 cxd4 11. Ne2 Bc5 12. b4 Be7 13. Nexd4 Nxd4 14. Nxd4 Qc7 15. O-O g6 16. Qg4 h5 17. Nxe6 Qc6 18. Nd4 Qb7 19. Qe2 Nb6 20. e6 f5 21. Qe5 O-O 22. Rae1 Bf6 23. Qe3 Re8 24. Qg3 Kh7 25. Nxf5 gxf5 26. Bxf5+ Kh8 27. Qg6 Qg7 28. Qxe8+ Qg8 29. Qxh5+ Kg7 30. Bc5 Bd4+ 31. Bxd4+ Kf8 32. Bc5+ Kg7 33. Qg5+ Kh8 34. Qh6+ Qh7 35. Qxh7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5 5. Ng3 Bg6 6. h4 h6 7. Nf3 Nd7 8. h5 Bh7 9. Bd3 Bxd3 10. Qxd3 e6 11. Bd2 Ngf6 12. O-O-O Be7 13. Kb1 O-O 14. Ne4 Nxe4 15. Qxe4 Nf6 16. Qe2 Qd5 17. Ne5 Rad8 18. g4 Qe4 19. Qxe4 Nxe4 20. Be3 Bg5 21. f4 Be7 22. c4 f5 23. gxf5 Rxf5 24. Rdg1 Nf6 25. Ng6 Bd6 26. Ne5 Nxh5 27. Rxh5 Rxh5 28. Ng6 Rh3 29. Bd2 h5 30. Bc3 h4 31. d5 Rg3 32. Rxg3 hxg3 33. dxe6 g2 34. Bd4 Bxf4 35. e7 Re8 36. Nxf4 Rxe7 37. Nxg2 b6 38. Be3 Re4 39. b3 Rg4 40. Ne1 Kf7 41. Kc2 Ke6 42. Kd3 c5 43. Nf3 Kf5 44. Nd2 Rh4 45. Nf1 Rh3 46. Ke2 g5 47. Kf2 g4 48. Ng3+ Ke5 49. Kg2 Rh8 50. Bg5 Rg8 51. Be3 Rf8 52. Bh6 Rf7 53. Be3 Rf3 54. Bf2 Rc3 55. Nf1 Rc2 56. a3 Rb2 57. b4 cxb4 58. axb4 Rxb4 59. c5 b5 60. Ne3 Ke6 61. c6 Re4 62. c7 Kd7 63. Nd5 Re5 64. Nf6+ Kc8 65. Nxg4 Rg5 66. Kf3 a5 67. Bb6 a4 68. Kf4 Rg6 69. Ba5 a3 70. Kf5 Rc6 71. Ne5 Rc5 72. Bb4 a2 73. Bxc5 a1=Q 74. Bd6 b4 75. Bxb4 Qb1+ 76. Ke6 Qxb4 77. Nc6 Qb6 78. Kd6 Qxc7+ 79. Kd5 Qd7+ 80. Kc5 Kc7 81. Nd4 Qd6+ 82. Kc4 Kb6 83. Nb3 Qe6+ 84. Kc3 Qe3+ 85. Kc4 Qe2+ 86. Kc3 Qf3+ 87. Kb2 Qd3 88. Nc1 Qd2+ 89. Kb1 Kb5 90. Ka1 Qxc1+ 91. Ka2 Qc2+ 92. Ka1 Qd2 93. Kb1 Kb4 94. Ka1 Kb3 95. Kb1 Qd1# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. c4 Nf6 2. Nc3 e6 3. e4 Nc6 4. d4 e5 5. dxe5 Nxe5 6. f4 Nc6 7. e5 Ng8 8. Nf3 d6 9. Be3 Bg4 10. h3 Bxf3 11. Qxf3 dxe5 12. Rd1 Nd4 13. Qxb7 Rb8 14. Qe4 f5 15. Qxe5+ Qe7 16. Bxd4 Rxb2 17. Be2 Qxe5 18. fxe5 Bb4 19. a3 Bxc3+ 20. Bxc3 Rc2 21. Bb4 Ne7 22. e6 Nc6 23. Bc5 f4 24. Rf1 g5 25. Bh5# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 O-O-O 19. Qe2 f5 20. dxc5 Bg7 21. Bxg7 Qxg7 22. O-O Bc6 23. Rad1 Bxa4 24. Rxd8+ Rxd8 25. Bxe4 fxe4 26. Qxe4 Kc7 27. Qf4+ e5 28. Qe4 Bc6 29. Qe3 Qxg2# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Na5 6. Bb5+ c6 7. dxc6 bxc6 8. Bd3 Nd5 9. Nf3 Bd6 10. O-O O-O 11. Re1 f5 12. Nxe5 Qf6 13. Nf3 g5 14. g3 g4 15. Nh4 f4 16. Qe2 f3 17. Qe4 Rf7 18. Qa4 Nf4 19. Bf1 Ne2+ 20. Bxe2 fxe2 21. Rxe2 Bc5 22. Qf4 Qxf4 23. gxf4 Rxf4 24. d3 Rf8 25. Nc3 Bd4 26. Bh6 Rf6 27. Bd2 Be6 28. Ne4 h5 29. Nxf6+ Bxf6 30. Rxe6 Bxh4 31. Bxa5 Rf8 32. Bc3 Bxf2+ 33. Kg2 h4 34. Rg6+ Kf7 35. Rf6+ Ke7 36. Rxf8 h3+ 37. Kxf2 Kxf8 38. Kg3 Ke7 39. Kxg4 Ke6 40. Re1+ Kd5 41. Kf5 c5 42. Re6 c4 43. d4 a5 44. Rb6 a4 45. a3 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. e4 g6 2. d4 Bg7 3. Nc3 d6 4. Be3 a6 5. h4 Nf6 6. h5 Nxh5 7. Rxh5 gxh5 8. Qxh5 Nd7 9. Bc4 e6 10. Bxe6 Qe7 11. Nd5 Nf6 12. Bxc8 Nxh5 13. Nxe7 Kxe7 14. Bxb7 Rab8 15. Bxa6 Rxb2 16. Bd3 Rhb8 17. Nf3 Rb1+ 18. Rxb1 Rxb1+ 19. Ke2 Nf6 20. e5 Nd5 21. c4 Rb2+ 22. Bd2 Nf4+ 23. Ke3 Nxg2+ 24. Ke4 dxe5 25. dxe5 Ke8 26. a4 Nh4 27. Bc1 Nxf3 28. Bxb2 Ng5+ 29. Kd5 Kd7 30. Bf5+ Ne6 31. a5 c6+ 32. Ke4 Bf8 33. a6 Kc7 34. Bxh7 Ng5+ 35. Kf5 Nxh7 36. e6 fxe6+ 37. Kxe6 Ng5+ 38. Kf5 Nf3 39. Ke4 Nd2+ 40. Kd3 Nb3 41. Kc3 Nc5 42. a7 Kb7 43. Ba3 Kxa7 44. Kd4 Ne6+ 45. Ke5 Bxa3 46. Kxe6 Kb6 47. f4 Kc5 48. f5 Kxc4 49. f6 Bf8 50. Kf7 Bc5 51. Ke6 Bf8 52. Kf7 Bb4 53. Ke6 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 Nf6 3. d4 exd4 4. e5 Ne4 5. Qxd4 d5 6. exd6 Nxd6 7. Nc3 Nc6 8. Qf4 Bf5 9. Bb5 Nxb5 10. Nxb5 Bb4+ 11. c3 Qd3 12. Nxc7+ Kd7 13. cxb4 Rhe8+ 14. Be3 Re4 15. Qxf5+ Kxc7 16. Qxf7+ Kb8 17. Rd1 Qxe3+ 18. fxe3 Rxe3+ 19. Kf2 Re7 20. Qf4+ Kc8 21. Rhe1 Rxe1 22. Nxe1 g5 23. Qf7 Ne5 24. Qe7 Ng4+ 25. Kg1 Nf6 26. Rd8# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. e4 g6 2. d4 Bg7 3. Nc3 d6 4. Be3 a6 5. h4 Nf6 6. h5 Nxh5 7. Rxh5 gxh5 8. Qxh5 Nd7 9. Bc4 e6 10. Bxe6 Qe7 11. Nd5 Nf6 12. Bxc8 Nxh5 13. Nxe7 Kxe7 14. Bxb7 Rab8 15. Bxa6 Rxb2 16. Bd3 Rhb8 17. Nf3 Rb1+ 18. Rxb1 Rxb1+ 19. Ke2 Nf6 20. e5 Nd5 21. c4 Rb2+ 22. Bd2 Nf4+ 23. Ke3 Nxg2+ 24. Ke4 dxe5 25. dxe5 Ke8 26. a4 Nh4 27. Bc1 Nxf3 28. Bxb2 Ng5+ 29. Kd5 Kd7 30. Bf5+ Ne6 31. a5 c6+ 32. Ke4 Bf8 33. a6 Kc7 34. Bxh7 Ng5+ 35. Kf5 Nxh7 36. e6 fxe6+ 37. Kxe6 Ng5+ 38. Kf5 Nf3 39. Ke4 Nd2+ 40. Kd3 Nb3 41. Kc3 Nc5 42. a7 Kb7 43. Ba3 Kxa7 44. Kd4 Ne6+ 45. Ke5 Bxa3 46. Kxe6 Kb6 47. f4 Kc5 48. f5 Kxc4 49. f6 Bf8 50. Kf7 Bc5 51. Ke6 Bb4 52. f7 Bf8 53. Kd7 Kd5 54. Ke8 Bd6 55. Kd7 c5 56. Ke8 c4 57. f8=Q Bxf8 58. Kxf8 c3 59. Ke7 c2 60. Kd7 c1=Q 61. Ke7 Qf4 62. Kd7 Qf7+ 63. Kc8 Kc6 64. Kb8 Qb7# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 6. Nf3 Nc6 7. Be3 a6 8. a3 b5 9. Bd3 Qb6 10. Bf2 cxd4 11. Ne2 Bc5 12. b4 Be7 13. Nexd4 Nxd4 14. Nxd4 Qc7 15. O-O g6 16. Qg4 h5 17. Nxe6 Qc6 18. Nd4 Qb7 19. Qe2 Nb6 20. e6 f5 21. Qe5 O-O 22. Rae1 Bf6 23. Qe3 Re8 24. Qg3 Kh7 25. Nxf5 gxf5 26. Bxf5+ Kh8 27. Qg6 Qg7 28. Qxe8+ Qg8 29. Qxh5+ Kg7 30. Bc5 Bd4+ 31. Bxd4+ Kf8 32. e7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1/2-1/2"]
+
+1. d4 d5 2. Nf3 Nf6 3. c4 dxc4 4. e3 a6 5. Bxc4 c5 6. O-O e6 7. dxc5 Bxc5 8. Qxd8+ Kxd8 9. Ne5 Ke7 10. Be2 Nbd7 11. Nd3 Bd6 12. Nd2 b5 13. a4 Bb7 14. axb5 axb5 15. Rxa8 Rxa8 16. Nb3 Bd5 17. Nd4 Bc4 18. Rd1 Nc5 19. Nc6+ Ke8 20. Nxc5 Bxc5 21. Bxc4 bxc4 22. Kf1 Ne4 23. f3 Nd6 24. Bd2 Ra2 25. Bc3 f6 26. e4 Nb5 27. Rd8+ Kf7 28. Rd7+ Kg6 29. h4 Nxc3 30. bxc3 Rf2+ 31. Ke1 Rxg2 32. Nd8 e5 33. Ne6 Rg1+ 34. Ke2 Rg2+ 35. Kd1 Rg1+ 36. Ke2 Rg2+ 37. Kd1 Rg1+ 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 e6 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. Qe2 c5 18. d5 exd5 19. Nxd5 Bxd5 20. Rxd5 Nf6 21. Rdd1 Rxd1+ 22. Rxd1 Rd8 23. Ne5 Rxd1+ 24. Qxd1 Bd6 25. Nc6 Qc7 26. Nxa7 Qxa7 27. Qxd6 h5 28. Qd8+ Kh7 29. a3 Qa5 30. Bf1 Qe1 31. Qd3+ g6 32. Kg2 h4 33. h3 Kg7 34. Qc2 Nd5 35. Qd3 Nf6 36. Qc2 Nd5 37. Qe4 Nf6 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 c6 4. Nc3 e6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 O-O-O 19. Qe2 f5 20. dxc5 Bg7 21. Bxg7 Qxg7 22. O-O Bc6 23. Rad1 Bxa4 24. Rxd8+ Rxd8 25. Bxe4 fxe4 26. Qxe4 Kc7 27. Qf4+ e5 28. Qe4 Bc6 29. Qe3 Qxg2# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. Nf3 d5 2. d4 Nf6 3. c4 e6 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. a3 c5 18. d5 exd5 19. Nxd5 Bxd5 20. Rxd5 Nf6 21. Rxd8 Rxd8 22. Ne5 Qc7 23. b4 Bd6 24. Nc6 Re8 25. b5 Bxf4 26. exf4 Qxf4 27. h3 h5 28. Rd1 h4 29. Nxa7 g5 30. Qd2 Qf5 31. Re1 Rxe1+ 32. Qxe1 g4 33. Nc6 gxh3 34. Ne7+ Kf8 35. Nxf5 hxg2 36. Qe7+ Kg8 37. Qxf6 h3 38. Qg7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. e4 c5 2. Nf3 Nc6 3. Bb5 e6 4. O-O Nge7 5. Re1 a6 6. Bf1 d5 7. exd5 Nxd5 8. d4 cxd4 9. Nxd4 Bd7 10. c4 Nf6 11. Nc3 Nxd4 12. Qxd4 Bc6 13. Qe3 Bd6 14. h3 O-O 15. Bd2 Qc7 16. Rad1 Rfd8 17. Bc1 h6 18. b3 Bh2+ 19. Kh1 Bd6 20. Bb2 Bf4 21. Qe2 Qa5 22. a3 Qg5 23. Kg1 Bd2 24. h4 Qf4 25. Nd5 exd5 26. Rxd2 Re8 27. Qd1 Rxe1 28. Qxe1 Re8 29. Re2 Rxe2 30. Qxe2 Qxh4 31. Qe7 dxc4 32. Bxc4 Qh5 33. Bxf6 gxf6 34. Qxf6 Qd1+ 35. Kh2 Qh5+ 36. Kg3 a5 37. f4 Be4 38. Kf2 Qc5+ 39. Kf1 Qh5 40. Qd8+ Kh7 41. Qe7 Qd1+ 42. Kf2 Qd2+ 43. Kf1 Qxg2+ 44. Ke1 Qg3+ 45. Kd2 Qxf4+ 46. Kc3 Qe3+ 47. Kb2 Qd2+ 48. Ka1 Qc1+ 49. Ka2 Qb1# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1/2-1/2"]
+
+1. e4 g6 2. d4 Bg7 3. Nc3 d6 4. Be3 a6 5. Qd2 b5 6. h4 h5 7. Nh3 Bb7 8. Ng5 Nd7 9. a4 b4 10. Ne2 c5 11. Nf4 Ngf6 12. Bc4 O-O 13. Nxg6 Nxe4 14. Qe2 d5 15. Nxf8 dxc4 16. Nxd7 Qxd7 17. Rd1 cxd4 18. Bxd4 Bxd4 19. Nxe4 Qd5 20. f3 Qe5 21. Rh3 Bxe4 22. Qxe4 Qxe4+ 23. fxe4 Bxb2 24. Rg3+ Kh7 25. Rd5 Kh6 26. Rc5 Bf6 27. Ke2 c3 28. e5 Bxh4 29. Rh3 Bg5 30. a5 Kg6 31. Rd3 Rb8 32. Rc6+ Kf5 33. e6 fxe6 34. Rxa6 b3 35. cxb3 c2 36. Rc6 c1=Q 37. Rxc1 Bxc1 38. a6 Ra8 39. Rc3 Bb2 40. Rc5+ e5 41. Ra5 Bd4 42. b4 Bb6 43. Ra3 e4 44. b5 Ke5 45. Rc3 Kd5 46. Rc6 Bc5 47. Rh6 Kc4 48. Rxh5 Kxb5 49. Re5 Rxa6 50. Rxe4 Rg6 51. Kf3 Bd6 52. g4 Rf6+ 53. Ke3 Bc5+ 54. Kd3 Rd6+ 55. Ke2 Rd5 56. Kf3 Kc6 57. Re1 Bd6 58. Rc1+ Kd7 59. Ra1 Rd4 60. g5 Ke6 61. g6 Kf6 62. Rg1 Kg7 63. Ke2 Re4+ 64. Kd3 Rf4 65. Rg2 Rf6 66. Rg1 Rxg6 67. Rf1 Rf6 68. Rg1+ Kf7 69. Rh1 Kg6 70. Rg1+ Kf7 71. Rh1 Rf3+ 72. Ke4 Rf4+ 73. Ke3 Ra4 74. Kd3 Ke6 75. Rh5 Be5 76. Ke3 Kd5 77. Kd3 Ra3+ 78. Ke2 e6 79. Kd2 Ke4 80. Kc2 Rc3+ 81. Kd2 Ra3 82. Kc2 Ra2+ 83. Kb3 Rb2+ 84. Kc4 Rc2+ 85. Kb3 Rc3+ 86. Kb4 Rc1 87. Rh6 Rc6 88. Kb5 Rc1 89. Rxe6 Kd5 90. Rh6 Rb1+ 91. Ka6 Bd6 92. Ka5 Bc5 93. Rh2 Kc4 94. Rc2+ Kd5 95. Rh2 Kc6 96. Ka4 Rb8 97. Rc2 Rb4+ 98. Ka3 Kb5 99. Ka2 Bd4 100. Ka3 Ra4+ 101. Kb3 Rb4+ 102. Ka3 Rb1 1/2-1/2
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. d4 d5 2. c4 e6 3. Nc3 c6 4. e4 dxe4 5. Nxe4 Bb4+ 6. Bd2 Qxd4 7. Bxb4 Qxe4+ 8. Be2 Na6 9. Ba5 b6 10. Qd6 e5 11. O-O-O Qf4+ 12. Rd2 Qf6 13. Bc3 Qxd6 14. Rxd6 f6 15. f4 e4 16. Rxc6 Kd7 17. Rxc8 Kxc8 18. Bg4+ Kc7 19. Ne2 Nc5 20. Nd4 Nh6 21. Be2 Rhe8 22. Nb5+ Kc6 23. Rd1 Rad8 24. Nxa7+ Kb7 25. Nb5 Rxd1+ 26. Kxd1 Rd8+ 27. Nd4 Ne6 28. Kc2 Nxd4+ 29. Bxd4 Rxd4 30. Kc3 Rd8 31. g4 f5 32. g5 Ng4 33. Bxg4 fxg4 34. f5 e3 35. f6 e2 36. f7 e1=Q+ 37. Kb3 Rd3+ 38. Kc2 Qd1# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. g3 Bb4+ 5. Bd2 Be7 6. Qc2 O-O 7. Bg2 c6 8. O-O b6 9. Bf4 Bb7 10. Rd1 Nbd7 11. Nc3 dxc4 12. Nd2 Nd5 13. Nxc4 Nxf4 14. gxf4 Qc7 15. e3 Rad8 16. Rac1 Qb8 17. a3 c5 18. d5 exd5 19. Nxd5 Bxd5 20. Rxd5 Nf6 21. Rxd8 Rxd8 22. Ne5 Qc7 23. b4 Bd6 24. Nc6 Re8 25. b5 Bxf4 26. exf4 Qxf4 27. h3 h5 28. Rd1 h4 29. Nxa7 g5 30. Qd2 Qf5 31. Re1 Rxe1+ 32. Qxe1 g4 33. Nc6 gxh3 34. Ne7+ Kf8 35. Nxf5 hxg2 36. Qe7+ Kg8 37. Qxf6 h3 38. Qg7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 O-O-O 19. Qe2 f5 20. dxc5 Bg7 21. Bxg7 Qxg7 22. O-O Bc6 23. Rad1 Bxa4 24. Rxd8+ Rxd8 25. Bxe4 fxe4 26. Qxe4 Kc7 27. Qf4+ e5 28. Qe4 Bc6 29. Qe3 Qxg2# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4 5. Nxd4 Bg7 6. Be3 Nf6 7. Bc4 O-O 8. Bb3 d6 9. f3 Bd7 10. Qd2 Nxd4 11. Bxd4 b5 12. a3 a5 13. O-O Bc6 14. Rfd1 Qb8 15. Ne2 a4 16. Ba2 Rc8 17. c3 e6 18. Qg5 e5 19. Bf2 Qc7 20. Rd2 h6 21. Qxg6 Bxe4 22. fxe4 Kh8 23. Qf5 Rab8 24. Ng3 Rd8 25. Nh5 Nxh5 26. Qxh5 Rd7 27. Be3 Kh7 28. Rf1 Rf8 29. Rf6 Bxf6 30. Qxh6+ Kg8 31. Qxf6 Qd8 32. Qg6+ Kh8 33. Qh6+ Kg8 34. Bg5 Re8 35. Bf6 Qb6+ 36. Kh1 Qe3 37. Qg7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "0-1"]
+
+1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. Bg5 h6 6. Bh4 dxc4 7. e4 g5 8. Bg3 b5 9. Be2 Bb7 10. h4 g4 11. Ne5 Nbd7 12. Nxd7 Qxd7 13. Be5 Qe7 14. b3 Rg8 15. bxc4 b4 16. Na4 Nxe4 17. Bxg4 c5 18. Bf3 O-O-O 19. Qe2 f5 20. dxc5 Bg7 21. Bxg7 Qxg7 22. O-O Bc6 23. Rad1 Bxa4 24. Rxd8+ Rxd8 25. Bxe4 fxe4 26. Qxe4 Kc7 27. Qf4+ e5 28. Qe4 Bc6 29. Qe3 Qxg2# 0-1
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. f3 e5 7. Nb3 Be6 8. Be3 h5 9. Nd5 Bxd5 10. exd5 Nbd7 11. Qd2 g6 12. O-O-O Bg7 13. Kb1 Qc7 14. Be2 O-O 15. g4 hxg4 16. fxg4 Ne4 17. Qd3 Nec5 18. Qd2 Ne4 19. Qb4 Nec5 20. h4 a5 21. Qb5 a4 22. Nxc5 Nxc5 23. a3 Ne4 24. h5 Rfc8 25. Bd3 Nc3+ 26. bxc3 Qxc3 27. Bd2 Qxa3 28. Bb4 f5 29. Bxa3 e4 30. Qd7 exd3 31. Qe6+ Kh8 32. hxg6+ Bh6 33. Rxh6+ Kg7 34. Rh7+ Kf8 35. Qf7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1-0"]
+
+1. Nf3 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 5. h4 Nxc3 6. bxc3 Bg7 7. h5 c5 8. h6 Bf6 9. e4 Nc6 10. Bb5 O-O 11. Bxc6 bxc6 12. e5 Bh8 13. O-O Bg4 14. Re1 Qd5 15. d4 cxd4 16. cxd4 f6 17. Qb3 Bxf3 18. gxf3 fxe5 19. Qxd5+ cxd5 20. dxe5 Rxf3 21. Bg5 Rf5 22. f4 Kf7 23. Rac1 Bxe5 24. Rxe5 Rxe5 25. fxe5 Ke6 26. Rc7 Re8 27. Rxa7 d4 28. Kf2 Rf8+ 29. Ke2 Rf5 30. Rxe7+ Kd5 31. Bf6 Rh5 32. Rxh7 Ke4 33. e6 Rh2+ 34. Kd1 Kd3 35. Kc1 Rc2+ 36. Kb1 Rc6 37. Re7 Rb6+ 38. Kc1 Rc6+ 39. Kd1 Rb6 40. Ke1 Ke3 41. Bg5+ Kf3 42. h7 Rb8 43. Rf7+ Ke4 44. e7 Kd3 45. Rf8 Rb1+ 46. Kf2 Rb2+ 47. Kg3 Re2 48. h8=Q Kc4 49. e8=Q Rxe8 50. Rxe8 Kc5 51. Qe5+ Kb6 52. Rb8+ Kc6 53. Rc8+ Kb6 54. Qxd4+ Kb7 55. Rc5 Kb6 56. Qd6+ Kb7 57. Rc7+ Kb8 58. Qd8# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "1-0"]
+
+1. Nf3 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. d4 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 Ra8 12. a5 c5 13. Qa4 Bd7 14. Qa3 Nh5 15. Bd2 Nf4 16. Rfb1 Nxe2+ 17. Nxe2 f5 18. Rxb7 Bc8 19. Rbb1 fxe4 20. Ng5 Nf5 21. Nxe4 Ba6 22. Qd3 Nd4 23. Rb6 Qh4 24. N2g3 Rf3 25. gxf3 Rf8 26. Rxa6 Nxf3+ 27. Kf1 Qh3+ 28. Ke2 Nd4+ 29. Kd1 Qg4+ 30. Kc1 Nf3 31. Rb6 Nxh2 32. a6 Nf3 33. a7 Nxd2 34. a8=Q Rxa8 35. Rxa8+ Kf7 36. Rb7+ Qd7 37. Rxd7# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Kibitzer"]
+[Black "Maia-2700"]
+[Result "1-0"]
+
+1. e4 g6 2. d4 Bg7 3. Nc3 d6 4. Be3 a6 5. h4 Nf6 6. h5 Nxh5 7. Rxh5 gxh5 8. Qxh5 Nc6 9. O-O-O e5 10. Bc4 Qd7 11. Nf3 exd4 12. Nxd4 Nxd4 13. Bxd4 Bxd4 14. Rxd4 b5 15. Nd5 Qd8 16. e5 bxc4 17. Nf6+ Ke7 18. Nd5+ Ke8 19. Nf6+ Ke7 20. exd6+ cxd6 21. Nd5+ Ke8 22. Re4+ Be6 23. Rxe6+ Kd7 24. Qxf7+ Kc6 25. Nb4+ Kb6 26. Nd5+ Kc6 27. Ne7+ Kb6 28. Nf5 Rf8 29. Nxd6 Rxf7 30. Nxf7+ Kc5 31. Nxd8 Rxd8 32. Rxa6 Rf8 33. f3 Rg8 34. g4 Rf8 35. Ra3 Kd4 36. Kd2 Rf6 37. Re3 Rh6 38. Re4+ Kd5 39. Kc3 Rf6 40. Re3 Rf4 41. a4 Kc5 42. a5 Kb5 43. Re5+ Ka6 44. Rf5 Rxf5 45. gxf5 h5 46. f6 h4 47. f7 h3 48. f8=Q Kb7 49. Qh6 h2 50. Qxh2 Kc6 51. a6 Kd7 52. a7 Ke6 53. a8=Q Kf6 54. Qh6+ Ke7 55. Qaf8+ Kd7 56. Qhd6# 1-0
+
+[Event "gauntlet vs Maia-2700"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Maia-2700"]
+[Black "Kibitzer"]
+[Result "0-1"]
+
+1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. e3 Bf5 5. Nh4 Be4 6. Nc3 e6 7. f3 Bg6 8. Bd2 Be7 9. Nxg6 hxg6 10. Qc2 Nbd7 11. O-O-O a6 12. Kb1 dxc4 13. Bxc4 b5 14. Be2 c5 15. dxc5 Bxc5 16. g4 Rc8 17. g5 Nh5 18. Ne4 O-O 19. Nxc5 Rxc5 20. Qd3 Rd5 21. Qa3 Qxg5 22. e4 Rxd2 23. Rxd2 Qxd2 24. Qd3 Qxd3+ 25. Bxd3 Ne5 26. Be2 Nf4 27. Bd1 Rd8 28. Bb3 Nxf3 29. Rd1 Rxd1+ 30. Bxd1 Nd2+ 31. Kc2 Nxe4 32. Bf3 Nd6 33. Kc3 Nd5+ 34. Kd4 Nf5+ 35. Kc5 Nfe7 36. Kd6 Kf8 37. a3 Ke8 38. b3 Nf5+ 39. Kc5 Kd7 40. a4 bxa4 41. bxa4 Nd6 42. a5 Nb7+ 43. Kd4 Nxa5 44. Kd3 Nc6 45. Bd1 Kd6 46. Kd2 Kc5 47. h4 f5 48. Ba4 e5 49. Bb3 e4 50. Bxd5 Kxd5 51. Ke3 Ne5 52. Kd2 Kd4 53. Ke2 f4 54. Kd2 e3+ 55. Kc2 f3 56. h5 f2 57. h6 gxh6 58. Kb3 f1=Q 59. Kb2 e2 60. Kb3 e1=Q 61. Ka3 Qa1+ 62. Kb3 Qfb1# 0-1
+
