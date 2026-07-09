@@ -33,14 +33,17 @@ the diagram is the current code path, with exact parameter counts written in the
 
 ## published model
 
-strongest checkpoint: **[`Pradheep1647/kibitzer-s2-shaw-142m-comp`](https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-142m-comp)**.
+strongest published checkpoint: **[`Pradheep1647/kibitzer-tactical-repair`](https://huggingface.co/Pradheep1647/kibitzer-tactical-repair)**.
+
+base supervised checkpoint: **[`Pradheep1647/kibitzer-s2-shaw-142m-comp`](https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-142m-comp)**.
 
 | artifact | value |
 |---|---|
-| checkpoint | `S2_shaw_142M_comp.pt` |
-| local path | `runs/scaling_shaw_comp/S2_shaw_142M_comp.pt` |
-| training objective | `policy_value_competition_continuation` |
-| eval setup | 64-sim PUCT unless stated otherwise |
+| checkpoint | `tactical_repair.pt` |
+| local path | `runs/tactical/tactical_repair.pt` |
+| hf repo | [`Pradheep1647/kibitzer-tactical-repair`](https://huggingface.co/Pradheep1647/kibitzer-tactical-repair) |
+| training objective | `tactical_supervised_repair_r1_policy_only` |
+| eval setup | 128-sim PUCT vs Leela/Maia proxy unless stated otherwise |
 
 ## what it does
 
@@ -196,7 +199,7 @@ uv run python scripts/train_bc.py -h  # supervised training
 | `runs/tactical/tactical_repair.pt` | best local repair branch; tactical R1 | 2026-07-09 |
 | `runs/tactical/tactical_repair_r2.pt` | rejected tactical R2; worse external gate | 2026-07-09 |
 
-generated checkpoints are gitignored. the strongest published checkpoint is on [Hugging Face](https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-142m-comp); hf push support lives in `kibitzer/hf_utils.py`.
+generated checkpoints are gitignored. the strongest published checkpoint is on [Hugging Face](https://huggingface.co/Pradheep1647/kibitzer-tactical-repair); hf push support lives in `kibitzer/hf_utils.py`.
 
 ## citations
 
