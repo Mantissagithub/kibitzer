@@ -1,0 +1,65 @@
+<UciProtocol (pid=38451)>: stderr >> [1m[31m       _
+<UciProtocol (pid=38451)>: stderr >> |   _ | |
+<UciProtocol (pid=38451)>: stderr >> |_ |_ |_|[0m v0.33.0-dev+git.d8ce482 built Jul  7 2026
+<UciProtocol (pid=38451)>: stderr >> Search algorithm: classic
+============================================================
+ KIBITZER GUMBEL SEARCH GATE
+============================================================
+checkpoint:       runs/tactical/tactical_repair.pt
+search:           gumbel
+games/sims/seed:  40 / 128 / 23
+gumbel config:    max_actions=16 scale=0
+opponent:         Leela-2700 nodes=1 backend=cuda
+jsonl:            search_lab/results/gumbel/gumbel_vs2700_s128_g40_seed23.jsonl
+pgn:              search_lab/results/gumbel/gumbel_vs2700_s128_g40_seed23.pgn
+
+<UciProtocol (pid=38451)>: stderr >> Loading weights file from: data/leela/t1-256x10-distilled.pb.gz
+<UciProtocol (pid=38451)>: stderr >> CUDA Runtime version: 13.0.0
+<UciProtocol (pid=38451)>: stderr >> Latest version of CUDA supported by the driver: 13.0.0
+<UciProtocol (pid=38451)>: stderr >> Compiled with CUTLASS enabled
+<UciProtocol (pid=38451)>: stderr >> GPU: NVIDIA GeForce RTX 4060 Laptop GPU
+<UciProtocol (pid=38451)>: stderr >> GPU memory: 7.62262 Gb
+<UciProtocol (pid=38451)>: stderr >> GPU clock frequency: 2250 MHz
+<UciProtocol (pid=38451)>: stderr >> GPU compute capability: 8.9
+<UciProtocol (pid=38451)>: stderr >> L2 cache capacity: 33554432
+<UciProtocol (pid=38451)>: stderr >> WARNING: you will probably get better performance from the cuda-fp16 backend.
+[gumbel 1/40] as white result=1/2-1/2 W/D/L=0/1/0 score=0.5 rate=0.500 elo=2700 elapsed=0.6m eta=21.9m
+[gumbel 2/40] as black result=1-0     W/D/L=0/1/1 score=0.5 rate=0.250 elo=2509 elapsed=0.7m eta=13.9m
+[gumbel 3/40] as white result=1-0     W/D/L=1/1/1 score=1.5 rate=0.500 elo=2700 elapsed=1.4m eta=17.2m
+[gumbel 4/40] as black result=1-0     W/D/L=1/1/2 score=1.5 rate=0.375 elo=2611 elapsed=1.7m eta=15.3m
+[gumbel 5/40] as white result=1/2-1/2 W/D/L=1/2/2 score=2.0 rate=0.400 elo=2630 elapsed=2.3m eta=15.8m
+[gumbel 6/40] as black result=0-1     W/D/L=2/2/2 score=3.0 rate=0.500 elo=2700 elapsed=2.8m eta=15.9m
+[gumbel 7/40] as white result=0-1     W/D/L=2/2/3 score=3.0 rate=0.429 elo=2650 elapsed=3.1m eta=14.4m
+[gumbel 8/40] as black result=1-0     W/D/L=2/2/4 score=3.0 rate=0.375 elo=2611 elapsed=3.2m eta=12.8m
+[gumbel 9/40] as white result=1/2-1/2 W/D/L=2/3/4 score=3.5 rate=0.389 elo=2621 elapsed=3.7m eta=12.7m
+[gumbel 10/40] as black result=1/2-1/2 W/D/L=2/4/4 score=4.0 rate=0.400 elo=2630 elapsed=3.9m eta=11.7m
+[gumbel 11/40] as white result=0-1     W/D/L=2/4/5 score=4.0 rate=0.364 elo=2603 elapsed=4.1m eta=10.9m
+[gumbel 12/40] as black result=1/2-1/2 W/D/L=2/5/5 score=4.5 rate=0.375 elo=2611 elapsed=4.5m eta=10.6m
+[gumbel 13/40] as white result=0-1     W/D/L=2/5/6 score=4.5 rate=0.346 elo=2590 elapsed=5.1m eta=10.5m
+[gumbel 14/40] as black result=1-0     W/D/L=2/5/7 score=4.5 rate=0.321 elo=2570 elapsed=5.5m eta=10.3m
+[gumbel 15/40] as white result=1/2-1/2 W/D/L=2/6/7 score=5.0 rate=0.333 elo=2580 elapsed=5.9m eta=9.9m
+[gumbel 16/40] as black result=1-0     W/D/L=2/6/8 score=5.0 rate=0.312 elo=2563 elapsed=6.3m eta=9.5m
+[gumbel 17/40] as white result=0-1     W/D/L=2/6/9 score=5.0 rate=0.294 elo=2548 elapsed=6.9m eta=9.3m
+[gumbel 18/40] as black result=1-0     W/D/L=2/6/10 score=5.0 rate=0.278 elo=2534 elapsed=7.4m eta=9.0m
+[gumbel 19/40] as white result=0-1     W/D/L=2/6/11 score=5.0 rate=0.263 elo=2521 elapsed=8.0m eta=8.9m
+[gumbel 20/40] as black result=1-0     W/D/L=2/6/12 score=5.0 rate=0.250 elo=2509 elapsed=8.2m eta=8.2m
+[gumbel 21/40] as white result=1/2-1/2 W/D/L=2/7/12 score=5.5 rate=0.262 elo=2520 elapsed=8.5m eta=7.7m
+[gumbel 22/40] as black result=1/2-1/2 W/D/L=2/8/12 score=6.0 rate=0.273 elo=2530 elapsed=8.7m eta=7.1m
+[gumbel 23/40] as white result=1-0     W/D/L=3/8/12 score=7.0 rate=0.304 elo=2556 elapsed=9.4m eta=6.9m
+[gumbel 24/40] as black result=1-0     W/D/L=3/8/13 score=7.0 rate=0.292 elo=2546 elapsed=9.5m eta=6.3m
+[gumbel 25/40] as white result=1/2-1/2 W/D/L=3/9/13 score=7.5 rate=0.300 elo=2553 elapsed=10.0m eta=6.0m
+[gumbel 26/40] as black result=1-0     W/D/L=3/9/14 score=7.5 rate=0.288 elo=2543 elapsed=10.4m eta=5.6m
+[gumbel 27/40] as white result=1/2-1/2 W/D/L=3/10/14 score=8.0 rate=0.296 elo=2550 elapsed=11.2m eta=5.4m
+[gumbel 28/40] as black result=1-0     W/D/L=3/10/15 score=8.0 rate=0.286 elo=2541 elapsed=11.4m eta=4.9m
+[gumbel 29/40] as white result=1/2-1/2 W/D/L=3/11/15 score=8.5 rate=0.293 elo=2547 elapsed=12.2m eta=4.6m
+[gumbel 30/40] as black result=1-0     W/D/L=3/11/16 score=8.5 rate=0.283 elo=2539 elapsed=12.6m eta=4.2m
+[gumbel 31/40] as white result=1/2-1/2 W/D/L=3/12/16 score=9.0 rate=0.290 elo=2545 elapsed=13.1m eta=3.8m
+[gumbel 32/40] as black result=1/2-1/2 W/D/L=3/13/16 score=9.5 rate=0.297 elo=2550 elapsed=13.7m eta=3.4m
+[gumbel 33/40] as white result=0-1     W/D/L=3/13/17 score=9.5 rate=0.288 elo=2543 elapsed=14.3m eta=3.0m
+[gumbel 34/40] as black result=1-0     W/D/L=3/13/18 score=9.5 rate=0.279 elo=2535 elapsed=14.5m eta=2.6m
+[gumbel 35/40] as white result=0-1     W/D/L=3/13/19 score=9.5 rate=0.271 elo=2528 elapsed=15.2m eta=2.2m
+[gumbel 36/40] as black result=1-0     W/D/L=3/13/20 score=9.5 rate=0.264 elo=2522 elapsed=15.5m eta=1.7m
+[gumbel 37/40] as white result=0-1     W/D/L=3/13/21 score=9.5 rate=0.257 elo=2515 elapsed=16.0m eta=1.3m
+[gumbel 38/40] as black result=1-0     W/D/L=3/13/22 score=9.5 rate=0.250 elo=2509 elapsed=16.3m eta=0.9m
+[gumbel 39/40] as white result=1/2-1/2 W/D/L=3/14/22 score=10.0 rate=0.256 elo=2515 elapsed=16.9m eta=0.4m
+[gumbel 40/40] as black result=1-0     W/D/L=3/14/23 score=10.0 rate=0.250 elo=2509 elapsed=17.3m eta=0.0m

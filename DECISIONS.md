@@ -1306,3 +1306,96 @@ paths, both away from fine-tuning the 15M net:
 2. **Ceiling / scaling-law write-up** — the blog deliverable: an honest ~2500-2600
    ceiling with every cheap lever fenced off with receipts (D35-D60), and scale
    quantified as the only way up.
+
+---
+
+## D61 , gate Gumbel AlphaZero search before any more RL training
+
+D49 showed that ordinary AlphaZero at 128 simulations produced a diffuse visit
+target and weakened the sharp supervised policy. D50 tested PUCT tuning and
+alpha-beta, but did not test the one search method designed specifically for
+policy improvement with a small simulation budget: Gumbel AlphaZero.
+
+The experiment is search-only. It does not train a checkpoint and does not
+change `kibitzer/search.py`. The implementation lives under `search_lab/` and
+follows the published Gumbel AlphaZero mechanism plus DeepMind's `mctx`
+reference implementation:
+
+- Sequential Halving at the root instead of PUCT plus Dirichlet noise.
+- At most 16 root actions considered from a 128-evaluation budget.
+- Completed Q values use the prior-weighted mixed node value for unvisited
+  actions, min-max rescaling, `value_scale=0.1`, and `maxvisit_init=50`.
+- Interior nodes use deterministic visitation toward
+  `softmax(log_policy + completed_q)`.
+- External evaluation uses `gumbel_scale=0`, the deterministic setting for a
+  perfect-information evaluation game.
+
+References:
+
+- Gumbel AlphaZero: https://openreview.net/forum?id=bERaNdoegnO
+- DeepMind `mctx`: https://github.com/google-deepmind/mctx
+- uncertainty-guided AlphaZero branching, reserved for a later training stage
+  only if search passes: https://openreview.net/forum?id=3q6lJTN45T
+
+Cheap paired gate:
+
+```bash
+bash search_lab/run_gumbel_gate.sh
+```
+
+Protocol:
+
+| field | value |
+|---|---:|
+| checkpoint | `runs/tactical/tactical_repair.pt` |
+| opponent | Leela-2700 proxy, nodes 1, CUDA |
+| search budget | 128 network evaluations per move |
+| cheap gate | 40 PUCT games plus 40 Gumbel games |
+| seed | 23 |
+| pairing | identical openings and colors |
+| outputs | `search_lab/results/gumbel/` |
+
+Decision rule:
+
+1. `gumbel_score - puct_score >= 0.03`: promising only, then run the paired
+   80-game confirmation with `GAMES=80 bash search_lab/run_gumbel_gate.sh`.
+2. Delta at or below `-0.03`: reject Gumbel search and do not train from it.
+3. Absolute delta below `0.03`: no external signal. Stop unless the locked
+   move-regret diagnostic independently improves.
+4. Only an externally confirmed search gain unlocks Gumbel self-play with
+   uncertainty-guided branches. A search failure closes this RL path and sends
+   the project back to spatial-depth and data scaling.
+
+### Result: REJECTED at the 40-game paired gate
+
+The gate completed with the same checkpoint, opponent, openings, colors, seed,
+and 128 network-evaluation budget for both methods:
+
+| search | W/D/L | score rate | implied Elo |
+|---|---:|---:|---:|
+| normal PUCT | 6 / 11 / 23 | 0.2875 | 2542 |
+| Gumbel | 3 / 14 / 23 | 0.2500 | 2509 |
+
+The paired score-rate delta was `-0.0375`, with bootstrap 95% interval
+`[-0.200, +0.125]`. The interval includes zero and positive values, so this does
+not prove that Gumbel search is intrinsically weaker. It does prove that this
+configuration produced no positive evidence under the preregistered gate. Its
+point estimate crossed the `-0.03` stop line rather than the `+0.03` continue
+line.
+
+The result shape is also clear: both methods lost 23 games, but Gumbel scored
+three fewer wins and three more draws. It did not reduce the failure count
+against the external opponent.
+
+Decision: do not run the 80-game confirmation, do not generate Gumbel self-play,
+and do not tune `gumbel_scale`, action count, or completed-Q constants on this
+same 40-game gate. Normal PUCT remains the production search. The next model
+experiment moves to deeper 64-square spatial reasoning and data scaling, not
+another search or RL variant.
+
+Artifacts:
+
+- `search_lab/results/gumbel/puct_vs2700_s128_g40_seed23.{jsonl,pgn,log}`
+- `search_lab/results/gumbel/gumbel_vs2700_s128_g40_seed23.{jsonl,pgn,log}`
+- `search_lab/results/gumbel/fig_gumbel_score_curve.png`
+- `search_lab/results/gumbel/fig_gumbel_wdl_elo.png`

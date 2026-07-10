@@ -55,9 +55,53 @@ Q(s) = value_net(s), then recursively extend only capture moves while budget rem
 - `puct_stacked`: combines FPU and prior pruning.
 - `alphabeta`: iterative deepening negamax alpha-beta using policy priors only for move ordering.
 - `alphabeta_quiescence`: alpha-beta plus capture-only quiescence at leaves.
+- `gumbel`: Gumbel AlphaZero selection with Sequential Halving at the root,
+  completed-Q policy improvement, and deterministic improved-policy selection
+  below the root. This experiment is isolated from `kibitzer/search.py`.
+
+## Gumbel gate
+
+Run the cheap paired external gate:
+
+```bash
+bash search_lab/run_gumbel_gate.sh
+```
+
+It runs normal PUCT and Gumbel search from the same `tactical_repair.pt`
+checkpoint for 40 games each against Leela-2700. Both sides use the same
+openings, colors, seed, and 128 network evaluations per move. No weights are
+trained or changed.
+
+Generated JSONL, PGN, logs, and plots go to `search_lab/results/gumbel/`.
+
+### Result
+
+| search | W/D/L | score rate | implied Elo |
+|---|---:|---:|---:|
+| normal PUCT | 6 / 11 / 23 | 0.2875 | 2542 |
+| Gumbel | 3 / 14 / 23 | 0.2500 | 2509 |
+
+Paired delta: `-0.0375`, with bootstrap 95% interval `[-0.200, +0.125]`.
+The interval is inconclusive, but the point estimate crossed the preregistered
+`-0.03` stop line instead of the `+0.03` continue line. Gumbel had the same 23
+losses while converting three PUCT wins into draws. The 80-game confirmation
+and Gumbel self-play stage are rejected.
+
+![Gumbel cumulative score and paired delta](results/gumbel/fig_gumbel_score_curve.png)
+
+![Gumbel WDL and implied Elo](results/gumbel/fig_gumbel_wdl_elo.png)
+
+The 80-game command is retained for reproducibility, but should only be used
+when a future configuration clears the cheap gate:
+
+```bash
+GAMES=80 bash search_lab/run_gumbel_gate.sh
+```
 
 ## Read
 
-PUCT variants land inside the baseline self-match noise band. Alpha-beta collapses despite similar or higher
-evaluation spend, which points at the value head being too weak/miscalibrated for minimax leaf evaluation. The
-policy-guided averaging in PUCT is still the safer search mode for this model.
+PUCT variants land inside the baseline self-match noise band. Alpha-beta
+collapses despite similar or higher evaluation spend, which points at the value
+head being too weak or miscalibrated for minimax leaf evaluation. Gumbel search
+also missed its external continue gate. Normal PUCT remains the search method
+for this checkpoint.

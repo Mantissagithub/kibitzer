@@ -1,0 +1,64 @@
+<UciProtocol (pid=17785)>: stderr >> [1m[31m       _
+<UciProtocol (pid=17785)>: stderr >> |   _ | |
+<UciProtocol (pid=17785)>: stderr >> |_ |_ |_|[0m v0.33.0-dev+git.d8ce482 built Jul  7 2026
+<UciProtocol (pid=17785)>: stderr >> Search algorithm: classic
+============================================================
+ KIBITZER PUCT SEARCH GATE
+============================================================
+checkpoint:       runs/tactical/tactical_repair.pt
+search:           puct
+games/sims/seed:  40 / 128 / 23
+opponent:         Leela-2700 nodes=1 backend=cuda
+jsonl:            search_lab/results/gumbel/puct_vs2700_s128_g40_seed23.jsonl
+pgn:              search_lab/results/gumbel/puct_vs2700_s128_g40_seed23.pgn
+
+<UciProtocol (pid=17785)>: stderr >> Loading weights file from: data/leela/t1-256x10-distilled.pb.gz
+<UciProtocol (pid=17785)>: stderr >> CUDA Runtime version: 13.0.0
+<UciProtocol (pid=17785)>: stderr >> Latest version of CUDA supported by the driver: 13.0.0
+<UciProtocol (pid=17785)>: stderr >> Compiled with CUTLASS enabled
+<UciProtocol (pid=17785)>: stderr >> GPU: NVIDIA GeForce RTX 4060 Laptop GPU
+<UciProtocol (pid=17785)>: stderr >> GPU memory: 7.62262 Gb
+<UciProtocol (pid=17785)>: stderr >> GPU clock frequency: 2250 MHz
+<UciProtocol (pid=17785)>: stderr >> GPU compute capability: 8.9
+<UciProtocol (pid=17785)>: stderr >> L2 cache capacity: 33554432
+<UciProtocol (pid=17785)>: stderr >> WARNING: you will probably get better performance from the cuda-fp16 backend.
+[puct 1/40] as white result=0-1     W/D/L=0/0/1 score=0.0 rate=0.000 elo=-inf elapsed=0.4m eta=15.1m
+[puct 2/40] as black result=1-0     W/D/L=0/0/2 score=0.0 rate=0.000 elo=-inf elapsed=0.6m eta=10.9m
+[puct 3/40] as white result=1/2-1/2 W/D/L=0/1/2 score=0.5 rate=0.167 elo=2420 elapsed=0.7m eta=8.7m
+[puct 4/40] as black result=1/2-1/2 W/D/L=0/2/2 score=1.0 rate=0.250 elo=2509 elapsed=1.0m eta=9.4m
+[puct 5/40] as white result=0-1     W/D/L=0/2/3 score=1.0 rate=0.200 elo=2459 elapsed=1.4m eta=10.1m
+[puct 6/40] as black result=1-0     W/D/L=0/2/4 score=1.0 rate=0.167 elo=2420 elapsed=1.9m eta=10.9m
+[puct 7/40] as white result=1/2-1/2 W/D/L=0/3/4 score=1.5 rate=0.214 elo=2474 elapsed=2.4m eta=11.2m
+[puct 8/40] as black result=1-0     W/D/L=0/3/5 score=1.5 rate=0.188 elo=2445 elapsed=2.6m eta=10.2m
+[puct 9/40] as white result=0-1     W/D/L=0/3/6 score=1.5 rate=0.167 elo=2420 elapsed=3.1m eta=10.8m
+[puct 10/40] as black result=0-1     W/D/L=1/3/6 score=2.5 rate=0.250 elo=2509 elapsed=3.6m eta=10.8m
+[puct 11/40] as white result=0-1     W/D/L=1/3/7 score=2.5 rate=0.227 elo=2487 elapsed=3.8m eta=9.9m
+[puct 12/40] as black result=1-0     W/D/L=1/3/8 score=2.5 rate=0.208 elo=2468 elapsed=4.1m eta=9.5m
+[puct 13/40] as white result=1-0     W/D/L=2/3/8 score=3.5 rate=0.269 elo=2527 elapsed=4.6m eta=9.6m
+[puct 14/40] as black result=1-0     W/D/L=2/3/9 score=3.5 rate=0.250 elo=2509 elapsed=4.9m eta=9.1m
+[puct 15/40] as white result=0-1     W/D/L=2/3/10 score=3.5 rate=0.233 elo=2493 elapsed=5.4m eta=9.1m
+[puct 16/40] as black result=1-0     W/D/L=2/3/11 score=3.5 rate=0.219 elo=2479 elapsed=5.9m eta=8.9m
+[puct 17/40] as white result=1-0     W/D/L=3/3/11 score=4.5 rate=0.265 elo=2523 elapsed=6.5m eta=8.8m
+[puct 18/40] as black result=1-0     W/D/L=3/3/12 score=4.5 rate=0.250 elo=2509 elapsed=6.8m eta=8.3m
+[puct 19/40] as white result=1/2-1/2 W/D/L=3/4/12 score=5.0 rate=0.263 elo=2521 elapsed=7.3m eta=8.1m
+[puct 20/40] as black result=1-0     W/D/L=3/4/13 score=5.0 rate=0.250 elo=2509 elapsed=7.5m eta=7.5m
+[puct 21/40] as white result=1/2-1/2 W/D/L=3/5/13 score=5.5 rate=0.262 elo=2520 elapsed=8.3m eta=7.5m
+[puct 22/40] as black result=1/2-1/2 W/D/L=3/6/13 score=6.0 rate=0.273 elo=2530 elapsed=8.8m eta=7.2m
+[puct 23/40] as white result=1/2-1/2 W/D/L=3/7/13 score=6.5 rate=0.283 elo=2538 elapsed=8.9m eta=6.6m
+[puct 24/40] as black result=1-0     W/D/L=3/7/14 score=6.5 rate=0.271 elo=2528 elapsed=9.1m eta=6.1m
+[puct 25/40] as white result=0-1     W/D/L=3/7/15 score=6.5 rate=0.260 elo=2518 elapsed=9.7m eta=5.8m
+[puct 26/40] as black result=1-0     W/D/L=3/7/16 score=6.5 rate=0.250 elo=2509 elapsed=10.0m eta=5.4m
+[puct 27/40] as white result=0-1     W/D/L=3/7/17 score=6.5 rate=0.241 elo=2500 elapsed=10.3m eta=4.9m
+[puct 28/40] as black result=1-0     W/D/L=3/7/18 score=6.5 rate=0.232 elo=2492 elapsed=10.6m eta=4.6m
+[puct 29/40] as white result=0-1     W/D/L=3/7/19 score=6.5 rate=0.224 elo=2484 elapsed=10.9m eta=4.1m
+[puct 30/40] as black result=1/2-1/2 W/D/L=3/8/19 score=7.0 rate=0.233 elo=2493 elapsed=11.3m eta=3.8m
+[puct 31/40] as white result=0-1     W/D/L=3/8/20 score=7.0 rate=0.226 elo=2486 elapsed=11.7m eta=3.4m
+[puct 32/40] as black result=1-0     W/D/L=3/8/21 score=7.0 rate=0.219 elo=2479 elapsed=12.0m eta=3.0m
+[puct 33/40] as white result=1/2-1/2 W/D/L=3/9/21 score=7.5 rate=0.227 elo=2487 elapsed=12.3m eta=2.6m
+[puct 34/40] as black result=1-0     W/D/L=3/9/22 score=7.5 rate=0.221 elo=2481 elapsed=12.6m eta=2.2m
+[puct 35/40] as white result=1/2-1/2 W/D/L=3/10/22 score=8.0 rate=0.229 elo=2489 elapsed=13.3m eta=1.9m
+[puct 36/40] as black result=0-1     W/D/L=4/10/22 score=9.0 rate=0.250 elo=2509 elapsed=13.8m eta=1.5m
+[puct 37/40] as white result=1-0     W/D/L=5/10/22 score=10.0 rate=0.270 elo=2527 elapsed=14.3m eta=1.2m
+[puct 38/40] as black result=1-0     W/D/L=5/10/23 score=10.0 rate=0.263 elo=2521 elapsed=14.6m eta=0.8m
+[puct 39/40] as white result=1/2-1/2 W/D/L=5/11/23 score=10.5 rate=0.269 elo=2527 elapsed=15.0m eta=0.4m
+[puct 40/40] as black result=0-1     W/D/L=6/11/23 score=11.5 rate=0.287 elo=2542 elapsed=15.5m eta=0.0m
