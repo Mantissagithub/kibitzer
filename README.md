@@ -186,6 +186,25 @@ both experiments converged: offline metrics don't predict play. the value head i
 
 [full D52 report](reports/value_head/REPORT.md)
 
+### rl fine-tuning (grpo + dppo)
+
+D60 - genuine RL as the last non-scale lever. critic-free GRPO on an *external* verifiable reward (game outcome vs an adaptive stockfish elo ladder), with 128-sim searched rollouts, an exact total-variation DPPO trust region over the legal moves, and a KL anchor to the base. no self-play targets, no value critic - built specifically to dodge the "beats its own sibling, regresses vs real opponents" trap.
+
+![grpo ladder climb](reports/grpo/fig1_ladder_climb.png)
+
+the adaptive ladder climbed 1900 → 2500 and the model held ~54% there. but that climb is exactly what a *static* 2500 model produces (the ladder only steps ±100/iter until it hits the model's level), so it confirms the base's strength, not a gain.
+
+![grpo external gate](reports/grpo/fig3_external_gate.png)
+
+on the leela-2700 gate at the identical config as the base:
+
+| checkpoint | W/D/L | score | implied elo |
+|---|---|---|---|
+| grpo_v5 (best) | 12/20/48 | 0.275 | ~2532 |
+| tactical_repair (base) | 12/23/45 | 0.294 | ~2548 |
+
+flat within noise - identical wins (12=12), three base draws turned into losses. the fixed-opponent probe@2000 was flat too (0.9125 → 0.900). GRPO held the model's strength but added nothing externally: the 9th non-scale lever to hold-or-lose against the external yardstick. [full plots + report](reports/grpo/README.md).
+
 ## experiment log
 
 this repo is closer to a lab notebook than a clean model release. the short version:
@@ -199,6 +218,7 @@ this repo is closer to a lab notebook than a clean model release. the short vers
 | value-head repair | improved offline value metrics, regressed real play |
 | tactical repair | small external gain; R1 kept, R2 rejected |
 | teacher-preference repair | first DPO-style attempt rejected; offline pair metrics did not transfer |
+| grpo + dppo rl (D60) | neutral; searched rollouts + trust region held ~2500 strength, no external gain (0.275 vs base 0.294) |
 | joint scratch / point tweaks | mostly negative or inconclusive |
 
 the longer failure log is in **[DECISIONS.md](DECISIONS.md)**; the scaling summary is in **[docs/scaling_study/README.md](docs/scaling_study/README.md)**.
