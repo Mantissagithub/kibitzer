@@ -1458,3 +1458,48 @@ better representations feeding it, i.e. the scale / deeper-encoder + real-poolin
 (which the interp's mean-pool-bottleneck finding independently points at). The
 `--value-scale` passthrough stays in `maia_gauntlet.py` (default 1.0, now confirmed
 correct). Artifacts: `reports/value_scale_sweep/`.
+
+## D63 , PUCT simulation-count sweep shows the checkpoint is compute-starved
+
+D62 closed the "trust the value less" path. The next question was whether the
+current checkpoint had already saturated at the 128-sim external gate, or whether
+the gate was simply too shallow to extract its latent strength.
+
+Experiment: hold the model fixed at `runs/tactical/tactical_repair.pt`, keep the
+same Leela/Maia-2700 proxy at nodes=1, use the same seed 23 opening/color schedule,
+and sweep only the PUCT simulation count. Each point is 40 games.
+
+| sims | W/D/L | score | Elo delta | implied proxy Elo |
+|---:|---:|---:|---:|---:|
+| 64 | 3 / 1 / 36 | 0.087 | -407 | 2293 |
+| 128 | 6 / 11 / 23 | 0.287 | -158 | 2542 |
+| 256 | 5 / 16 / 19 | 0.325 | -127 | 2573 |
+| 512 | 29 / 8 / 3 | 0.825 | +269 | 2969 |
+
+The control reproduced the known tactical R1 seed-23 region: `128 sims = 0.287`,
+close to the 80-game 0.294 reference. 256 sims only nudged the score to 0.325,
+but 512 sims caused a real phase change: losses collapsed from 23 to 3 and the
+score jumped by +0.537 over the 128-sim control.
+
+Read: this is not a new trained model and not an intrinsic 2969 Elo claim. The
+opponent is searchless Leela/Maia at nodes=1, while Kibitzer is spending 512
+network evaluations per move. So the result is asymmetric by design. What it
+does prove is narrower and useful: the 15.2M tactical checkpoint was
+compute-starved at the 128-sim gate, and deeper PUCT can extract much more
+strength from the same weights.
+
+Decision: stop treating 128 sims as the ceiling. Keep 128 as the cheap gate for
+iteration, but run expensive confirmation at 1024/2048 sims on rented GPUs before
+changing the public default. The confirmation should include 2700 plus stronger
+Leela checkpoints, because a one-node 2700 proxy may be too easy once Kibitzer
+gets deep search.
+
+Artifacts:
+
+- `reports/sims_sweep/kibitzer_vs2700_s64_g40_seed23.{jsonl,pgn}`
+- `reports/sims_sweep/kibitzer_vs2700_s128_g40_seed23.{jsonl,pgn}`
+- `reports/sims_sweep/kibitzer_vs2700_s256_g40_seed23.{jsonl,pgn}`
+- `reports/sims_sweep/kibitzer_vs2700_s512_g40_seed23.{jsonl,pgn}`
+- `reports/sims_sweep/fig_sims_sweep.png`
+- `reports/sims_sweep/fig_sims_elo.png`
+- `reports/sims_sweep/README.md`

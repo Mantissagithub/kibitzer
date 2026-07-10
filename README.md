@@ -137,6 +137,28 @@ folder-level plots:
 - [regret-start plots](reports/regret_start/README.md)
 - [az eval plots](reports/az/README.md)
 
+### search budget sweep
+
+D63 is the first clearly positive non-training signal after the repair/RL failures: the same
+`tactical_repair.pt` checkpoint gets much stronger when PUCT is allowed to search deeper.
+Only the simulation count changes; the opponent stays the Leela/Maia-2700 proxy at nodes=1.
+
+![sims sweep score and wdl](reports/sims_sweep/fig_sims_sweep.png)
+
+![sims sweep implied elo](reports/sims_sweep/fig_sims_elo.png)
+
+| sims | W/D/L | score | implied proxy elo |
+|---:|---:|---:|---:|
+| 64 | 3 / 1 / 36 | 0.087 | 2293 |
+| 128 | 6 / 11 / 23 | 0.287 | 2542 |
+| 256 | 5 / 16 / 19 | 0.325 | 2573 |
+| 512 | 29 / 8 / 3 | 0.825 | 2969 |
+
+takeaway: the checkpoint was compute-starved at the 128-sim gate. 512 sims does not mean
+the model itself is 2969 Elo; it means deep PUCT extracts a lot more strength against a
+searchless external yardstick. the next confirmation is a rented-GPU 1024/2048 sweep against
+2700 plus stronger Leela checkpoints. [full report](reports/sims_sweep/README.md).
+
 ### az self-play
 
 alphazero-style self-play: the model plays against itself using PUCT search with dirichlet root noise, trains on the visit distribution + game outcome, then we match the new model vs the old one.
@@ -220,7 +242,7 @@ this repo is closer to a lab notebook than a clean model release. the short vers
 | line | result |
 |---|---|
 | scaling/data | worked best; data mattered more than more params past ~15m |
-| search depth | helped play, but mostly as an inference-time crutch |
+| search depth | strongest live positive signal; 512 sims jumped from 0.287 to 0.825 vs the Leela-2700 proxy |
 | az self-play | beat its own base, regressed vs maia/leela-style opponents |
 | td-leaf | fixed easy curriculum rungs, stalled around 1900 |
 | value-head repair | improved offline value metrics, regressed real play |
@@ -236,7 +258,7 @@ the longer failure log is in **[DECISIONS.md](DECISIONS.md)**; the scaling summa
 what we know works:
 - **[scaling the backbone](docs/scaling_study/design.md)** (clean power law, more data > more params past ~15m)
 - **[opd distillation](reports/opd/REPORT.md)** (lc0 teacher transfers well)
-- **[more search sims](reports/search_depth/)** (= stronger play, but it's an inference crutch)
+- **[more search sims](reports/sims_sweep/README.md)** (= stronger play, but it's an inference crutch)
 
 what we're trying next:
 - **[teacher-preference repair](scripts/run_preference_repair.sh)** - DPO-style move-pair repair from Stockfish-ranked hard positions
