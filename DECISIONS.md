@@ -1399,3 +1399,62 @@ Artifacts:
 - `search_lab/results/gumbel/gumbel_vs2700_s128_g40_seed23.{jsonl,pgn,log}`
 - `search_lab/results/gumbel/fig_gumbel_score_curve.png`
 - `search_lab/results/gumbel/fig_gumbel_wdl_elo.png`
+
+## D62 , interp-motivated value_scale sweep on the external gate (in progress)
+
+The mechanistic-interp pass (`interp/`) gave one directly actionable, non-architectural
+knob. Findings: the value head lands on the correct final sign but is **noisy and late**
+(win value stays negative ~50 plies then flips; the loss briefly reads +0.39 before
+diving), and per-square encoder structure is crushed by the mean-pool. The value point
+is the cheap one to act on, because PUCT backs the value up at full weight
+(`kibitzer/search.py:64`, `exploitation = -value_scale * child.mean_value`) and the
+external Leela-2700 gate (`scripts/maia_gauntlet.py`) hardcoded `value_scale=1.0`. So
+every external number we own, including tactical_repair's 0.294, trusts a demonstrably
+shaky value head completely.
+
+Hypothesis: down-weighting the value in the search backup (lean on the reliable policy
+prior) holds or improves external play, at zero training cost. This is not a D50 redo:
+D50 swept `value_scale` only on the **offline move-regret** metric, never on the external
+play gate.
+
+Change (minimal, non-architectural): added `--value-scale` to `maia_gauntlet.py` and
+threaded it into `puct_search` (`value_scale` was already a first-class search param;
+`eval_search_vs_stockfish.py` already exposed it). No model/config/training change.
+
+Experiment (`scripts/run_value_scale_sweep.sh`): tactical_repair vs Leela-2700,
+`value_scale ∈ {1.0, 0.75, 0.5, 0.25, 0.0}`, 40 games @128 sims, seed 23 (1.0 = control,
+must reproduce ~0.294; 0.0 = policy-only search, "does the value head help search at
+all"). Optional SF-1900/2300 cross-check via `LADDER=1`. ~3–4h, no training.
+
+Decision rule: a `value_scale < 1.0` beating the 1.0 control by ≥ +0.03 (confirmed at 80
+games) and holding on the SF ladder → adopt as the default in the gate + UCI + eval, log
+as a free interp-derived gain. Flat → value head is load-bearing despite being noisy,
+lever closes. `value_scale=0.0` clearly best → the scalar value head is net-negative in
+search, which motivates a value-head replacement on the later architecture track.
+
+### Result: REJECTED, and it flips the interp read (value head is load-bearing)
+
+The sweep regressed **monotonically** as the value weight dropped (Leela-2700, 40g @128
+sims, seed 23):
+
+| value_scale | W/D/L | score | implied Elo |
+|---|---:|---:|---:|
+| 1.0 (control) | 6 / 11 / 23 | 0.287 | 2542 |
+| 0.75 | 3 / 7 / 30 | 0.163 | 2415 |
+| 0.5 | 2 / 1 / 37 | 0.062 | 2230 |
+
+The 1.0 control reproduced ~0.29 (nothing else drifted), and every notch away from the
+value head collapsed play harder; 0.25/0.0 were not worth completing given the monotone
+trend. So the interp's "value is noisy and late" was true but the inference was wrong:
+the value backup is **heavily load-bearing**. Even a shaky value signal is what turns the
+raw policy prior into ~2500 play, and starving it drops the search back toward the raw
+prior, which Leela-2700 punishes hard.
+
+Verdict: value down-weighting is the **wrong direction**; lever closed. Combined with D52
+this fences the value head from both sides: making it *bigger/better-offline* hurt play
+(D52), and *trusting it less* hurts play worse (D62). The value head is weak **and**
+essential and cannot be cheaply routed around or upgraded. The only remaining fix is
+better representations feeding it, i.e. the scale / deeper-encoder + real-pooling track
+(which the interp's mean-pool-bottleneck finding independently points at). The
+`--value-scale` passthrough stays in `maia_gauntlet.py` (default 1.0, now confirmed
+correct). Artifacts: `reports/value_scale_sweep/`.

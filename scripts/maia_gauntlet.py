@@ -48,14 +48,14 @@ def open_maia(lc0_path: str, weights: str, backend: str) -> chess.engine.SimpleE
     )
 
 
-def play_game(*, evaluator, engine, network_color, opening, simulations, maia_nodes, max_plies):
+def play_game(*, evaluator, engine, network_color, opening, simulations, maia_nodes, max_plies, value_scale=1.0):
     board = opening
     game = chess.pgn.Game.from_board(board)
     node = game.end()
     plies = 0
     while not board.is_game_over(claim_draw=True) and plies < max_plies:
         if board.turn == network_color:
-            move = puct_search(board, evaluator, simulations=simulations).move
+            move = puct_search(board, evaluator, simulations=simulations, value_scale=value_scale).move
         else:
             played = engine.play(board, chess.engine.Limit(nodes=maia_nodes))
             if played.move is None:
@@ -92,6 +92,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--maia-nodes", type=int, default=1)
     p.add_argument("--games", type=int, default=40)
     p.add_argument("--simulations", type=int, default=256)
+    p.add_argument("--value-scale", type=float, default=1.0, help="puct value-backup weight; <1 trusts the noisy value head less")
     p.add_argument("--max-plies", type=int, default=200)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out-jsonl", type=Path, required=True)
@@ -132,7 +133,7 @@ def main() -> None:
             game, result = play_game(
                 evaluator=evaluator, engine=engine, network_color=network_color,
                 opening=opening, simulations=args.simulations, maia_nodes=args.maia_nodes,
-                max_plies=args.max_plies,
+                max_plies=args.max_plies, value_scale=args.value_scale,
             )
             if result == "1/2-1/2":
                 score = 0.5
