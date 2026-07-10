@@ -436,3 +436,186 @@ Saved stopped-run evidence:
 - `reports/preference_repair/preference_repair_anchor_r1_vs2700_s128_g80_seed31_stopped62.jsonl`
 - `reports/preference_repair/preference_repair_anchor_r1_vs2700_s128_g80_seed31_stopped62.log`
 - `reports/preference_repair/preference_repair_anchor_r1_vs2700_s128_g80_seed31_stopped62.pgn`
+
+## 2026-07-10: Genuine RL branch — GRPO + exact-divergence DPPO on external reward
+
+Every repair branch above (regret, regret-start self-play, tactical R2, DPO/AWAC
+preference) shares the same failure signature: it trains on the model's own
+outputs and/or drifts off the base, beats a sibling, and stalls or regresses
+against the external Leela/Maia-2700 yardstick. tactical R1
+(`runs/tactical/tactical_repair.pt`, 0.294 @128 sims / ~2548 proxy-Elo) is still
+the only genuine external-gate win, and it is supervised, not RL.
+
+### Decision
+
+Try genuine RL — the one untried lever — but design it to structurally avoid
+both failure ingredients. Planned with Fable 5 against the user's research folio
+methods (GRPO, DPPO arXiv 2602.04879, MaxRL arXiv 2602.02710) and domain papers
+(GRPO-for-chess 2507.00726, policy-gradient-search 1904.03646). The bet:
+
+- **Critic-free GRPO** — group-relative z-score advantage replaces the value head
+  (the proven-dead lever, D52), so the frozen value head keeps 128-sim gate
+  search anchored.
+- **External verifiable reward** — game outcome vs a strength-capped Stockfish
+  ladder, never self-play visit targets. No sibling in the loop = nothing to
+  style-exploit.
+- **Exact-divergence DPPO trust region** — chess's ~30 legal moves let us compute
+  the full-distribution TV divergence exactly (no binary/top-k approximation),
+  asymmetric mask keyed to δ=0.2, anchored to the rollout policy, plus a weak
+  KL(π‖base) β=0.05 to the frozen tactical base as a global anti-drift anchor.
+- **Search-based rollouts** — moves are selected by PUCT (default 64 sims, Dirichlet
+  root noise + an opening temperature schedule for group diversity), so the model
+  plays at its real searched strength; mu recorded is still the RAW prior so the
+  DPPO trust region fences the raw policy toward the base while GRPO pushes it
+  toward search-validated winners (expert-iteration flavor on external reward).
+- **Scope** policy head + final norm only, lr 1e-5, one epoch per fresh buffer.
+
+### Correction (searchless was wrong)
+
+First cut used raw-policy rollouts at temp 1.0 for speed. A diagnostic on
+`tactical_repair.pt` vs SF-1600 (no search) exposed why that is fatal: the policy
+is extremely sharp, so play collapses with temperature —
+
+| move selection | score vs SF-1600 |
+|---|---|
+| 128-sim search (the gate) | 1.000 |
+| greedy raw (temp 0) | 0.875 |
+| raw temp 0.3 | ~0.5 |
+| raw temp 0.5 | 0.167 |
+| raw temp 1.0 | 0.000 |
+
+At temp 1.0 the ~2500 model hangs pieces into a 1600 and the outcome reward
+becomes blunder-noise, not a measure of decision quality. Fix: rollouts now use
+PUCT search for move selection (strong play) with a temperature schedule only for
+opening spread. The searchless raw path is retained (sims=0) for the smoke/ablation
+only.
+
+### The objective and algorithm (exact math)
+
+**Notation.** State $s$ (a position where it is the model's turn) with legal moves
+$L(s)$; policy $\pi_\theta(a \mid s) = \mathrm{softmax}$ over the masked policy-head
+logits (mass only on $L(s)$). The rollout checkpoint's raw policy is
+$\mu = \pi_{\theta_{\text{old}}}$; the frozen tactical base is $\pi_{\text{base}}$
+(`tactical_repair.pt`, fixed for the whole run).
+
+**Rollout / behavior.** Games are played in groups; a group is $G$ games sharing one
+opening, color, and opponent Elo. Moves are chosen by PUCT (128 sims) with Dirichlet
+root noise and a temperature schedule on the visit counts. At every model ply we
+store $\big(s_t,\, a_t,\, \mu(\cdot \mid s_t),\, \text{group},\, \text{game}\big)$,
+where $a_t$ is the played move.
+
+**Reward (external, verifiable).** Terminal outcome of game $i$ from the model's
+point of view — no per-move value target, no learned critic:
+
+$$
+R_i = \begin{cases} 1 & \text{win} \\ \tfrac{1}{2} & \text{draw} \\ 0 & \text{loss} \end{cases}
+$$
+
+**Advantage (GRPO, critic-free).** z-score the game rewards inside each group $g$ and
+broadcast to every model ply $t$ of that game:
+
+$$
+\hat{A}_i = \frac{R_i - \frac{1}{|g|}\sum_{j \in g} R_j}
+{\sqrt{\frac{1}{|g|}\sum_{j \in g}\big(R_j - \bar{R}_g\big)^2} + \varepsilon},
+\qquad \hat{A}_t = \hat{A}_{\mathrm{game}(t)}, \qquad \varepsilon = 10^{-4}
+$$
+
+A group with a single distinct result has $\mathrm{std} = 0 \Rightarrow \hat{A} = 0$
+(no gradient — uninformative).
+
+**Importance ratio** (per played move):
+
+$$
+r_t = \frac{\pi_\theta(a_t \mid s_t)}{\mu(a_t \mid s_t)}
+$$
+
+**Exact DPPO trust region.** Total-variation distance over the legal moves only —
+exact, since $|L(s)| \approx 30$ (no binary / top-$k$ approximation needed):
+
+$$
+D_t = D_{\mathrm{TV}}\!\big(\pi_\theta(\cdot \mid s_t),\, \mu(\cdot \mid s_t)\big)
+= \frac{1}{2}\sum_{a \in L(s_t)} \big|\, \pi_\theta(a \mid s_t) - \mu(a \mid s_t) \,\big|
+$$
+
+**DPPO asymmetric mask** ($\delta = 0.2$) — block an update only when it pushes
+further in the reward-relevant direction past the trust radius; moves back toward
+$\mu$ are always allowed; no ratio clipping:
+
+$$
+m_t = \begin{cases}
+0, & \big(\hat{A}_t > 0 \,\wedge\, r_t > 1 \,\wedge\, D_t > \delta\big)
+   \;\vee\; \big(\hat{A}_t < 0 \,\wedge\, r_t < 1 \,\wedge\, D_t > \delta\big) \\[4pt]
+1, & \text{otherwise}
+\end{cases}
+$$
+
+**Base-policy anchor (anti-drift)** — forward KL to the frozen tactical base over
+legal moves:
+
+$$
+\mathrm{KL}_t = \sum_{a \in L(s_t)} \pi_\theta(a \mid s_t)
+\Big[\log \pi_\theta(a \mid s_t) - \log \pi_{\text{base}}(a \mid s_t)\Big]
+$$
+
+**Loss** (minimized over $T$ plies; $\beta = 0.05$):
+
+$$
+\mathcal{L}(\theta) = -\,\frac{\sum_t m_t\, r_t\, \hat{A}_t}{\sum_t m_t}
+\;+\; \beta \cdot \frac{1}{T}\sum_t \mathrm{KL}_t
+$$
+
+The gradient flows to the policy head and final RMSNorm only; the trunk and value
+head are frozen, so PUCT's value backup at gate time is unchanged.
+
+**Per-iteration algorithm** ($k = 1 \dots 30$):
+
+1. **rollout** — from $\theta_{k-1}$, play $G$-grouped games vs Stockfish at ladder
+   Elo $e_k$ (PUCT-128 move selection, Dirichlet + temperature schedule); record
+   $\mu$, $a_t$, group.
+2. **reward** — $R_i =$ game outcome (model POV).
+3. **advantage** — $\hat{A} =$ per-group z-score of $R$, broadcast to plies.
+4. **update** — $\theta_k \leftarrow$ one AdamW epoch (lr $10^{-5}$) on
+   $\mathcal{L}(\theta)$, warm-started from $\theta_{k-1}$, with $\mu$ frozen as
+   $\theta_{k-1}$'s raw policy (the rollout anchor).
+5. **ladder** — $e_{k+1} = \mathrm{clip}\big(e_k \pm 100 \text{ toward a } 50\% \text{ score},\ [1600, 2600]\big)$.
+6. **every 5** — probe $\theta_k$ vs a fixed held-out Stockfish-2000 (greedy, 128 sims).
+
+**Promotion gate** (external, terminal, unchanged): the best $\theta_k$ vs
+Leela/Maia-2700 at 128 sims must beat `tactical_repair.pt`'s $0.294$ by
+$\geq +0.03$ score rate. Head-to-head vs the base is deliberately absent — it is the
+discredited signal (D48–D54).
+
+**Stage-3 MaxRL variant** (reward transform only, run later on a harder rung):
+binarize $R$ (win $=1$, else $0$); within a group drop the non-winning trajectories
+from the policy term (success-only averaging) and weight the winners by the harmonic
+$\text{pass@}k$ mixture
+
+$$
+\nabla_\theta J_{\text{MaxRL}} = \sum_{k=1}^{T} \frac{1}{k}\, \nabla_\theta\, \text{pass@}k,
+$$
+
+so low-pass-rate (hard) openings dominate the gradient. The DPPO mask and base-KL
+anchor are unchanged.
+
+### Implemented
+
+Greenfield (train_rl.py/train_ppo.py from AGENTS.md don't exist on this branch):
+
+- `kibitzer/grpo.py` — pure math: `group_zscore`, `exact_tv`, `dppo_mask`.
+- `kibitzer/rollout.py` — batched parallel game runner vs a Stockfish `UCI_Elo`
+  opponent, temperature sampling, 200-ply adjudication (cap = draw), per-ply μ
+  records + outcome reward.
+- `scripts/train_grpo.py` — `gen`/`train`/`probe`/`loop` subcommands with the
+  adaptive ladder (nudge opponent toward ~50% win rate, bounds 1600–2600) and a
+  per-iteration metrics jsonl.
+- `scripts/run_grpo.sh` — env-var driver with a `SMOKE=1` cpu path.
+- `tests/test_grpo.py` — 6 unit tests (z-score edge cases, DPPO mask truth
+  table, exact-TV vs hand computation); all pass.
+
+### Gate (unchanged discipline)
+
+Promotion only if the paired 80-game Leela/Maia-2700 gate at 128 sims
+(`run_repair_eval_gate.sh`, seed 23) beats tactical R1's 0.294 by ≥ +0.03 score
+rate (~+25 Elo). Head-to-head vs own base stays diagnostic-only. If this — the
+first RL with a truly external reward — also fails to clear the gate, scale
+remains the only lever with a positive slope.
