@@ -205,6 +205,14 @@ on the leela-2700 gate at the identical config as the base:
 
 flat within noise - identical wins (12=12), three base draws turned into losses. the fixed-opponent probe@2000 was flat too (0.9125 → 0.900). GRPO held the model's strength but added nothing externally: the 9th non-scale lever to hold-or-lose against the external yardstick. [full plots + report](reports/grpo/README.md).
 
+### looking inside (interpretability)
+
+not a strength experiment. a mechanistic-interp pass on the base: replay real leela-2700 games (win/draw/loss), hook every position, and watch how it reasons. findings: head specialization only shows up in the last encoder layer, there's a fixed d8 "attention-sink" head, the mean-pool crushes per-square activation norm from ~79 to ~2 (a real bottleneck, and an argument for attention pooling), and the value head lands on the right sign but noisily and late. includes side-by-side board + attention videos per game.
+
+![encoder head atlas](interp/figures/fig1_head_atlas.png)
+
+[full interp study, figures, and videos](interp/README.md)
+
 ## experiment log
 
 this repo is closer to a lab notebook than a clean model release. the short version:
