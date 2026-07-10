@@ -315,6 +315,10 @@ data starvation identified in D13 has been reduced.
 
 ---
 
+> **numbering note:** decisions D18-D43 were the S3 / 100M scaling-study sub-decisions;
+> they were condensed into `docs/scaling_study/` and the memory log rather than kept as
+> individual sections here, so the section numbering resumes at D44.
+
 ## D44 , measured Elo of the 100M shaw model (calibrated, 160 games)
 
 Proper Elo measurement of runs/scaling_shaw_data/checkpoints/S2_shaw_100M.pt via PUCT (256 sims) vs
@@ -1063,7 +1067,7 @@ Saved stopped-run evidence:
 - `reports/preference_repair/preference_repair_anchor_r1_vs2700_s128_g80_seed31_stopped62.log`
 - `reports/preference_repair/preference_repair_anchor_r1_vs2700_s128_g80_seed31_stopped62.pgn`
 
-## D60 , plan genuine GRPO plus exact-divergence DPPO on external reward
+## D60 , GRPO + exact-divergence DPPO on external reward (plan + neutral result)
 
 Every repair branch above (regret, regret-start self-play, tactical R2, DPO/AWAC
 preference) shares the same failure signature: it trains on the model's own
@@ -1227,7 +1231,7 @@ from the policy term (success-only averaging) and weight the winners by the harm
 `pass@k` mixture
 
 $$
-G = sum_{k=1}^{T} (1 / k) * grad(pass_at_k)
+\nabla_\theta J_{\text{MaxRL}} = \sum_{k=1}^{T} \frac{1}{k}\, \nabla_\theta\, \text{pass@}k
 $$
 
 so low-pass-rate (hard) openings dominate the gradient. The DPPO mask and base-KL
@@ -1255,3 +1259,50 @@ Promotion only if the paired 80-game Leela/Maia-2700 gate at 128 sims
 rate (~+25 Elo). Head-to-head vs own base stays diagnostic-only. If this - the
 first RL with a truly external reward - also fails to clear the gate, scale
 remains the only lever with a positive slope.
+
+### Result: NEUTRAL — held strength, added nothing externally (killed at iter 11/30)
+
+Ran the loop from `tactical_repair.pt` (30-iter plan; killed at iter 11 once the
+signal was clearly flat). The searched-rollout fix worked — the model played at
+strength, informative_groups ran ~50-100%, and the adaptive ladder climbed
+1900 -> 2500 with the model holding ~54% vs SF-2500. But that climb is exactly what
+a *static* 2500 model produces (the ladder only steps +/-100 per iteration until it
+reaches the model's level), so it confirms the base's level, not a gain.
+
+Fixed-opponent probe was flat:
+
+| probe@2000 (greedy, 128 sims, held-out) | score |
+|---|---|
+| iter 5  | 0.9125 |
+| iter 10 | 0.900 |
+
+External promotion gate — best-probe checkpoint `grpo_v5` vs Leela/Maia-2700, seed 23,
+80 games, 128 sims (identical config to the 0.294 reference):
+
+| checkpoint | W/D/L | score | implied Elo |
+|---|---|---|---|
+| `grpo_v5` | 12 / 20 / 48 | 0.275 | ~2532 |
+| `tactical_repair` (base) | 12 / 23 / 45 | 0.294 | ~2548 |
+
+Delta -0.019 score rate (~-16 Elo): identical wins (12 = 12), three base draws turned
+into losses. Flat within 80-game noise — **no external gain.**
+
+**Verdict: NEUTRAL.** GRPO + exact-DPPO on an external verifiable reward — the
+best-motivated remaining RL lever (search in the loop, a principled trust region, no
+self-referential target) — held the model's strength but did not raise it. This is
+the 9th non-scale attempt (D35-D54, D60) to hold-or-lose against the external Leela
+yardstick; only scale (D43) has ever shown a positive slope. The ~2500-2600 ceiling
+for the 15.2M model stands (hard < 2700). Artifacts: `runs/grpo/grpo_v{1..11}.pt`,
+`runs/grpo/metrics.jsonl`, `reports/grpo/grpo_v5_vs2700_s128_g80_seed23.{jsonl,pgn,log}`.
+
+### Next step
+
+Not more RL knob-turning — the dead-flat probe makes that prior weak. Two legitimate
+paths, both away from fine-tuning the 15M net:
+
+1. **Scale run** — a bigger backbone (S3, ~50-100M *params*) on the 100M+ position
+   data. The single lever with a proven positive slope (D43) toward the project goal
+   of beating Stockfish's strongest.
+2. **Ceiling / scaling-law write-up** — the blog deliverable: an honest ~2500-2600
+   ceiling with every cheap lever fenced off with receipts (D35-D60), and scale
+   quantified as the only way up.
