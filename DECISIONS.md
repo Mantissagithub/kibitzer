@@ -1175,7 +1175,7 @@ $\mu$ are always allowed; no ratio clipping:
 $$
 m_t = \begin{cases}
 0, & \big(\hat{A}_t > 0 \,\wedge\, r_t > 1 \,\wedge\, D_t > \delta\big)
-   \;\vee\; \big(\hat{A}_t < 0 \,\wedge\, r_t < 1 \,\wedge\, D_t > \delta\big) \\[4pt]
+   \;\vee\; \big(\hat{A}_t < 0 \,\wedge\, r_t < 1 \,\wedge\, D_t > \delta\big) \\
 1, & \text{otherwise}
 \end{cases}
 $$
@@ -1224,11 +1224,10 @@ discredited signal (D48-D54).
 **Stage-3 MaxRL variant** (reward transform only, run later on a harder rung):
 binarize $R$ (win $=1$, else $0$); within a group drop the non-winning trajectories
 from the policy term (success-only averaging) and weight the winners by the harmonic
-$\operatorname{pass@}k$ mixture
+`pass@k` mixture
 
 $$
-\nabla_\theta J_{\mathrm{MaxRL}}
-= \sum_{k=1}^{T} \frac{1}{k}\,\nabla_\theta\,\operatorname{pass@}k
+G = sum_{k=1}^{T} (1 / k) * grad(pass_at_k)
 $$
 
 so low-pass-rate (hard) openings dominate the gradient. The DPPO mask and base-KL
