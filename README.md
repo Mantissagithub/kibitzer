@@ -144,7 +144,7 @@ alphazero-style self-play: the model plays against itself using PUCT search with
 | iter | vs base score | vs maia 2700 | notes |
 |---|---|---|---|
 | 1 | **0.625** | 0.100 | beats itself, regresses vs maia |
-| 2 | killed | - | 400 sims too slow, see [decision.md](decision.md) |
+| 2 | killed | - | 400 sims too slow, see [DECISIONS.md](DECISIONS.md) |
 
 the pattern: az improves the model against its own play style (0.625 h2h) but makes it *worse* against strong opponents (maia 2700: 0.100 vs base ref 0.225). classic self-play overfitting when the data is narrow - 80 games isn't enough diversity. the new config (200 games @ 200 sims) aims to fix this.
 
@@ -201,7 +201,7 @@ this repo is closer to a lab notebook than a clean model release. the short vers
 | teacher-preference repair | first DPO-style attempt rejected; offline pair metrics did not transfer |
 | joint scratch / point tweaks | mostly negative or inconclusive |
 
-the longer failure log is in **[decision.md](decision.md)**; the scaling summary is in **[docs/scaling_study/README.md](docs/scaling_study/README.md)**.
+the longer failure log is in **[DECISIONS.md](DECISIONS.md)**; the scaling summary is in **[docs/scaling_study/README.md](docs/scaling_study/README.md)**.
 
 ## roadmap
 
