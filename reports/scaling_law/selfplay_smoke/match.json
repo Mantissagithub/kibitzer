@@ -1,8 +1,0 @@
-{
-  "model_a": "runs/selfplay_smoke/selfplay_v1.pt",
-  "model_b": "runs/scaling_shaw_data/checkpoints/S2_shaw_100M.pt",
-  "w": 10,
-  "d": 11,
-  "l": 19,
-  "a_score": 0.3875
-}

@@ -1,0 +1,390 @@
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "Kibitzer-s512"]
+[Black "SF-2200"]
+[Result "1-0"]
+[ECO "B63"]
+[GameDuration "00:12:44"]
+[GameEndTime "2026-07-11T01:25:48.676 GMT+5:30"]
+[GameStartTime "2026-07-11T01:13:03.700 GMT+5:30"]
+[Opening "Sicilian"]
+[PlyCount "56"]
+[Termination "adjudication"]
+[TimeControl "30/move"]
+[Variation "Richter-Rauzer, Rauzer attack"]
+
+1. e4 {book} c5 {book} 2. Nf3 {book} d6 {book} 3. d4 {book} cxd4 {book}
+4. Nxd4 {book} Nf6 {book} 5. Nc3 {2.2s} Nc6 {-0.46/29 30s} 6. Bg5 {2.3s}
+e6 {-0.49/30 30s} 7. Qd2 {2.2s} Nxd4 {-0.62/29 30s} 8. Qxd4 {2.1s}
+Be7 {-0.65/30 30s} 9. O-O-O {2.0s} O-O {-0.72/28 30s} 10. f4 {2.0s}
+Bd7 {-0.56/28 30s} 11. e5 {2.1s} dxe5 {-0.26/30 30s} 12. fxe5 {2.2s}
+Nd5 {-0.26/30 30s} 13. Bxe7 {2.2s} Qxe7 {-0.31/28 30s} 14. Nxd5 {2.1s}
+exd5 {-0.45/26 30s} 15. Bd3 {2.0s} Rfc8 {-0.34/28 30s} 16. Rhf1 {2.0s}
+Rc6 {-0.50/28 30s} 17. Qxd5 {2.0s} Be6 {-0.13/27 30s} 18. Qe4 {2.1s}
+g6 {-0.25/28 30s} 19. a3 {2.0s} Qc7 {-0.03/28 30s} 20. h4 {2.0s}
+Rc5 {-0.36/29 30s} 21. Rde1 {2.0s} Rd8 {-0.29/30 30s} 22. h5 {2.0s}
+b6 {-0.25/30 30s} 23. hxg6 {2.1s} hxg6 {-2.07/28 30s} 24. Kb1 {2.0s}
+Qc6 {-1.80/29 30s} 25. Qh4 {2.0s} Rdd5 {-1.83/28 30s} 26. Rh1 {0.98s}
+Kf8 {-M20/59 30s} 27. Qf6 {0.85s} Bh3 {-M16/78 30s} 28. Rxh3 {1.4s}
+Qxf6 {-7.36/30 30s, White wins by adjudication} 1-0
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "SF-2200"]
+[Black "Kibitzer-s512"]
+[Result "0-1"]
+[ECO "B54"]
+[GameDuration "00:16:43"]
+[GameEndTime "2026-07-11T01:42:31.853 GMT+5:30"]
+[GameStartTime "2026-07-11T01:25:48.677 GMT+5:30"]
+[Opening "Sicilian"]
+[PlyCount "71"]
+[Termination "adjudication"]
+[TimeControl "30/move"]
+
+1. e4 {book} c5 {book} 2. Nf3 {book} d6 {book} 3. d4 {book} cxd4 {book}
+4. Nxd4 {book} Nf6 {book} 5. Qf3 {+0.35/29 30s} Nc6 {2.1s} 6. Nb3 {-0.01/30 30s}
+g6 {2.1s} 7. Nc3 {-0.43/30 30s} Bg7 {2.2s} 8. Bd3 {-0.50/29 30s} O-O {2.1s}
+9. Qe2 {-0.55/29 30s} a5 {2.1s} 10. a4 {-0.35/30 30s} Nb4 {2.1s}
+11. Bb5 {+0.07/29 30s} d5 {2.2s} 12. h3 {0.00/30 30s} Nxe4 {2.2s}
+13. Nxe4 {-0.45/31 30s} dxe4 {2.2s} 14. O-O {-0.41/29 30s} Bf5 {2.2s}
+15. c3 {-0.38/29 30s} Nd3 {2.2s} 16. Bg5 {-0.86/29 30s} h6 {2.1s}
+17. Bxe7 {-0.47/29 30s} Qxe7 {2.2s} 18. Bxd3 {-0.43/28 30s} Rad8 {2.1s}
+19. Rfe1 {-0.40/28 30s} Qh4 {2.1s} 20. Bb5 {-0.12/29 30s} Be5 {2.1s}
+21. Nd2 {0.00/30 30s} Qf4 {2.1s} 22. Nf1 {-0.40/28 30s} h5 {2.0s}
+23. Rad1 {-0.37/31 30s} Qg5 {2.0s} 24. Nd2 {-0.22/29 30s} Bxh3 {2.1s}
+25. Qxe4 {-0.39/31 30s} Bf4 {1.9s} 26. Nc4 {-0.74/29 30s} Bf5 {2.1s}
+27. Qxb7 {-0.62/30 30s} Rxd1 {2.1s} 28. Rxd1 {-0.27/23 30s} h4 {2.0s}
+29. Qd5 {0.00/32 30s} h3 {2.0s} 30. Nxa5 {-0.05/31 30s} Qh4 {2.0s}
+31. Bc6 {-3.00/27 30s} Bg4 {2.0s} 32. g3 {-4.43/24 30s} Bxg3 {2.1s}
+33. fxg3 {-5.34/23 30s} Qxg3+ {2.0s} 34. Qg2 {-8.53/24 30s} hxg2 {2.0s}
+35. b3 {-M16/62 30s} Bxd1 {1.5s}
+36. b4 {-M10/245 12s, Black wins by adjudication} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "Kibitzer-s512"]
+[Black "SF-2500"]
+[Result "1-0"]
+[ECO "A56"]
+[GameDuration "00:13:51"]
+[GameEndTime "2026-07-11T01:56:24.378 GMT+5:30"]
+[GameStartTime "2026-07-11T01:42:32.844 GMT+5:30"]
+[Opening "Benoni defense"]
+[PlyCount "60"]
+[Termination "adjudication"]
+[TimeControl "30/move"]
+
+1. d4 {book} Nf6 {book} 2. c4 {book} c5 {book} 3. Nf3 {book} cxd4 {book}
+4. Nxd4 {book} b6 {book} 5. Nc3 {2.3s} Nc6 {-0.36/29 30s} 6. e4 {2.0s}
+e6 {-0.57/29 30s} 7. Ndb5 {2.1s} Bc5 {-0.69/28 30s} 8. Bf4 {2.2s}
+Kf8 {-0.18/30 30s} 9. Bc7 {2.2s} Qe8 {-1.08/28 30s} 10. Bd6+ {2.1s}
+Bxd6 {-1.57/30 30s} 11. Nxd6 {2.0s} Qe7 {-1.48/29 30s} 12. Be2 {2.0s}
+Ba6 {-1.55/27 30s} 13. Qd2 {2.0s} h5 {-1.39/29 30s} 14. O-O-O {2.0s}
+Rd8 {-1.40/28 30s} 15. f4 {2.0s} Ne8 {-1.88/28 30s} 16. e5 {2.0s}
+Nxd6 {-1.15/28 30s} 17. exd6 {2.0s} Qh4 {-1.21/28 30s} 18. g3 {2.0s}
+Qh3 {-1.54/27 30s} 19. b3 {2.0s} Rb8 {-1.41/27 30s} 20. Bf3 {2.0s}
+Na5 {-1.14/27 30s} 21. Bg2 {2.0s} Qg4 {-1.24/28 30s} 22. Rhf1 {2.0s}
+Qf5 {-0.99/28 30s} 23. Be4 {2.1s} Nxc4 {-1.99/30 30s} 24. bxc4 {2.1s}
+Qg4 {-2.97/28 30s} 25. f5 {2.0s} Bxc4 {-4.85/27 30s} 26. Rf4 {2.1s}
+b5 {-6.22/25 30s} 27. Rxg4 {2.1s} b4 {-6.89/24 30s} 28. fxe6 {2.0s}
+hxg4 {-7.82/25 30s} 29. e7+ {1.9s} Ke8 {-9.08/25 30s} 30. Nd5 {1.8s}
+f5 {-M14/89 30s, White wins by adjudication} 1-0
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "SF-2500"]
+[Black "Kibitzer-s512"]
+[Result "1/2-1/2"]
+[ECO "A56"]
+[GameDuration "00:27:01"]
+[GameEndTime "2026-07-11T02:23:25.590 GMT+5:30"]
+[GameStartTime "2026-07-11T01:56:24.380 GMT+5:30"]
+[Opening "Benoni defense"]
+[PlyCount "109"]
+[Termination "illegal move"]
+[TimeControl "30/move"]
+
+1. d4 {book} Nf6 {book} 2. c4 {book} c5 {book} 3. Nf3 {book} cxd4 {book}
+4. Nxd4 {book} b6 {book} 5. Bg5 {+0.43/29 30s} Bb7 {2.1s} 6. f3 {+0.25/28 30s}
+e6 {2.0s} 7. Nb5 {-0.11/31 30s} Bb4+ {2.0s} 8. N5c3 {+0.02/29 30s} h6 {2.1s}
+9. Bh4 {-0.55/29 30s} O-O {2.0s} 10. Nd2 {-1.16/28 30s} d5 {2.1s}
+11. Qa4 {-1.45/29 30s} a5 {2.0s} 12. e3 {-1.73/27 30s} d4 {2.3s}
+13. exd4 {-1.85/27 30s} Qxd4 {2.3s} 14. Bf2 {-1.95/29 30s} Qe5+ {2.2s}
+15. Be2 {-1.94/28 30s} Rd8 {2.1s} 16. Qb5 {-0.90/28 30s} Bxc3 {2.2s}
+17. bxc3 {-0.67/30 30s} Qxc3 {2.2s} 18. Rd1 {-0.72/30 30s} Nc6 {2.1s}
+19. Qb3 {-0.30/28 30s} Qxb3 {2.1s} 20. Nxb3 {-1.00/28 30s} a4 {2.0s}
+21. Rxd8+ {-0.18/30 30s} Rxd8 {2.0s} 22. Bxb6 {-0.28/32 30s} axb3 {2.0s}
+23. Bxd8 {-0.29/31 30s} bxa2 {2.0s} 24. Bxf6 {+2.38/32 30s} gxf6 {1.9s}
+25. Kf2 {+2.47/30 30s} Nb4 {1.8s} 26. Ra1 {+2.19/31 30s} Ba6 {1.8s}
+27. c5 {+2.32/31 30s} Bb7 {1.9s} 28. Bd1 {+2.11/35 30s} Bd5 {1.9s}
+29. Kf1 {+1.80/35 30s} Bc4+ {2.0s} 30. Be2 {+0.06/42 30s} Bb3 {1.9s}
+31. Bd1 {+0.19/40 30s} Bxd1 {1.9s} 32. Rxd1 {+1.84/33 30s} Kf8 {1.9s}
+33. Ra1 {+2.77/36 30s} Ke7 {2.1s} 34. g4 {0.00/51 30s} Kd7 {1.9s}
+35. Kf2 {0.00/59 30s} Kc6 {1.9s} 36. Kg3 {0.00/28 30s} Kxc5 {1.9s}
+37. Kh4 {-0.13/24 30s} Kd4 {1.8s} 38. Kh5 {0.00/27 30s} Ke3 {1.8s}
+39. Kxh6 {0.00/49 30s} Kxf3 {1.9s} 40. g5 {0.00/51 30s} fxg5 {1.8s}
+41. Kxg5 {0.00/26 30s} f5 {1.8s} 42. Rc1 {+6.21/30 30s} f4 {1.8s}
+43. h4 {0.00/24 30s} Ke2 {1.9s} 44. h5 {0.00/23 30s} f3 {1.8s}
+45. h6 {0.00/56 30s} f2 {1.9s} 46. h7 {0.00/68 30s} f1=Q {2.0s}
+47. Rxf1 {0.00/61 30s} Kxf1 {2.0s} 48. h8=R {0.00/27 30s} Ke2 {1.9s}
+49. Rh1 {0.00/29 30s} Nc2 {1.7s} 50. Kf6 {-0.19/30 30s} Kd2 {1.3s}
+51. Ke5 {0.00/71 30s} Kc3 {1.4s} 52. Rh3+ {0.00/68 30s} Kd2 {1.7s}
+53. Rh1 {0.00/25 30s} Kc3 {1.4s} 54. Rd1 {0.00/66 30s} Ne3 {0.91s}
+55. Rh1 {0.00/65 30s,  makes an illegal move: 0000} 1/2-1/2
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "Kibitzer-s512"]
+[Black "SF-2700"]
+[Result "0-1"]
+[ECO "A04"]
+[GameDuration "00:21:18"]
+[GameEndTime "2026-07-11T02:44:45.244 GMT+5:30"]
+[GameStartTime "2026-07-11T02:23:26.656 GMT+5:30"]
+[Opening "Reti Opening"]
+[PlyCount "100"]
+[TimeControl "30/move"]
+
+1. Nf3 {book} c5 {book} 2. c4 {book} b6 {book} 3. g3 {book} Bb7 {book}
+4. Bg2 {book} g6 {book} 5. O-O {2.2s} Bg7 {-0.36/32 30s} 6. Nc3 {2.0s}
+Nf6 {-0.32/31 30s} 7. d4 {2.2s} cxd4 {-0.32/30 30s} 8. Qxd4 {2.3s}
+d6 {-0.33/30 30s} 9. Rd1 {2.3s} Nc6 {-0.38/30 30s} 10. Qf4 {2.0s}
+Qd7 {-0.48/29 30s} 11. b3 {2.1s} O-O {-0.49/30 30s} 12. Bb2 {2.1s}
+Nd8 {-0.66/27 30s} 13. Qh4 {2.1s} Ne4 {-0.26/29 30s} 14. Bh3 {2.1s}
+f5 {-0.16/30 30s} 15. Nxe4 {2.1s} Bxb2 {+0.75/28 30s} 16. Neg5 {2.1s}
+h5 {+0.55/29 30s} 17. e4 {2.0s} Bxa1 {+0.83/28 30s} 18. exf5 {2.0s}
+Bxf3 {+2.83/30 30s} 19. Rxa1 {2.0s} Bb7 {+3.62/29 30s} 20. fxg6 {1.9s}
+Qc6 {+3.60/28 30s} 21. f3 {1.9s} Qc5+ {+3.69/29 30s} 22. Kg2 {1.9s}
+Rf6 {+4.16/26 30s} 23. b4 {2.0s} Qe5 {+5.47/27 30s} 24. Re1 {2.1s}
+Qxe1 {+6.91/29 30s} 25. Qxh5 {2.1s} Qd2+ {+7.05/26 30s} 26. Kg1 {2.0s}
+Qd4+ {+7.09/25 30s} 27. Kg2 {1.9s} Qb2+ {+7.21/28 30s} 28. Kf1 {2.1s}
+Qb1+ {+7.03/28 30s} 29. Ke2 {2.0s} Qxg6 {+7.04/27 30s} 30. Qxg6+ {1.9s}
+Rxg6 {+7.38/33 30s} 31. f4 {1.9s} Rxg5 {+7.34/28 30s} 32. fxg5 {1.9s}
+Kg7 {+7.35/28 30s} 33. Bf5 {1.8s} Nc6 {+7.34/28 30s} 34. b5 {1.9s}
+Nd4+ {+9.59/29 30s} 35. Kd3 {2.0s} Nxf5 {+M35/29 30s} 36. g4 {1.9s}
+Nh4 {+M25/47 30s} 37. Kd4 {1.9s} Rf8 {+M23/52 30s} 38. Kc3 {1.9s}
+Kg6 {+M21/55 30s} 39. Kb4 {1.9s} Rf1 {+M11/59 30s} 40. a4 {1.9s}
+Rf3 {+M13/58 30s} 41. a5 {2.0s} Kxg5 {+M11/99 30s} 42. a6 {1.7s}
+Be4 {+M9/99 30s} 43. c5 {1.4s} dxc5+ {+M5/43 30s} 44. Kc4 {1.5s}
+e6 {+M3/245 0.049s} 45. h3 Ng6 {+M1/245 0.019s} 46. h4+ Kf6 {+M3/245 0.006s}
+47. h5 Ke7 {+M1/245 0.009s} 48. hxg6 {0.55s} Rg3 {+M1/245 0.008s} 49. g7 {0.50s}
+Kd6 {+M1/245 0.024s} 50. g8=Q Bd5# {+M1/29 30s, Black mates} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "SF-2700"]
+[Black "Kibitzer-s512"]
+[Result "1-0"]
+[ECO "A04"]
+[GameDuration "00:28:13"]
+[GameEndTime "2026-07-11T03:12:58.339 GMT+5:30"]
+[GameStartTime "2026-07-11T02:44:45.247 GMT+5:30"]
+[Opening "Reti Opening"]
+[PlyCount "117"]
+[TimeControl "30/move"]
+
+1. Nf3 {book} c5 {book} 2. c4 {book} b6 {book} 3. g3 {book} Bb7 {book}
+4. Bg2 {book} g6 {book} 5. O-O {+0.37/33 30s} Bg7 {2.1s} 6. e3 {+0.32/32 30s}
+Nf6 {2.0s} 7. b3 {+0.12/32 30s} O-O {2.0s} 8. Bb2 {+0.11/32 30s} d6 {2.1s}
+9. Qe2 {+0.27/31 30s} Nbd7 {2.0s} 10. Rd1 {+0.24/32 30s} Qc7 {2.0s}
+11. d4 {+0.25/31 30s} cxd4 {2.1s} 12. Rxd4 {+0.24/31 30s} a6 {2.1s}
+13. Nc3 {+0.11/30 30s} Rac8 {2.0s} 14. h4 {+0.12/29 30s} h5 {2.0s}
+15. Rc1 {+0.06/29 30s} Qb8 {2.0s} 16. Rc2 {0.00/30 30s} Rfe8 {2.0s}
+17. Ne1 {0.00/31 30s} Bxg2 {2.1s} 18. Nxg2 {+0.03/28 30s} Qb7 {2.0s}
+19. Ne1 {-0.13/28 30s} Ne5 {2.0s} 20. Rd1 {0.00/31 30s} Nfg4 {2.1s}
+21. Rcd2 {+0.02/31 30s} b5 {2.1s} 22. f3 {-0.26/32 30s} Nh6 {2.1s}
+23. cxb5 {-0.10/33 30s} Nf5 {2.1s} 24. bxa6 {+1.32/29 30s} Qa7 {2.1s}
+25. Nb5 {+1.00/30 30s} Qxa6 {2.1s} 26. Nd4 {+0.58/31 30s} Qxe2 {2.1s}
+27. Rxe2 {0.00/32 30s} Nxg3 {2.2s} 28. Rg2 {0.00/31 30s} Nf5 {2.1s}
+29. Nxf5 {0.00/32 30s} gxf5 {2.0s} 30. a4 {+0.01/36 30s} Ng6 {1.9s}
+31. b4 {+0.38/28 30s} Bh6 {2.0s} 32. Rd3 {+0.35/26 30s} Rc4 {2.0s}
+33. Ba3 {+0.28/32 30s} Kh7 {1.9s} 34. a5 {+0.02/30 30s} Ne5 {1.9s}
+35. Rb3 {+0.34/28 30s} Rxh4 {1.9s} 36. Bc1 {+0.62/29 30s} Rc8 {2.0s}
+37. Bb2 {-0.26/30 30s} Nc4 {2.0s} 38. Nc2 {-0.79/28 30s} Rh3 {1.9s}
+39. a6 {-1.36/28 30s} e5 {1.9s} 40. b5 {+0.62/29 30s} Nb6 {1.9s}
+41. Rc3 {+2.82/28 30s} Rxf3 {1.9s} 42. Rxc8 {+3.26/28 30s} Nxc8 {1.9s}
+43. Bc3 {+3.33/31 30s} h4 {1.9s} 44. Ba5 {+3.84/24 30s} h3 {1.9s}
+45. b6 {+5.10/26 30s} Nxb6 {1.9s} 46. Bxb6 {+5.81/29 30s} hxg2 {1.9s}
+47. Kxg2 {+6.19/27 30s} e4 {1.9s} 48. a7 {+6.49/30 30s} f4 {1.9s}
+49. a8=Q {+6.61/25 30s} Rg3+ {1.9s} 50. Kh2 {+6.74/26 30s} f5 {1.9s}
+51. Bd4 {+7.64/27 30s} Rg8 {1.9s} 52. Qb7+ {+61.24/26 30s} Bg7 {1.9s}
+53. Qf7 {+M23/61 30s} f3 {1.4s} 54. Kh3 {+M17/66 30s} f2 {1.7s}
+55. Kg2 {+M19/32 30s} f4 {1.5s} 56. exf4 {+M13/66 30s} f1=Q+ {1.5s}
+57. Kxf1 {+M9/28 30s} d5 {1.3s} 58. Ne3 {+M5/245 0.99s} Kh8 {0.93s}
+59. Qh5# {+M1/245 0.40s, White mates} 1-0
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "Kibitzer-s512"]
+[Black "SF-2900"]
+[Result "*"]
+[ECO "A13"]
+[GameDuration "00:08:37"]
+[GameEndTime "2026-07-11T03:21:36.582 GMT+5:30"]
+[GameStartTime "2026-07-11T03:12:59.393 GMT+5:30"]
+[Opening "English Opening"]
+[PlyCount "41"]
+[Termination "unterminated"]
+[TimeControl "30/move"]
+
+1. c4 {book} e6 {book} 2. d4 {book} Nf6 {book} 3. Nf3 {book} Bb4+ {book}
+4. Bd2 {book} Qe7 {book} 5. g3 {2.3s} Bxd2+ {-0.35/30 30s} 6. Qxd2 {2.2s}
+d5 {-0.33/31 30s} 7. Nc3 {2.1s} dxc4 {-0.10/30 30s} 8. Bg2 {2.1s}
+Nbd7 {-0.27/28 30s} 9. O-O {2.1s} e5 {-0.15/28 30s} 10. Nb5 {2.1s}
+O-O {-0.25/31 30s} 11. Nxc7 {2.1s} Rb8 {-0.37/31 30s} 12. dxe5 {2.1s}
+Nxe5 {-0.17/31 30s} 13. Nb5 {2.1s} a6 {-0.04/31 30s} 14. Nd6 {2.0s}
+Bg4 {0.00/33 30s} 15. Nxe5 {2.3s} Qxe5 {-0.35/27 30s} 16. Nxc4 {2.2s}
+Qe6 {-0.32/30 30s} 17. Ne3 {2.1s} Rfd8 {-1.04/29 30s} 18. Qa5 {2.3s}
+Bxe2 {-0.33/29 30s} 19. Rfe1 {2.3s} b6 {-0.28/29 30s} 20. Qg5 {2.2s}
+h6 {-0.19/28 30s} 21. Qf4 {2.2s, No result} *
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "Kibitzer-s512"]
+[Black "SF-2200"]
+[Result "0-1"]
+[ECO "A22"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-07-11T03:21:53.850 GMT+5:30"]
+[GameStartTime "2026-07-11T03:21:51.536 GMT+5:30"]
+[Opening "English Opening"]
+[PlyCount "8"]
+[Termination "time forfeit"]
+[TimeControl "2/move"]
+
+1. c4 {book} e5 {book} 2. Nc3 {book} Nf6 {book} 3. Nf3 {book} Nc6 {book}
+4. a3 {book} d5 {book, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "SF-2200"]
+[Black "Kibitzer-s512"]
+[Result "1-0"]
+[ECO "A22"]
+[GameDuration "00:00:04"]
+[GameEndTime "2026-07-11T03:21:58.043 GMT+5:30"]
+[GameStartTime "2026-07-11T03:21:53.851 GMT+5:30"]
+[Opening "English Opening"]
+[PlyCount "9"]
+[Termination "time forfeit"]
+[TimeControl "2/move"]
+
+1. c4 {book} e5 {book} 2. Nc3 {book} Nf6 {book} 3. Nf3 {book} Nc6 {book}
+4. a3 {book} d5 {book} 5. d4 {0.00/22 2.0s, Black loses on time} 1-0
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "Kibitzer-s512"]
+[Black "SF-2500"]
+[Result "0-1"]
+[ECO "A40"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-07-11T03:22:01.182 GMT+5:30"]
+[GameStartTime "2026-07-11T03:21:59.045 GMT+5:30"]
+[Opening "Modern defense"]
+[PlyCount "8"]
+[Termination "time forfeit"]
+[TimeControl "2/move"]
+
+1. d4 {book} g6 {book} 2. Nf3 {book} Bg7 {book} 3. g3 {book} Nf6 {book}
+4. Bg2 {book} O-O {book, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "SF-2500"]
+[Black "Kibitzer-s512"]
+[Result "1-0"]
+[ECO "A40"]
+[GameDuration "00:00:04"]
+[GameEndTime "2026-07-11T03:22:05.195 GMT+5:30"]
+[GameStartTime "2026-07-11T03:22:01.182 GMT+5:30"]
+[Opening "Modern defense"]
+[PlyCount "9"]
+[Termination "time forfeit"]
+[TimeControl "2/move"]
+
+1. d4 {book} g6 {book} 2. Nf3 {book} Bg7 {book} 3. g3 {book} Nf6 {book}
+4. Bg2 {book} O-O {book} 5. Nbd2 {+0.22/20 2.0s, Black loses on time} 1-0
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "Kibitzer-s512"]
+[Black "SF-2700"]
+[Result "*"]
+[ECO "D15"]
+[GameDuration "00:00:01"]
+[GameEndTime "2026-07-11T03:22:07.357 GMT+5:30"]
+[GameStartTime "2026-07-11T03:22:06.204 GMT+5:30"]
+[Opening "Queen's Gambit declined"]
+[PlyCount "8"]
+[Termination "unterminated"]
+[TimeControl "2/move"]
+[Variation "4.Nc3"]
+
+1. d4 {book} d5 {book} 2. c4 {book} c6 {book} 3. Nf3 {book} Nf6 {book}
+4. Nc3 {book} e6 {book, No result} *
+
+[Event "?"]
+[Site "?"]
+[Date "2026.07.11"]
+[Round "1"]
+[White "Kibitzer-s512"]
+[Black "SF-2200"]
+[Result "0-1"]
+[ECO "E90"]
+[GameDuration "00:04:35"]
+[GameEndTime "2026-07-11T18:26:06.113 GMT+5:30"]
+[GameStartTime "2026-07-11T18:21:30.532 GMT+5:30"]
+[Opening "King's Indian"]
+[PlyCount "88"]
+[TimeControl "5/move"]
+[Variation "5.Nf3"]
+
+1. d4 {book} Nf6 {book} 2. c4 {book} g6 {book} 3. Nc3 {book} Bg7 {book}
+4. e4 {book} d6 {book} 5. Nf3 {2.2s} Bg4 {-0.64/22 5.0s} 6. Be2 {2.1s}
+Nbd7 {-0.71/22 5.0s} 7. Be3 {2.1s} e5 {-0.66/23 5.0s} 8. dxe5 {2.1s}
+Nh5 {-0.62/24 5.0s} 9. exd6 {2.1s} Bxc3+ {-2.92/22 5.0s} 10. bxc3 {2.0s}
+Rc8 {-2.81/22 5.0s} 11. h3 {2.0s} Bxf3 {-3.31/22 5.0s} 12. Bxf3 {2.0s}
+Nhf6 {-3.29/23 5.0s} 13. O-O {2.0s} O-O {-3.34/23 5.0s} 14. c5 {1.9s}
+cxd6 {-3.18/22 5.0s} 15. cxd6 {2.0s} Re8 {-3.45/21 5.0s} 16. Bd4 {2.0s}
+b6 {-2.70/20 5.0s} 17. Re1 {2.1s} Ne5 {-4.20/21 5.0s} 18. Bxe5 {2.1s}
+Rxe5 {-4.12/19 5.0s} 19. Qd4 {2.0s} Rcc5 {-4.01/20 5.0s} 20. Rad1 {2.0s}
+h5 {-4.39/21 5.0s} 21. d7 {1.9s} Nh7 {-4.03/20 5.0s} 22. Qd6 {1.9s}
+Re6 {-2.99/20 5.0s} 23. Qd4 {2.0s} Nf8 {-2.57/20 5.0s} 24. e5 {2.0s}
+Rc7 {-2.58/20 5.0s} 25. Bd5 {2.1s} Rxd7 {-2.76/22 5.0s} 26. c4 {2.0s}
+Kg7 {-2.64/21 5.0s} 27. f4 {2.0s} Kh6 {-2.94/21 5.0s} 28. Qe3 {2.0s}
+f5 {-3.16/21 5.0s} 29. Bxe6 {2.0s} Rxd1 {-1.77/24 5.0s} 30. Bd5 {2.0s}
+Rxe1+ {-1.92/24 5.0s} 31. Qxe1 {2.0s} Nd7 {-1.97/22 5.0s} 32. e6 {2.0s}
+Qe7 {-1.38/24 5.0s} 33. Kh2 {2.0s} h4 {-1.25/22 5.0s} 34. Qc3 {1.9s}
+Nf6 {-1.30/24 5.0s} 35. Qe5 {2.0s} Kg7 {-0.98/25 5.0s} 36. Bf3 {2.0s}
+Kf8 {-0.81/23 5.0s} 37. Bc6 {1.9s} Kg8 {-0.86/25 5.0s} 38. Kg1 {2.0s}
+Nh5 {-0.71/26 5.0s} 39. Kf2 {2.0s} Ng3 {-1.00/24 5.0s} 40. Kg1 {2.0s}
+Qb4 {+0.96/27 5.0s} 41. e7 {1.7s} Qb1+ {+M7/60 5.0s} 42. Kf2 {0.93s}
+Qf1+ {+M5/29 5.0s} 43. Ke3 Qe2+ {+M3/18 5.0s} 44. Kd4
+Qd2# {+M1/21 4.9s, Black mates} 0-1
+
