@@ -1503,3 +1503,131 @@ Artifacts:
 - `reports/sims_sweep/fig_sims_sweep.png`
 - `reports/sims_sweep/fig_sims_elo.png`
 - `reports/sims_sweep/README.md`
+
+## D64 , failure analysis retires mate-repair; param-scaling rejected, pivot to 512-sim expert iteration (D65)
+
+An earlier draft of D64 proposed a narrow mate-repair stage, drawn from 2 mate
+losses in the `st=5`-contaminated official-Elo run. Before spending GPU on it we
+ran a corpus-scale autopsy instead, and the autopsy retired the patch.
+
+Method (`reports/failure_analysis/`, `scripts/analyze_failures.py`): re-score
+every model move across 336 valid existing games with Stockfish depth 12, compute
+average centipawn loss (ACPL) on *contested* positions only (`|eval|<=600cp`, so
+crushing/lost technique is not counted), drop void/time-forfeit games, and classify
+each decisive loss as *gradual* (rots into a lost game, no single `>=300cp` throw)
+vs *sudden* (one big throw from a still-playable position). Corpus: the tactical
+checkpoint at 64-512 sims vs Maia-2700 and a Stockfish `UCI_Elo` 1900-2900 ladder.
+
+Findings:
+
+| phase | ACPL / move | blunders (cpl>=200) |
+|---|---:|---:|
+| opening | 8.4 | 1 |
+| middlegame | 32.8 | 151 |
+| endgame | 44.2 | 119 |
+
+Of 106 decisive losses, 81 (76%) are gradual and 25 (24%) are sudden. Endgame ACPL
+vs Maia-2700 is 52.9. There are real gradual losses even vs `SF-1900` and `SF-2300`.
+
+Read: the disease is value-driven positional drift, not tactical or mate blindness
+(that is the 24% symptom). The opening is effectively solved (ACPL 8, 1 blunder in
+336 games); the model keeps playing locally plausible moves while the position quality
+decays, because the weak load-bearing value head cannot steer PUCT off the losing
+branches. That collapses hardest exactly where priors stop carrying it and precise
+evaluation is required: a single-position mean-pooled net with no game history and no
+tablebase has nothing to fall back on in the endgame. An independent read from GPT
+(via codex, fed only the numbers and 6 FENs) reached the same conclusion.
+
+Rejected, with evidence:
+
+- **mate-repair** (the original D64): targets a slice of the 24% sudden bucket and
+  does nothing for 76% of losses. Retired.
+- **opening-curriculum**: targets the one phase that is already solved (ACPL 8),
+  zero headroom.
+- **value-head tinkering**: the broken component itself, already a closed lever
+  (D52 enlarge hurt, D62 down-weight hurt).
+
+Direction considered but REJECTED (user decision, 2026-07-11): scaling the shared
+backbone (more params, same architecture) is the only *data-supported* positive-slope
+lever, but the user has declined it. A bigger rung (S4, d_model 448) is a from-scratch
+run that does not fit the 8GB 4060, needs an off-box GPU, and is a blunt instrument for
+a value-specific diagnosis. The context-window>1 architectural variant is also parked.
+We are not scaling params.
+
+Chosen direction instead: ride the one proven-positive *inference* lever, 512-sim search
+(D63), as an expert-iteration teacher. See **D65**. Artifacts:
+`reports/failure_analysis/{README.md,figures/*,data/*}` and
+`scripts/{analyze_failures,summarize_failures,plot_failures,plot_eval_curves}.py`.
+
+## D65 , 512-sim hard-target self-play expert iteration , FAILED the gate (512-sim strength is inference-only)
+
+The self-play graveyard (D48 AZ-lite 0.388, D49 proper AZ 0.19, D50) shares one flaw the
+prior decisions could not see: all of it used **128-sim search as the teacher**. D63 came
+later and proved 128-sim search is weak (0.287 vs Leela-2700 proxy) while 512-sim is strong
+(0.825). Distilling a weak teacher explains those regressions. This tests the untried
+version: a strong 512-sim teacher, hard targets, policy-only, external gate. Honest prior:
+a coin-flip (~40%), not a sure thing.
+
+The crux this experiment resolves: 512-sim strength comes from PUCT averaging **denoising the
+weak value head at inference** (D63 mechanism). So the open question is whether that strength
+**distills into the weights** (better priors -> better raw play -> better next search) or
+whether it stays trapped at inference (value head still noisy, net barely moves). One clean
+iteration answers it.
+
+Design (one iteration, deliberately not a 30-iter loop):
+
+1. **Generate** - `scripts/selfplay_az.py gen` from `runs/tactical/tactical_repair.pt` at
+   `--sims 512`, Dirichlet root noise (alpha 0.3, eps 0.25) + an opening temperature schedule
+   (`--temp-plies 20`) for game diversity. Model plays both sides (true self-play). Records
+   per-position visit dicts + game outcome. Scope ~150-300 games -> ~15-30k positions. The
+   512-sim self-play on the 4060 is the bottleneck (several hours); it is the price of a strong
+   teacher.
+2. **Train (new hard-target path)** - target = one-hot `argmax(visits)`, the move 512-sim
+   search actually chose; **top-1 cross-entropy**, not the soft visit-distribution CE that
+   diluted decisiveness in D49. Scope = **policy head + final RMSNorm only**; trunk and value
+   head FROZEN, so the value backup search relies on is unchanged (the clean test of "do better
+   priors alone help"). Weak `KL(pi||base)` anchor beta~0.05 to the frozen base (anti-drift,
+   from D60). lr 2e-5, 1 epoch. Value is NOT trained (closed lever, D35/D52/D62).
+3. **Gate (external, unchanged discipline)** - `scripts/run_repair_eval_gate.sh` candidate vs
+   Leela/Maia-2700, 80 games, seed 23, **128 sims** (apples-to-apples with the 0.294 baseline),
+   plus a 512-sim read for real strength. Head-to-head vs own base stays DIAGNOSTIC ONLY
+   (discredited signal, D53/D54).
+
+Promotion gate: candidate must beat tactical R1's 0.294 by >= +0.03 score rate (~+25 Elo).
+Kill: if the gate lands <= 0.294+noise, this is the 10th self-play no-gain; log it and stop,
+and the "512-sim strength is inference-only, not distillable" hypothesis stands.
+
+Code to add (not yet built): a `--hard-targets` path + `--freeze-value`/policy-head scope +
+`--kl-base`/`--kl-beta` anchor in `scripts/selfplay_az.py train`; a `scripts/run_selfplay_ei.sh`
+driver wiring gen -> train -> gate with staged logs and a `SMOKE=1` cpu path. Reuse:
+`selfplay_az.py gen`, `puct_search` (`.visits`), `run_repair_eval_gate.sh`, `ModelEvaluator`.
+
+### Result: FAILED the gate , no external gain, crux resolved
+
+Ran exactly as scoped. 200 self-play games at 512 sims -> 18,339 positions; trained the
+policy head + final norm only (value frozen) on hard argmax targets with a KL-to-base 0.05
+anchor; gated vs Maia/Leela-2700 at both sim counts (`scripts/gate_sims.sh`).
+
+| gate | candidate | base | pass bar | verdict |
+|---|---:|---:|---:|---|
+| 128 sims, 80 games | 0.281 (14W/17D/49L) | 0.287 | 0.317 | FLAT (dead even, below bar) |
+| 512 sims, 40 games | 0.762 (28W/5D/7L) | 0.825 | 0.855 | slightly DOWN |
+
+The candidate is no better than the base at 128 sims and a touch worse at 512. So the
+crux D65 was built to resolve is answered, and the answer is the pessimistic one:
+**512-sim search strength is inference-only and does not distill into the weights.** The
+mechanism (D63) was that PUCT averaging denoises the weak value head at inference; training
+the policy toward the searched-best moves did not transfer that into the net, and if
+anything the sharper priors slightly reduced the room search had to denoise (512-sim score
+dipped). Value stays the bottleneck; better priors alone do not help.
+
+This closes the one gap the self-play graveyard (D48-D50) still had: those used a weak
+128-sim teacher, so "maybe a strong 512-sim teacher would work" was the open question. It
+does not. This is the **10th** non-scale no-gain (D35, D45, D48, D49, D50, D51, D52, D53/D54,
+D60, D65). Param-scaling is the only lever with a positive slope and the user has declined
+it (D64). Honest state: no open lever that moves external strength remains, so the next
+artifact is the ceiling write-up / blog, not another training run.
+
+Artifacts: `reports/selfplay_ei/{selfplay_s512_g200.jsonl, ei_hard_s512.pt,
+ei_hard_vs2700_s128_g80_seed23.*, ei_hard_vs2700_s512_g40_seed23.*}`; code
+`scripts/{selfplay_az.py (hard-target path), run_selfplay_ei.sh, gate_sims.sh}`.

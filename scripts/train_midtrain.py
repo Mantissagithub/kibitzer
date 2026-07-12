@@ -37,6 +37,7 @@ def iter_puzzle_samples(
     *,
     rating_min: int,
     rating_max: int,
+    theme_any: set[str] | None = None,
     worker_id: int = 0,
     num_workers: int = 1,
 ) -> Iterator[PositionSample]:
@@ -54,6 +55,10 @@ def iter_puzzle_samples(
                 rating = 1500
             if rating < rating_min or rating > rating_max or len(moves) < 2:
                 continue
+            if theme_any:
+                themes = set(row[7].split()) if len(row) > 7 else set()
+                if not themes.intersection(theme_any):
+                    continue
             board = chess.Board(fen)
             try:
                 board.push_uci(moves[0])  # setup move -> solver to move
@@ -78,6 +83,7 @@ class MixedDataset(IterableDataset[dict[str, torch.Tensor]]):
         mix_ratio: float,
         rating_min: int,
         rating_max: int,
+        theme_any: set[str] | None,
         seed: int,
     ) -> None:
         self.puzzle_csv = puzzle_csv
@@ -86,6 +92,7 @@ class MixedDataset(IterableDataset[dict[str, torch.Tensor]]):
         self.mix_ratio = mix_ratio
         self.rating_min = rating_min
         self.rating_max = rating_max
+        self.theme_any = theme_any
         self.seed = seed
 
     def __iter__(self) -> Iterator[dict[str, torch.Tensor]]:
@@ -99,6 +106,7 @@ class MixedDataset(IterableDataset[dict[str, torch.Tensor]]):
             self.puzzle_csv,
             rating_min=self.rating_min,
             rating_max=self.rating_max,
+            theme_any=self.theme_any,
             worker_id=wid,
             num_workers=nw,
         )
@@ -160,6 +168,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--mix-ratio", type=float, default=0.3, help="fraction of samples drawn from puzzles")
     p.add_argument("--rating-min", type=int, default=1200)
     p.add_argument("--rating-max", type=int, default=2400)
+    p.add_argument("--theme-any", default="", help="space/comma separated puzzle themes; empty keeps all")
     p.add_argument("--lr", type=float, default=5e-5, help="low, this is a refine not a retrain")
     p.add_argument("--value-weight", type=float, default=0.1)
     p.add_argument("--warmup-frac", type=float, default=0.03)
@@ -187,6 +196,8 @@ def main() -> None:
     print(f"  max positions:   {args.max_positions:,}")
     print(f"  mix ratio:       {args.mix_ratio:g} puzzle / {1.0 - args.mix_ratio:g} game")
     print(f"  puzzle rating:   {args.rating_min}-{args.rating_max}")
+    if args.theme_any.strip():
+        print(f"  puzzle themes:   {args.theme_any}")
     print(f"  lr/value weight: {args.lr:g} / {args.value_weight:g}")
     print(f"  batch/workers:   {args.batch_size} / {args.num_workers}")
     print(f"  output:          {args.out}")
@@ -218,6 +229,7 @@ def main() -> None:
         mix_ratio=args.mix_ratio,
         rating_min=args.rating_min,
         rating_max=args.rating_max,
+        theme_any={x for x in args.theme_any.replace(",", " ").split() if x},
         seed=args.seed,
     )
     loader = DataLoader(dataset, batch_size=args.batch_size, collate_fn=collate_positions, num_workers=args.num_workers)
@@ -285,6 +297,7 @@ def main() -> None:
                 "mix_ratio": args.mix_ratio,
                 "rating_min": args.rating_min,
                 "rating_max": args.rating_max,
+                "theme_any": args.theme_any,
                 "lr": args.lr,
                 "value_weight": args.value_weight,
                 "batch_size": args.batch_size,

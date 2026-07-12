@@ -135,17 +135,48 @@ def train(args: argparse.Namespace) -> None:
     payload = torch.load(args.checkpoint, map_location=args.device, weights_only=False)
     model = Kibitzer(payload["config"]).to(args.device)
     model.load_state_dict(payload["model"])
+
+    # expert-iteration scope (D65): train only the policy head + final norm, freeze the
+    # trunk and the value head so the value backup that puct relies on at gate time is
+    # bit-identical. this isolates "do better priors alone help" from any value drift.
+    if args.freeze_nonpolicy:
+        trainable = []
+        for name, prm in model.named_parameters():
+            keep = name.startswith("policy_head") or name.startswith("norm.")
+            prm.requires_grad_(keep)
+            if keep:
+                trainable.append(prm)
+        params = trainable
+        n_train = sum(p.numel() for p in trainable)
+        print(f"[scope] frozen: policy_head + final norm only, {n_train} params trainable, value head FROZEN")
+    else:
+        params = list(model.parameters())
+
+    # anti-drift anchor (D60): weak KL(pi || base) toward the frozen base policy so the
+    # sharpened policy cannot run away from the checkpoint that already works.
+    base = None
+    if args.kl_base:
+        bp = torch.load(args.kl_base, map_location=args.device, weights_only=False)
+        base = Kibitzer(bp["config"]).to(args.device)
+        base.load_state_dict(bp["model"])
+        base.eval()
+        for prm in base.parameters():
+            prm.requires_grad_(False)
+
     samples = []
     for f in sorted(glob.glob(args.data)):
         for line in open(f, encoding="utf-8"):
             if line.strip():
                 samples.append(json.loads(line))
-    print(f"training on {len(samples)} self-play positions (soft visit-distribution targets)")
+    tgt = "hard argmax (top-1 cross-entropy)" if args.hard_targets else "soft visit-distribution"
+    val = "FROZEN" if args.freeze_nonpolicy else f"trained (w={args.value_weight})"
+    kl = f"on (beta={args.kl_beta})" if base is not None else "off"
+    print(f"[train] {len(samples)} self-play positions | targets: {tgt} | value: {val} | kl-to-base: {kl}")
     loader = DataLoader(AZDataset(samples), batch_size=args.batch_size, shuffle=True, collate_fn=az_collate)
-    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+    opt = torch.optim.AdamW(params, lr=args.lr, weight_decay=0.01)
     model.train()
     for epoch in range(args.epochs):
-        tp = tv = 0.0
+        tp = tv = tk = 0.0
         for batch in loader:
             piece = batch["piece_idx"].unsqueeze(1).to(args.device)  # [B,1,64]
             aux = batch["aux"].unsqueeze(1).to(args.device)
@@ -155,18 +186,34 @@ def train(args: argparse.Namespace) -> None:
             logits, value = model(piece, aux)
             logits = logits[:, -1, :].masked_fill(~legal, -1e9)
             logp = F.log_softmax(logits, dim=-1)
-            policy_loss = -(target * logp).sum(dim=-1).mean()  # soft cross-entropy to visit dist
-            value_loss = F.mse_loss(value[:, -1, 0], value_t)
-            loss = policy_loss + args.value_weight * value_loss
+            if args.hard_targets:
+                # the single move 512-sim search actually chose = most-visited move.
+                hard_idx = target.argmax(dim=-1)
+                policy_loss = F.nll_loss(logp, hard_idx)
+            else:
+                policy_loss = -(target * logp).sum(dim=-1).mean()
+            loss = policy_loss
+            if not args.freeze_nonpolicy:
+                value_loss = F.mse_loss(value[:, -1, 0], value_t)
+                loss = loss + args.value_weight * value_loss
+            else:
+                value_loss = torch.zeros((), device=args.device)
+            kl_val = torch.zeros((), device=args.device)
+            if base is not None:
+                with torch.no_grad():
+                    blogits, _ = base(piece, aux)
+                    blogp = F.log_softmax(blogits[:, -1, :].masked_fill(~legal, -1e9), dim=-1)
+                kl_val = (logp.exp() * (logp - blogp)).sum(dim=-1).mean()
+                loss = loss + args.kl_beta * kl_val
             opt.zero_grad(set_to_none=True)
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm_(params, 1.0)
             opt.step()
-            tp += float(policy_loss.item()); tv += float(value_loss.item())
+            tp += float(policy_loss.item()); tv += float(value_loss.item()); tk += float(kl_val.item())
         n = max(1, len(loader))
-        print(f"epoch {epoch+1}: policy {tp/n:.4f}  value {tv/n:.4f}")
-    torch.save({"model": model.state_dict(), "config": model.config, "training_objective": "selfplay_az"}, args.out)
-    print(f"saved {args.out}")
+        print(f"[epoch {epoch+1}/{args.epochs}] policy {tp/n:.4f}  value {tv/n:.4f}  kl_base {tk/n:.4f}", flush=True)
+    torch.save({"model": model.state_dict(), "config": model.config, "training_objective": "selfplay_ei_hard"}, args.out)
+    print(f"[train] saved {args.out}")
 
 
 def match(args: argparse.Namespace) -> None:
@@ -216,6 +263,10 @@ def main() -> None:
     t.add_argument("--epochs", type=int, default=4)
     t.add_argument("--batch-size", type=int, default=128)
     t.add_argument("--value-weight", type=float, default=1.0)
+    t.add_argument("--hard-targets", action="store_true", help="top-1 CE on the most-visited move (D65) instead of soft visit-dist")
+    t.add_argument("--freeze-nonpolicy", action="store_true", help="train only policy head + final norm; freeze trunk and value head")
+    t.add_argument("--kl-base", type=Path, default=None, help="anchor checkpoint for a weak KL(pi||base) anti-drift term")
+    t.add_argument("--kl-beta", type=float, default=0.05)
     t.add_argument("--out", type=Path, required=True)
     t.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     m = sub.add_parser("match")
