@@ -1,0 +1,146 @@
+{
+  "external_comparisons": [
+    {
+      "method": "TD-Leaf value update",
+      "candidate_score": 0.7625,
+      "baseline_score": 0.7375,
+      "candidate_wdl": [26, 9, 5],
+      "baseline_wdl": [27, 5, 8],
+      "candidate_games": 40,
+      "baseline_games": 40,
+      "protocol": "SF-1900, 256 sims",
+      "decision": "neutral"
+    },
+    {
+      "method": "Regret-start AZ",
+      "candidate_score": 0.075,
+      "baseline_score": 0.175,
+      "candidate_wdl": [1, 1, 18],
+      "baseline_wdl": [2, 3, 15],
+      "candidate_games": 20,
+      "baseline_games": 20,
+      "protocol": "Leela-2700, 128 sims",
+      "decision": "regressed"
+    },
+    {
+      "method": "DPO/AWAC anchor retry",
+      "candidate_score": 0.2016,
+      "baseline_score": 0.2938,
+      "candidate_wdl": [4, 17, 41],
+      "baseline_wdl": [12, 23, 45],
+      "candidate_games": 62,
+      "baseline_games": 80,
+      "protocol": "Leela-2700, 128 sims",
+      "decision": "regressed"
+    },
+    {
+      "method": "GRPO + DPPO",
+      "candidate_score": 0.275,
+      "baseline_score": 0.2938,
+      "candidate_wdl": [12, 20, 48],
+      "baseline_wdl": [12, 23, 45],
+      "candidate_games": 80,
+      "baseline_games": 80,
+      "protocol": "Leela-2700, 128 sims",
+      "decision": "neutral"
+    },
+    {
+      "method": "512-sim expert iteration",
+      "candidate_score": 0.2813,
+      "baseline_score": 0.2875,
+      "candidate_wdl": [14, 17, 49],
+      "baseline_wdl": [6, 11, 23],
+      "candidate_games": 80,
+      "baseline_games": 40,
+      "protocol": "Leela-2700, 128-sim gate",
+      "decision": "neutral"
+    },
+    {
+      "method": "512-sim expert iteration",
+      "candidate_score": 0.7625,
+      "baseline_score": 0.825,
+      "candidate_wdl": [28, 5, 7],
+      "baseline_wdl": [29, 8, 3],
+      "candidate_games": 40,
+      "baseline_games": 40,
+      "protocol": "Leela-2700, 512-sim gate",
+      "decision": "regressed"
+    }
+  ],
+  "selfplay_transfer": {
+    "method": "AlphaZero iteration 1",
+    "sibling_score": 0.625,
+    "sibling_wdl": [9, 7, 4],
+    "sibling_games": 20,
+    "external_score": 0.1,
+    "external_wdl": [1, 2, 17],
+    "external_games": 20,
+    "external_reference": 0.225,
+    "protocol": "head-to-head vs parent and Leela-2700 external gate"
+  },
+  "historical_selfplay": [
+    {
+      "method": "AZ-lite hard BC",
+      "candidate_score_vs_parent": 0.3875,
+      "wdl": [10, 11, 19],
+      "games": 40,
+      "source": "D48"
+    },
+    {
+      "method": "AlphaZero soft visits",
+      "candidate_score_vs_parent": 0.1875,
+      "wdl": [1, 13, 26],
+      "games": 40,
+      "source": "D49"
+    }
+  ],
+  "preference_first_run": {
+    "score": 0.1532,
+    "wdl": [3, 13, 46],
+    "games": 62,
+    "pair_accuracy": 0.607,
+    "pair_margin": 0.7716,
+    "anchor_kl": 0.0009,
+    "source": "D59"
+  },
+  "grpo_iterations": [
+    [1, 1900, 0.89375, null],
+    [2, 2000, 0.76875, null],
+    [3, 2100, 0.75, null],
+    [4, 2200, 0.5625, null],
+    [5, 2300, 0.61875, 0.9125],
+    [6, 2400, 0.53125, null],
+    [7, 2400, 0.59375, null],
+    [8, 2500, 0.54375, null],
+    [9, 2500, 0.5375, null],
+    [10, 2500, 0.44375, 0.9],
+    [11, 2400, 0.6, null]
+  ],
+  "failure_modes": {
+    "methods": [
+      "TD-Leaf",
+      "AZ-lite",
+      "AlphaZero",
+      "Regret-start AZ",
+      "DPO/AWAC",
+      "GRPO/DPPO",
+      "Expert iteration"
+    ],
+    "dimensions": [
+      "self-referential teacher",
+      "sparse credit",
+      "value bottleneck untouched",
+      "offline/external mismatch",
+      "narrow state distribution"
+    ],
+    "strength": [
+      [0, 1, 0, 1, 1],
+      [2, 1, 1, 1, 2],
+      [2, 2, 0, 2, 2],
+      [2, 1, 1, 2, 2],
+      [0, 0, 2, 2, 1],
+      [0, 2, 2, 1, 1],
+      [2, 1, 2, 2, 2]
+    ]
+  }
+}
