@@ -1,0 +1,7 @@
+{
+  "checkpoint": "runs/oracle_process_rl/oracle_process_rl.pt",
+  "raw_rollout": "runs/oracle_process_rl/on_policy_raw.jsonl",
+  "labeled_buffer": "runs/oracle_process_rl/oracle_labeled.jsonl",
+  "metrics": "reports/oracle_process_rl/training_metrics.jsonl",
+  "next": "run paired external gates at 128 and 512 simulations"
+}

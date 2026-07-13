@@ -22,7 +22,6 @@ CONCURRENCY="${CONCURRENCY:-1}"        # 1 = model gets the whole GPU (avoid con
 ST="${ST:-30}"                         # seconds/move ceiling (model ignores clock, does fixed sims)
 MAXMOVES="${MAXMOVES:-0}"              # 0 = no cap; smoke uses a cap so plumbing finishes quickly
 ORDO_SAMPLES="${ORDO_SAMPLES:-1000}"
-ALLOW_TIME_LOSSES="${ALLOW_TIME_LOSSES:-0}"
 ANCHORS="${ANCHORS:-2200 2500 2700 2900 3100}"   # stockfish UCI_Elo ladder
 ANCHOR_REF="${ANCHOR_REF:-2500}"       # the ladder rung Ordo pins the scale to
 BOOK="${BOOK:-resources/books/8moves_v3.pgn}"
@@ -54,6 +53,10 @@ EXPECTED_GAMES=$(( ROUNDS * 2 * $(wc -w <<< "$ANCHORS") ))
 PGN="$OUT/official_elo_s${SIMS}_gpp${GPP}.pgn"
 CUTECHESS_LOG="$OUT/cutechess_s${SIMS}_gpp${GPP}.log"
 
+# interrupted cutechess runs leave partial PGNs. a new rating run must never append
+# fresh games to that stale evidence, because Ordo would silently rate the mixture.
+rm -f "$PGN" "$CUTECHESS_LOG" "$OUT/ratings.txt" "$OUT/validation.json"
+
 echo "============================================================"
 echo " OFFICIAL ELO TOURNAMENT  (model @ ${SIMS} sims vs SF ladder)"
 echo "============================================================"
@@ -69,7 +72,7 @@ fi
 echo "book:        $BOOK  plies=$OPENING_PLIES  |  pgn -> $PGN"
 echo "cutechess:   full stdout/stderr -> $CUTECHESS_LOG"
 echo "ordo:        ratings -> $OUT/ratings.txt"
-echo "validation:  expected_games=$EXPECTED_GAMES allow_time_losses=$ALLOW_TIME_LOSSES"
+echo "validation:  expected_games=$EXPECTED_GAMES; time/illegal/unterminated games rejected"
 echo "read:        smoke checks plumbing only; real Elo needs GPP >= 40"
 echo
 
@@ -116,19 +119,26 @@ if (( finished_games < EXPECTED_GAMES )); then
   exit 130
 fi
 
-time_losses="$(grep -ci 'loses on time' "$CUTECHESS_LOG" || true)"
-if (( time_losses > 0 && ALLOW_TIME_LOSSES == 0 )); then
-  echo "error: found $time_losses time losses; this is a timing setup failure for fixed-sim Kibitzer"
-  echo "fix: raise ST until Kibitzer-s${SIMS} never flags, or lower SIMS"
-  echo "example: ST=30 SIMS=$SIMS bash scripts/run_official_elo.sh"
-  echo "full log: $CUTECHESS_LOG"
-  exit 1
-fi
-
 echo
 echo "cutechess completed:"
 echo "  log: $CUTECHESS_LOG"
 echo "  pgn: $PGN"
+
+validation_args=(
+  --pgn "$PGN"
+  --expected-games "$EXPECTED_GAMES"
+  --out "$OUT/validation.json"
+)
+if (( MAXMOVES > 0 )); then
+  validation_args+=( --allow-unterminated )
+fi
+uv run python scripts/validate_tournament_pgn.py "${validation_args[@]}"
+
+if (( MAXMOVES > 0 )); then
+  echo
+  echo "SMOKE_DONE -> protocol and PGN plumbing are valid; no rating was calculated"
+  exit 0
+fi
 
 echo
 echo "============================================================"

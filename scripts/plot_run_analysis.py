@@ -1,6 +1,6 @@
 """Regenerate reports/run_analysis/ from local training/evaluation evidence.
 
-Reads DECISIONS.md, saved checkpoint metadata under runs/, the locked
+Reads LOGBOOK.md, saved checkpoint metadata under runs/, the locked
 common-oracle diagnostics reports under runs/diagnostics/, and the small
 Stockfish match reports under eval_pgns/. Every number plotted traces back to
 one of those repo-local files; metrics with no local evidence are drawn as an
@@ -102,7 +102,7 @@ def plot_value_metrics_by_epoch(
     log.record(
         "value stage epoch curve",
         available=bool(value_epochs),
-        source="DECISIONS.md D25 (value stage table)",
+        source="LOGBOOK.md D25 (value stage table)",
     )
     log.record(
         "value-repair stage epoch curve",
@@ -160,7 +160,7 @@ def plot_value_metrics_by_epoch(
     _footnote(
         fig,
         [
-            "DECISIONS.md §D25 (value stage, hand-recorded stdout)",
+            "LOGBOOK.md §D25 (value stage, hand-recorded stdout)",
             "runs/value_repair/value_repair_best_epoch_{1,2,3}.pt (programmatic eval_metrics)",
         ],
     )
@@ -179,7 +179,7 @@ def plot_policy_metrics_by_epoch(
     log.record(
         "joint stage policy epoch curve",
         available=bool(joint_epochs),
-        source="DECISIONS.md D27 (joint stage table)",
+        source="LOGBOOK.md D27 (joint stage table)",
     )
     log.record(
         "policy-only Phase-1 stage epoch curve",
@@ -218,8 +218,8 @@ def plot_policy_metrics_by_epoch(
         ax_acc.set_xticks(epochs)
         ax_acc.legend(fontsize=7)
     else:
-        _unavailable_axis(ax_ce, "joint stage policy CE:\nnot found in DECISIONS.md")
-        _unavailable_axis(ax_acc, "joint stage policy agreement:\nnot found in DECISIONS.md")
+        _unavailable_axis(ax_ce, "joint stage policy CE:\nnot found in LOGBOOK.md")
+        _unavailable_axis(ax_acc, "joint stage policy agreement:\nnot found in LOGBOOK.md")
 
     policy_note = "not recorded locally\n(scripts/train_bc.py logs\nonly a live tqdm postfix;\nno eval or history is saved)"
     if policy_yaml is not None:
@@ -234,7 +234,7 @@ def plot_policy_metrics_by_epoch(
     _footnote(
         fig,
         [
-            "DECISIONS.md §D27 (joint stage, hand-recorded stdout)",
+            "LOGBOOK.md §D27 (joint stage, hand-recorded stdout)",
             "runs/policy/policy_final.yaml (final config only, no epoch history)",
         ],
     )
@@ -471,7 +471,7 @@ def plot_match_wdl_score(
     ax.set_ylim(0, max(r["games"] for r in results) + 2)
     ax.set_title(
         "Match result vs. Stockfish-1320 — NOISY, do not read as an Elo estimate\n"
-        "(each point is a single 10-game match; see DECISIONS.md §D27 caveat)"
+        "(each point is a single 10-game match; see LOGBOOK.md §D27 caveat)"
     )
     ax.legend(fontsize=8, loc="upper right")
 
@@ -632,9 +632,9 @@ def main() -> None:
     output_dir: Path = args.output_dir or (repo_root / "reports" / "run_analysis")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    decisions_path = repo_root / "DECISIONS.md"
+    decisions_path = repo_root / "LOGBOOK.md"
     if not decisions_path.is_file():
-        raise SystemExit(f"missing DECISIONS.md: {decisions_path}")
+        raise SystemExit(f"missing LOGBOOK.md: {decisions_path}")
     decisions_text = decisions_path.read_text(encoding="utf-8")
 
     run_dir = repo_root / "runs"

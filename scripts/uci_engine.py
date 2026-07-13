@@ -82,10 +82,19 @@ def main() -> None:
             board = parse_position(line)
         elif line.startswith("go"):
             ensure_loaded()
-            if board.is_game_over(claim_draw=True):
+            # cutechess owns draw claims. returning 0000 for a merely claimable draw
+            # is reported as an illegal move and poisons the tournament PGN.
+            if board.is_game_over(claim_draw=False):
                 send("bestmove 0000")
             else:
-                res = puct_search(board, evaluator, simulations=sims, c_puct=cpuct, value_scale=vscale)
+                res = puct_search(
+                    board,
+                    evaluator,
+                    simulations=sims,
+                    c_puct=cpuct,
+                    value_scale=vscale,
+                    claim_draw=False,
+                )
                 send(f"bestmove {res.move.uci()}")
         elif line in ("quit", "stop"):
             if line == "quit":

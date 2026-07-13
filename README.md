@@ -159,6 +159,17 @@ the model itself is 2969 Elo; it means deep PUCT extracts a lot more strength ag
 searchless external yardstick. the next confirmation is a rented-GPU 1024/2048 sweep against
 2700 plus stronger Leela checkpoints. [full report](reports/sims_sweep/README.md).
 
+the adaptive gate reuses one tree across 128/256/512/1024 checkpoints, records the real
+simulation and time budget per move, and compares against uniform 512 search on paired openings:
+
+```bash
+bash scripts/run_adaptive_search_gate.sh
+```
+
+for the clean fixed-search tournament frontier, run `bash scripts/run_official_elo_frontier.sh`.
+every PGN is checked for time forfeits, illegal moves, malformed games, and incomplete runs
+before Ordo is allowed to calculate a rating.
+
 ### az self-play
 
 alphazero-style self-play: the model plays against itself using PUCT search with dirichlet root noise, trains on the visit distribution + game outcome, then we match the new model vs the old one.
@@ -166,7 +177,7 @@ alphazero-style self-play: the model plays against itself using PUCT search with
 | iter | vs base score | vs maia 2700 | notes |
 |---|---|---|---|
 | 1 | **0.625** | 0.100 | beats itself, regresses vs maia |
-| 2 | killed | - | 400 sims too slow, see [DECISIONS.md](DECISIONS.md) |
+| 2 | killed | - | 400 sims too slow, see [LOGBOOK.md](LOGBOOK.md) |
 
 the pattern: az improves the model against its own play style (0.625 h2h) but makes it *worse* against strong opponents (maia 2700: 0.100 vs base ref 0.225). classic self-play overfitting when the data is narrow - 80 games isn't enough diversity. the new config (200 games @ 200 sims) aims to fix this.
 
@@ -251,7 +262,7 @@ this repo is closer to a lab notebook than a clean model release. the short vers
 | grpo + dppo rl (D60) | neutral; searched rollouts + trust region held ~2500 strength, no external gain (0.275 vs base 0.294) |
 | joint scratch / point tweaks | mostly negative or inconclusive |
 
-the longer failure log is in **[DECISIONS.md](DECISIONS.md)**; the scaling summary is in **[docs/scaling_study/README.md](docs/scaling_study/README.md)**.
+the longer failure log is in **[LOGBOOK.md](LOGBOOK.md)**; the scaling summary is in **[docs/scaling_study/README.md](docs/scaling_study/README.md)**.
 
 ## roadmap
 

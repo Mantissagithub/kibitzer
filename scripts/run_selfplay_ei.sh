@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 export PYTHONUNBUFFERED=1
 
-# one clean iteration of 512-sim hard-target self-play expert iteration (DECISIONS.md D65).
+# one clean iteration of 512-sim hard-target self-play expert iteration (LOGBOOK.md D65).
 # the whole bet: 512-sim search is the strong teacher (D63), so we (1) self-play at 512 sims,
 # (2) train the policy head toward the move search actually chose (hard argmax, keeps the
 # decisiveness that soft targets diluted in D49), value head frozen, weak KL-to-base anchor,

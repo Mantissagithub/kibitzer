@@ -1,7 +1,7 @@
 """Evidence loading for the local training/evaluation run-analysis report.
 
 Every function here reads a single kind of repo-local artifact (a markdown
-table in DECISIONS.md, a checkpoint's non-tensor metadata, a diagnostics JSON
+table in LOGBOOK.md, a checkpoint's non-tensor metadata, a diagnostics JSON
 report, or a match-result JSON report) and returns plain data. Nothing here
 invents numbers: missing or malformed evidence is reported as unavailable
 rather than guessed.

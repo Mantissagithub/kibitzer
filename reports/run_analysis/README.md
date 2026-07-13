@@ -47,9 +47,9 @@ Full-game win/draw/loss results vs. Stockfish-1320 from the small local cuteches
 
 | evidence | available | source |
 |---|---|---|
-| value stage epoch curve | yes | DECISIONS.md D25 (value stage table) |
+| value stage epoch curve | yes | LOGBOOK.md D25 (value stage table) |
 | value-repair stage epoch curve | yes | runs/value_repair/value_repair_best_epoch_{1,2,3}.pt (eval_metrics) |
-| joint stage policy epoch curve | yes | DECISIONS.md D27 (joint stage table) |
+| joint stage policy epoch curve | yes | LOGBOOK.md D27 (joint stage table) |
 | policy-only Phase-1 stage epoch curve | **no** | scripts/train_bc.py (train_bc.py does not compute held-out metrics or persist a per-epoch loss log locally) |
 | common-oracle value metrics by bin | yes | runs/diagnostics/validation.json, runs/diagnostics/value_repair_validation.json |
 | search regret / near-best / best-move by checkpoint, sims, value scale | yes | runs/diagnostics/validation.json, runs/diagnostics/value_repair_validation.json |

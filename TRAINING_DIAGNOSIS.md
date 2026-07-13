@@ -3,7 +3,7 @@
 ## Scope
 
 This is a read-only diagnosis of the training history recorded in
-`DECISIONS.md`, the surviving public checkpoints, the old `main` training code,
+`LOGBOOK.md`, the surviving public checkpoints, the old `main` training code,
 and the current `clean-rebuild` branch.
 
 Ten representative checkpoints were downloaded from the public Kibitzer

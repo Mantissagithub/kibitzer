@@ -3,7 +3,7 @@
 # outcomes vs a strength-capped stockfish ladder, fenced by an exact-tv dppo
 # trust region over legal moves plus a weak kl to the frozen tactical base. it
 # removes the two ingredients behind every prior failure -- self-generated
-# targets and unfenced drift (see DECISIONS.md, memory rl_grpo_dppo_plan_d55).
+# targets and unfenced drift (see LOGBOOK.md, memory rl_grpo_dppo_plan_d55).
 #
 # gen:   sample groups of games vs a fixed stockfish elo, write per-ply records.
 # train: one grpo+dppo pass over a fresh buffer, heads+norm only.

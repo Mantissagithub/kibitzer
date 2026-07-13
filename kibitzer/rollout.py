@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import random
 import time
+from collections import Counter
 from dataclasses import dataclass, field
 
 import chess
@@ -58,6 +59,15 @@ def outcome_reward(board: chess.Board, model_white: bool) -> float:
     if o is None or o.winner is None:
         return 0.5
     return 1.0 if (o.winner == chess.WHITE) == model_white else 0.0
+
+
+def termination_reason(board: chess.Board, hit_ply_cap: bool) -> str:
+    outcome = board.outcome(claim_draw=True)
+    if outcome is not None:
+        return outcome.termination.name.lower()
+    if hit_ply_cap:
+        return "ply_cap"
+    return "unknown"
 
 
 @dataclass
@@ -106,6 +116,7 @@ def generate(
         return temp if board.ply() < temp_plies else temp_late
 
     total = len(games)
+    max_model_positions = total * ((max_plies + 1) // 2)
     start = time.monotonic()
     last_log = start
     active = [g for g in games if still_active(g)]
@@ -141,34 +152,44 @@ def generate(
             g.board.push(result.move)
             g.plies += 1
         active = [g for g in games if still_active(g)]
-        # live progress so a 20-min rollout isn't a silent wait: finished games,
-        # running score, and a linear-extrapolation eta. throttled to ~20s.
+        # games advance together, so finished/total is not a valid eta. report
+        # generated model positions against the all-games ply cap instead.
         if log_prefix is not None:
             now = time.monotonic()
             finished = total - len(active)
-            if finished > 0 and (now - last_log > 20.0 or not active):
+            if now - last_log > 20.0 or not active:
                 active_ids = {id(g) for g in active}
                 w = d = l = 0
+                endings: Counter[str] = Counter()
                 for g in games:
                     if id(g) in active_ids:
                         continue
                     r = outcome_reward(g.board, g.model_white)
                     w, d, l = (w + (r == 1.0), d + (r == 0.5), l + (r == 0.0))
+                    endings[termination_reason(g.board, g.plies >= max_plies)] += 1
                 pos = sum(len(g.records) for g in games)
                 elapsed = now - start
-                eta = elapsed / finished * (total - finished)
-                print(f"  [{log_prefix}] {finished}/{total} games  {pos} pos  "
-                      f"{w}W/{d}D/{l}L  score={(w + 0.5 * d) / max(1, finished):.3f}  "
-                      f"{elapsed / 60:.1f}m elapsed  ~{eta / 60:.1f}m left", flush=True)
+                cap_eta = elapsed / max(1, pos) * max(0, max_model_positions - pos)
+                ending_text = ",".join(f"{key}:{value}" for key, value in sorted(endings.items())) or "none"
+                score = (w + 0.5 * d) / finished if finished else 0.0
+                print(
+                    f"  [{log_prefix}] finished={finished}/{total} active={len(active)}  "
+                    f"model_pos={pos}/{max_model_positions}  completed={w}W/{d}D/{l}L "
+                    f"score={score:.3f}  endings={ending_text}  "
+                    f"{elapsed / 60:.1f}m elapsed  cap_eta~{cap_eta / 60:.1f}m",
+                    flush=True,
+                )
                 last_log = now
 
     out: list[dict] = []
     for g in games:
         reward = outcome_reward(g.board, g.model_white)
+        ending = termination_reason(g.board, g.plies >= max_plies)
         for fen, action, mu in g.records:
             out.append({
                 "fen": fen, "action": action, "mu": mu,
                 "reward": reward, "group_id": g.group_id, "game_id": g.game_id,
+                "termination": ending,
             })
     return out
 

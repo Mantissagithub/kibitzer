@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Scaling-law sweep launcher (docs/scaling_study/, DECISIONS.md D36).
+# Scaling-law sweep launcher (docs/scaling_study/, LOGBOOK.md D36).
 #
 # Downloads/caches Lichess Elite months 06-10 for training and month 11 as the
 # held-out eval set, then drives scripts/scaling_sweep.py over the ladder.

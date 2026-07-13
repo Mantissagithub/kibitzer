@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import chess
+import pytest
 
 from kibitzer.inference import PositionEvaluation
-from kibitzer.search import puct_search, terminal_value
+from kibitzer.search import adaptive_puct_search, puct_search, terminal_value
 
 
 class UniformEvaluator:
@@ -24,6 +25,7 @@ def test_search_returns_legal_move_and_preserves_board() -> None:
 
     assert result.move in board.legal_moves
     assert sum(result.visits.values()) == 8
+    assert result.simulations == 8
     assert board.fen() == original_fen
 
 
@@ -57,3 +59,47 @@ def test_zero_value_scale_follows_policy_prior() -> None:
     )
 
     assert result.move == chess.Move.from_uci("e2e4")
+
+
+def test_search_can_play_a_claimable_draw_for_uci() -> None:
+    board = chess.Board()
+    for move in ["g1f3", "g8f6", "f3g1", "f6g8"] * 2:
+        board.push_uci(move)
+
+    assert board.can_claim_threefold_repetition()
+    assert not board.is_game_over(claim_draw=False)
+    with pytest.raises(ValueError, match="terminal"):
+        puct_search(board, UniformEvaluator(), simulations=4)
+
+    result = puct_search(board, UniformEvaluator(), simulations=4, claim_draw=False)
+    assert result.move in board.legal_moves
+
+
+def test_adaptive_search_stops_early_on_a_decisive_root() -> None:
+    class SharpEvaluator:
+        def evaluate(self, board: chess.Board) -> PositionEvaluation:
+            legal_moves = list(board.legal_moves)
+            priors = {move: 0.0 for move in legal_moves}
+            priors[legal_moves[0]] = 1.0
+            return PositionEvaluation(priors=priors, value=0.0)
+
+    result = adaptive_puct_search(
+        chess.Board(),
+        SharpEvaluator(),
+        stages=(8, 16),
+    )
+
+    assert result.simulations == 8
+    assert result.stop_reason == "stable"
+
+
+def test_adaptive_search_spends_more_on_an_ambiguous_root() -> None:
+    result = adaptive_puct_search(
+        chess.Board(),
+        UniformEvaluator(),
+        stages=(8, 16),
+    )
+
+    assert result.simulations == 16
+    assert result.stop_reason == "max"
+    assert sum(result.visits.values()) == 16

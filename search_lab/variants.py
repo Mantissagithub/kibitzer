@@ -2,7 +2,7 @@
 # blending a different search algorithm over the SAME policy/value net so we can
 # compare their cap at equal compute. "budget" = net evaluations per move, so
 # mcts sims and alpha-beta nodes are compared on the same footing. see the search
-# axis table / DECISIONS D50.
+# axis table / LOGBOOK D50.
 
 from __future__ import annotations
 

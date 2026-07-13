@@ -37,7 +37,9 @@ class ModelEvaluator:
 
     @torch.inference_mode()
     def evaluate(self, board: chess.Board) -> PositionEvaluation:
-        if board.is_game_over(claim_draw=True):
+        # claimable draws still need a legal UCI move when the tournament manager
+        # has not claimed them yet. actual terminal boards are the only invalid input.
+        if board.is_game_over(claim_draw=False):
             raise ValueError("cannot evaluate a terminal board")
         encoded = board_to_tensor(board)
         piece_idx = encoded["piece_idx"].unsqueeze(0).unsqueeze(0).to(self.device)

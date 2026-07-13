@@ -40,4 +40,4 @@ The only remaining fix is better representations feeding it, i.e. the scale / de
 at). The `--value-scale` passthrough stays in `maia_gauntlet.py`, default 1.0 now confirmed
 correct.
 
-Full decision: `DECISIONS.md` D62. Raw games: `kibitzer_vs2700_s128_g40_seed23_vs*.{jsonl,pgn}`.
+Full decision: `LOGBOOK.md` D62. Raw games: `kibitzer_vs2700_s128_g40_seed23_vs*.{jsonl,pgn}`.
