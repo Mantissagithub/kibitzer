@@ -325,14 +325,53 @@ MIT, see [LICENSE](LICENSE). the model weights are trained on public lichess eli
 
 ## citations
 
-beyond the typical alphazero/deepmind stuff:
+this is the paper trail behind the architectures and experiments in this repo. it includes
+ideas that worked, ideas that failed their gate, and papers that directly shaped those tests.
+
+### chess systems and human models
+
+- [alphazero](https://arxiv.org/abs/1712.01815) - self-play policy/value learning with puct search
 - [searchless chess](https://arxiv.org/abs/2402.04494) - 2895 elo with no search, 270m params, 15b positions
-- [chinchilla scaling laws](https://arxiv.org/abs/2203.15556) - compute-optimal training
-- [lc0](https://github.com/LeelaChessZero/lc0) - teacher for opd, eval opponent
-- [maia](https://arxiv.org/abs/2006.01855) - human-like chess engine, used for eval
-- [maia-2](https://arxiv.org/abs/2409.20553) - unified human-aligned chess model across skill levels
+- [knightcap](https://arxiv.org/abs/cs/9901002) - early learned chess evaluation combined with tree search
+- [maia](https://arxiv.org/abs/2006.01855) - human move prediction at rating-specific skill levels
+- [maia-2](https://arxiv.org/abs/2409.20553) - one human-aligned model spanning skill levels
+- [maia-3](https://github.com/CSSLab/maia3) ([paper](https://openreview.net/forum?id=2ltBRzEHyd)) - chessformer-based human move prediction across skill levels
 - [allie](https://arxiv.org/abs/2410.03893) - human-aligned chess with time-adaptive search
 - [maia4all](https://arxiv.org/abs/2507.21488) - efficient individual human-behavior adaptation
 - [unimaia](https://arxiv.org/abs/2605.27767) - language-steered human-like chess policy control
-- [chessmimic](https://arxiv.org/abs/2606.04473) - recent per-rating transformers; compares against maia-3
+- [chessmimic](https://arxiv.org/abs/2606.04473) - per-rating move, clock, and outcome transformers
 - [elo-disentangled style embeddings](https://arxiv.org/abs/2606.25176) - player-style modeling using maia-3 policy logits
+
+### architecture and scaling
+
+- [attention is all you need](https://arxiv.org/abs/1706.03762) - transformer attention backbone
+- [self-attention with relative position representations](https://arxiv.org/abs/1803.02155) - the Shaw relative-attention form used by the board encoder
+- [mastering chess with a transformer model](https://arxiv.org/abs/2409.12272) - the earlier chessformer position-representation study behind the shaw ablation
+- [mamba](https://arxiv.org/abs/2312.00752) - selective state spaces behind the lightweight ssm blocks
+- [rmsnorm](https://arxiv.org/abs/1910.07467) - normalization used throughout the model
+- [glu variants improve transformer](https://arxiv.org/abs/2002.05202) - the swiglu feed-forward form
+- [kaplan scaling laws](https://arxiv.org/abs/2001.08361) - the original loss-versus-scale methodology
+- [chinchilla scaling laws](https://arxiv.org/abs/2203.15556) - compute-optimal parameter/data allocation
+
+### search, distillation, and reinforcement learning
+
+- [tdleaf(lambda)](https://arxiv.org/abs/cs/9901001) - temporal-difference learning through game-tree leaves
+- [proximal policy optimization](https://arxiv.org/abs/1707.06347) - clipped policy optimization baseline
+- [advantage-weighted regression](https://arxiv.org/abs/1910.00177) - supervised-looking off-policy policy improvement
+- [awac](https://arxiv.org/abs/2006.09359) - advantage-weighted actor-critic with offline data
+- [generalized knowledge distillation](https://arxiv.org/abs/2306.13649) - on-policy distillation from student-generated states
+- [direct preference optimization](https://arxiv.org/abs/2305.18290) - pairwise preference learning without a separate reward model
+- [conservative q-learning](https://arxiv.org/abs/2006.04779) - offline-rl protection against optimistic out-of-distribution values
+- [reinforced self-training](https://arxiv.org/abs/2308.08998) - generate, score, filter, and reuse model samples
+- [deepseekmath / grpo](https://arxiv.org/abs/2402.03300) - group-relative policy optimization without a learned critic
+- [dppo](https://arxiv.org/abs/2602.04879) - divergence-constrained trust regions used in the grpo experiment
+- [maximum likelihood reinforcement learning](https://arxiv.org/abs/2602.02710) - maxrl for sparse verifiable rewards
+- [post-training insights from learning chess](https://arxiv.org/abs/2507.00726) - grpo reward design and chess-specific post-training evidence
+- [policy gradient search](https://arxiv.org/abs/1904.03646) - online planning and expert iteration without a search tree
+- [gumbel muzero](https://openreview.net/forum?id=bERaNdoegnO) - gumbel action sampling and sequential-halving search
+- [search-contempt](https://arxiv.org/abs/2504.07757) - compute-aware self-play search for alphazero-like engines
+- [pgx](https://arxiv.org/abs/2303.17503) - hardware-accelerated parallel game simulation for rl
+
+### software reference
+
+- [lc0](https://github.com/LeelaChessZero/lc0) - teacher for on-policy distillation and the fixed external opponent
