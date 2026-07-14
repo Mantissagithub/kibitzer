@@ -16,6 +16,11 @@ class UniformEvaluator:
             value=0.0,
         )
 
+    def evaluate_batch(
+        self, boards: list[chess.Board]
+    ) -> list[PositionEvaluation]:
+        return [self.evaluate(board) for board in boards]
+
 
 def test_search_returns_legal_move_and_preserves_board() -> None:
     board = chess.Board()
@@ -27,6 +32,63 @@ def test_search_returns_legal_move_and_preserves_board() -> None:
     assert sum(result.visits.values()) == 8
     assert result.simulations == 8
     assert board.fen() == original_fen
+
+
+def test_batched_search_returns_legal_move_and_preserves_board() -> None:
+    board = chess.Board()
+    original_fen = board.fen()
+
+    result = puct_search(board, UniformEvaluator(), simulations=64, batch_size=16)
+
+    assert result.move in board.legal_moves
+    assert sum(result.visits.values()) == 64
+    assert result.simulations == 64
+    assert board.fen() == original_fen
+
+
+def test_batched_search_conserves_visits_when_lines_reach_terminal() -> None:
+    # white just played g4 after 1.f3 e5; black to move has the Qh4# mating line, so
+    # some batched descents reach a terminal board and must be resolved inline without
+    # over- or under-counting the simulation budget.
+    board = chess.Board()
+    for move in ["f2f3", "e7e5", "g2g4"]:
+        board.push_uci(move)
+    original_fen = board.fen()
+
+    result = puct_search(board, UniformEvaluator(), simulations=50, batch_size=8)
+
+    assert result.move in board.legal_moves
+    assert sum(result.visits.values()) == 50
+    assert board.fen() == original_fen
+
+
+def test_batched_search_follows_prior_like_sequential() -> None:
+    class PriorEvaluator:
+        def evaluate(self, board: chess.Board) -> PositionEvaluation:
+            legal_moves = list(board.legal_moves)
+            if not board.move_stack:
+                priors = {move: 0.0 for move in legal_moves}
+                priors[chess.Move.from_uci("e2e4")] = 0.9
+                priors[chess.Move.from_uci("d2d4")] = 0.1
+            else:
+                probability = 1.0 / len(legal_moves)
+                priors = {move: probability for move in legal_moves}
+            return PositionEvaluation(priors=priors, value=1.0)
+
+        def evaluate_batch(
+            self, boards: list[chess.Board]
+        ) -> list[PositionEvaluation]:
+            return [self.evaluate(board) for board in boards]
+
+    result = puct_search(
+        chess.Board(),
+        PriorEvaluator(),
+        simulations=32,
+        value_scale=0.0,
+        batch_size=8,
+    )
+
+    assert result.move == chess.Move.from_uci("e2e4")
 
 
 def test_terminal_value_uses_side_to_move_perspective() -> None:

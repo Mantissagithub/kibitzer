@@ -1,12 +1,36 @@
 # kibitzer
 
-chess is one of the games i'm fascinated by, so i constrained myself to a laptop rtx 4060 and asked how far i could push a small chess model. this repo is that experiment: a 15.2m-param attention-only policy/value model trained on lichess elite games, evaluated with search, and iterated through a bunch of failed and useful ideas.
+![kibitzer 2581 elo](reports/official_elo/elo_card.png)
 
-(the codebase supports both attention-only and a transformer + selective-SSM hybrid, up to 32.5m params. the best trained checkpoint right now is 15.2m, attention-only, 142m positions -- that's what all the evals below use.)
+chess is one of the games i'm fascinated by, so i constrained myself to a laptop rtx 4060 and asked how far i could push a small chess model. this repo is that experiment: a 15.2m-param attention-first policy/value model (a chess-relative attention encoder feeding a hybrid attention + selective-SSM trunk) trained on lichess elite games, evaluated with search, and iterated through dozens of failed and useful ideas. the honest headline is **2581 elo** on a proper stockfish-anchored tournament, everything trained on one consumer gpu.
+
+(the codebase supports both attention-only and a transformer + selective-SSM hybrid, up to 32.5m params. the best trained checkpoint right now is 15.2m, attention-first, 142m positions -- that's what all the evals below use.)
+
+## the name
+
+a **kibitzer** (yiddish, from the german *kiebitzen*, "to look on at a card or chess game") is the onlooker who leans over the players' shoulders and offers unsolicited commentary on the best move. that is exactly what this model is. it never owns a game of its own; it watches a single position, forms an opinion, and tells you the move it would play. a spectator with a very strong opinion about your board.
+
+## headline result
+
+official tournament elo: Ordo-rated over 171 clean games against a stockfish `UCI_Elo` ladder (2200-3100), both colors, model wrapped in 512-sim PUCT, anchored sf-2500 = 2500.
+
+| | rating | games | overall score |
+|---|---:|---:|---:|
+| **kibitzer @ 512 sims** | **2581.6 ± 102.3** | 171 | 42% |
+
+it crushes sf-2200 and sf-2500, loses to sf-2700 and above, with the 50% crossover around sf-2600. read it as the strength of the model *with* search: deep PUCT is doing real work that does not distill back into the raw weights. full method, the whole ladder, and the honest caveats are in **[LOGBOOK.md](LOGBOOK.md)** (D67). a complementary searchless-ladder estimate (2483 ± 32 at 64 sims) is in [current state](#current-state) below.
 
 ## architecture
 
-![anime explainer architecture](docs/kibitzer-architecture-anime-explainer.png)
+![kibitzer hybrid chess architecture](docs/archi.png)
+
+**how it works, end to end.** a position is not fed as pixels or a move list but as structured chess state: each of the 64 squares becomes one of 13 piece tokens (six white pieces, six black, or empty), alongside a 7-dim auxiliary vector holding side-to-move, the four castling rights, en passant, and the halfmove clock. the model can also consume a history of up to 128 plies, not just the current board.
+
+the board first passes through a **3-layer position encoder** built on **Shaw-style relative attention**: instead of absolute square embeddings, every pair of squares attends through its file and rank offset, bucketed into 15x15 = 225 learned relative vectors that are folded into the attention bias (the Chessformer / Shaw form). this makes the geometry translation-invariant, so a knight-move or a diagonal relationship means the same thing wherever it sits on the board. the 64 encoded squares are then mean-pooled into a single dense vector per position, with RMSNorm and SwiGLU feed-forwards throughout.
+
+those per-position vectors flow into a **10-layer trunk that runs over the ply history**, and this is exactly why "attention-only" undersells it: the trunk interleaves two block types. every third block is **causal self-attention** for global reasoning over the game so far; the rest are **selective state-space blocks** (SSM, Mamba-style), each a causal scan with input-dependent gates, a depthwise local convolution, and a cheap recurrent state that mixes the sequence in linear time. the bet is simple: attention is powerful but quadratic, SSM is cheap and linear, so interleave them and pay the full-attention cost only where it earns its keep. the best 15.2m checkpoint leans on the attention path; the default 32.5m config runs the full four-attention / six-SSM hybrid.
+
+finally an RMSNorm feeds two heads: an **AlphaZero-style policy** over the fixed 4,672-move action space (64 from-squares x 73 move planes) and a **tanh-bounded value head** that outputs a side-to-move score in [-1, 1]. at play time those policy priors and leaf values drive a PUCT search. so it is not a single trick: a chess-relative attention encoder, a hybrid attention plus selective-SSM temporal trunk, and dual policy / value heads, trained together.
 
 **current best checkpoint (all evals use this):**
 
@@ -29,11 +53,11 @@ chess is one of the games i'm fascinated by, so i constrained myself to a laptop
 | ssm state dim | 8 |
 | params | **32.5m** |
 
-the diagram is the current code path, with exact parameter counts written in the figure. the core idea: **attention is good at global reasoning, SSM is cheaper**. interleave them - every 3rd trunk block is attention, the rest are SSM. you get the benefits of both without paying full-attention cost across the whole sequence.
+the diagram above is the current code path, with exact parameter counts written into the figure.
 
 ## published model
 
-strongest published checkpoint: **[`Pradheep1647/kibitzer-tactical-repair`](https://huggingface.co/Pradheep1647/kibitzer-tactical-repair)**.
+strongest published checkpoint: **[`Pradheep1647/kibitzer-tactical-repair`](https://huggingface.co/Pradheep1647/kibitzer-tactical-repair)** (full model card: [`docs/hf_model_card.md`](docs/hf_model_card.md)).
 
 base supervised checkpoint: **[`Pradheep1647/kibitzer-s2-shaw-142m-comp`](https://huggingface.co/Pradheep1647/kibitzer-s2-shaw-142m-comp)**.
 
@@ -74,7 +98,7 @@ read this as: with search enabled, the model is roughly even with the 2500 Stock
 
 ### scaling study
 
-the attention-only backbone scales as a clean power law (S0 → S3, all on 5m positions):
+the attention-first backbone scales as a clean power law (S0 → S3, all on 5m positions):
 
 | tag | params | policy ce | top-1 move match |
 |---|---|---|---|
@@ -104,10 +128,10 @@ paired 80-game gates vs the Leela/Maia-2700 proxy at 128 sims:
 
 takeaway: tactical R1 is the current best local branch. tactical R2 passed the held-out top-1 gate but failed the external gate, so it should not be promoted.
 
-next branch: **teacher-preference repair**. this is the current RL-ish path:
-use Stockfish/LC0-style rankings as pairwise feedback, train DPO/AWAC-style
-policy improvement from `tactical_repair.pt`, and keep the external gate as the
-only promotion signal.
+the branch tried next was **teacher-preference repair**: Stockfish/LC0-style rankings as
+pairwise feedback, DPO/AWAC-style policy improvement from `tactical_repair.pt`, external gate as
+the only promotion signal. it was rejected, the offline pair metrics did not transfer to play
+(LOGBOOK.md D59). reproduce with:
 
 ```bash
 bash scripts/run_preference_repair.sh
@@ -166,9 +190,11 @@ simulation and time budget per move, and compares against uniform 512 search on 
 bash scripts/run_adaptive_search_gate.sh
 ```
 
-for the clean fixed-search tournament frontier, run `bash scripts/run_official_elo_frontier.sh`.
-every PGN is checked for time forfeits, illegal moves, malformed games, and incomplete runs
-before Ordo is allowed to calculate a rating.
+for the clean official tournament rating, run `bash scripts/run_official_elo.sh` (a cutechess
+gauntlet vs the stockfish ladder, then Ordo). every PGN is checked for time forfeits, illegal
+moves, malformed games, and incomplete runs; `bash scripts/rate_pgn.sh <pgn>` salvages a rating
+from a finished run by dropping only the contaminated games. this is how the 2581 headline was
+produced.
 
 ### az self-play
 
@@ -266,15 +292,11 @@ the longer failure log is in **[LOGBOOK.md](LOGBOOK.md)**; the scaling summary i
 
 ## roadmap
 
-what we know works:
+what actually moved external strength:
 - **[scaling the backbone](docs/scaling_study/design.md)** (clean power law, more data > more params past ~15m)
-- **[opd distillation](reports/opd/REPORT.md)** (lc0 teacher transfers well)
-- **[more search sims](reports/sims_sweep/README.md)** (= stronger play, but it's an inference crutch)
+- **[more search sims](reports/sims_sweep/README.md)** (stronger play, but it is an inference crutch that does not distill into the weights)
 
-what we're trying next:
-- **[teacher-preference repair](scripts/run_preference_repair.sh)** - DPO-style move-pair repair from Stockfish-ranked hard positions
-- **[az self-play](scripts/az_run.sh)** - parked unless generated states get external teacher labels
-- **[td-leaf](scripts/train_tdleaf.py)** - parked; value-only gains did not transfer cleanly to play
+what got tested and closed (full autopsy in **[LOGBOOK.md](LOGBOOK.md)**, D48-D67): teacher-preference repair, az self-play (including 512-sim expert iteration), on-policy lc0 distillation, td-leaf, value-head enlargement, grpo/dppo rl, and oracle process-reward repair. every one of them held or lost strength against a fixed external opponent. the only lever with a positive slope still open is parameter and data scale, and that is a deliberate not-now: the whole point was the ceiling of a small model on a laptop, and **2581 elo is that ceiling, honestly measured.**
 
 ## setup
 
@@ -296,6 +318,10 @@ uv run python scripts/train_bc.py -h  # supervised training
 | `runs/tactical/tactical_repair_r2.pt` | rejected tactical R2; worse external gate | 2026-07-09 |
 
 generated checkpoints are gitignored. the strongest published checkpoint is on [Hugging Face](https://huggingface.co/Pradheep1647/kibitzer-tactical-repair); hf push support lives in `kibitzer/hf_utils.py`.
+
+## license
+
+MIT, see [LICENSE](LICENSE). the model weights are trained on public lichess elite games and released under the same terms.
 
 ## citations
 

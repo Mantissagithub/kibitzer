@@ -65,6 +65,7 @@ def play_game(
     maia_nodes,
     max_plies,
     value_scale=1.0,
+    batch_size=1,
     adaptive_stages=None,
     entropy_threshold=0.55,
     top2_ratio_threshold=0.75,
@@ -87,6 +88,7 @@ def play_game(
                     evaluator,
                     simulations=simulations,
                     value_scale=value_scale,
+                    batch_size=batch_size,
                 )
             else:
                 searched = adaptive_puct_search(
@@ -152,6 +154,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--top2-ratio-threshold", type=float, default=0.75)
     p.add_argument("--value-delta-threshold", type=float, default=0.10)
     p.add_argument("--value-scale", type=float, default=1.0, help="puct value-backup weight; <1 trusts the noisy value head less")
+    p.add_argument("--batch-size", type=int, default=32, help="leaf-parallel search batch; 1 = serial (exact), >1 = faster batched eval")
     p.add_argument("--max-plies", type=int, default=200)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out-jsonl", type=Path, required=True)
@@ -210,6 +213,7 @@ def main() -> None:
                 evaluator=evaluator, engine=engine, network_color=network_color,
                 opening=opening, simulations=args.simulations, maia_nodes=args.maia_nodes,
                 max_plies=args.max_plies, value_scale=args.value_scale,
+                batch_size=args.batch_size,
                 adaptive_stages=args.adaptive_stages,
                 entropy_threshold=args.entropy_threshold,
                 top2_ratio_threshold=args.top2_ratio_threshold,

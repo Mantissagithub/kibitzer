@@ -16,10 +16,13 @@ export PYTHONUNBUFFERED=1
 
 CHECKPOINT="${CHECKPOINT:-runs/tactical/tactical_repair.pt}"
 SIMS="${SIMS:-512}"
+BATCH_SIZE="${BATCH_SIZE:-32}"         # leaf-parallel search batch; ~9x faster than serial batch-1 eval
 DEVICE="${DEVICE:-cuda}"
 GPP="${GPP:-40}"                       # games per opponent (both colors)
 CONCURRENCY="${CONCURRENCY:-1}"        # 1 = model gets the whole GPU (avoid contention)
-ST="${ST:-30}"                         # seconds/move ceiling (model ignores clock, does fixed sims)
+MODEL_ST="${MODEL_ST:-10}"             # model forfeit ceiling; it does fixed sims (~1.5s/move at 512 on the 4060), this is a ~7x safety margin incl. cold start
+SF_ST="${SF_ST:-1}"                    # stockfish seconds/move; anchors are UCI_Elo-capped so short time keeps their strength and runs ~30x faster than st=30
+TIMEMARGIN="${TIMEMARGIN:-2000}"       # ms of wall-clock overrun tolerated before a time forfeit; cutechess default ~0 forfeits SF on tiny jitter at st=1
 MAXMOVES="${MAXMOVES:-0}"              # 0 = no cap; smoke uses a cap so plumbing finishes quickly
 ORDO_SAMPLES="${ORDO_SAMPLES:-1000}"
 ANCHORS="${ANCHORS:-2200 2500 2700 2900 3100}"   # stockfish UCI_Elo ladder
@@ -36,7 +39,8 @@ if [[ "${SMOKE:-0}" == "1" ]]; then
   GPP=2
   ANCHORS="${SMOKE_ANCHORS:-2500}"
   ANCHOR_REF=2500
-  ST="${SMOKE_ST:-10}"
+  MODEL_ST="${SMOKE_ST:-10}"
+  SF_ST="${SMOKE_SF_ST:-1}"
   MAXMOVES="${SMOKE_MAXMOVES:-1}"
   OPENING_PLIES="${SMOKE_OPENING_PLIES:-1}"
   ORDO_SAMPLES="${SMOKE_ORDO_SAMPLES:-100}"
@@ -61,9 +65,10 @@ echo "============================================================"
 echo " OFFICIAL ELO TOURNAMENT  (model @ ${SIMS} sims vs SF ladder)"
 echo "============================================================"
 echo "checkpoint:  $CHECKPOINT"
-echo "model:       Kibitzer-s${SIMS}  device=$DEVICE"
+echo "model:       Kibitzer-s${SIMS}  device=$DEVICE  batch=$BATCH_SIZE (leaf-parallel search)"
 echo "opponents:   SF UCI_Elo { $ANCHORS }   (Ordo anchor = SF-$ANCHOR_REF)"
 echo "games:       $GPP per opponent (both colors), concurrency $CONCURRENCY"
+echo "clock:       model st=${MODEL_ST}s (fixed $SIMS sims, ignores clock)  |  stockfish st=${SF_ST}s/move"
 if (( MAXMOVES > 0 )); then
   echo "move cap:    $MAXMOVES full moves (smoke/plumbing mode)"
 else
@@ -76,12 +81,15 @@ echo "validation:  expected_games=$EXPECTED_GAMES; time/illegal/unterminated gam
 echo "read:        smoke checks plumbing only; real Elo needs GPP >= 40"
 echo
 
-# engine list: model first (gauntlet seed), then the stockfish anchors
+# engine list: model first (gauntlet seed), then the stockfish anchors. per-engine st:
+# the model gets a generous forfeit ceiling (it returns in ~1.5s at 512 sims regardless),
+# stockfish gets a short move time because its UCI_Elo strength is capped, not time-driven.
 engines=( -engine "name=Kibitzer-s${SIMS}" "cmd=$ROOT/scripts/kibitzer_uci.sh"
           "arg=--checkpoint" "arg=$CHECKPOINT" "arg=--sims" "arg=$SIMS"
-          "arg=--device" "arg=$DEVICE" proto=uci )
+          "arg=--batch-size" "arg=$BATCH_SIZE"
+          "arg=--device" "arg=$DEVICE" proto=uci "st=$MODEL_ST" )
 for e in $ANCHORS; do
-  engines+=( -engine "name=SF-$e" "cmd=$STOCKFISH" proto=uci
+  engines+=( -engine "name=SF-$e" "cmd=$STOCKFISH" proto=uci "st=$SF_ST"
              "option.UCI_LimitStrength=true" "option.UCI_Elo=$e" )
 done
 
@@ -92,7 +100,7 @@ fi
 
 set +e
 "$CUTECHESS" "${engines[@]}" \
-  -each proto=uci "st=$ST" \
+  -each proto=uci "timemargin=$TIMEMARGIN" \
   -tournament gauntlet -concurrency "$CONCURRENCY" \
   -rounds "$ROUNDS" -games 2 -repeat \
   -openings "file=$BOOK" format=pgn order=random "plies=$OPENING_PLIES" \

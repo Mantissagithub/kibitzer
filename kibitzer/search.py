@@ -15,6 +15,21 @@ from kibitzer.inference import PositionEvaluation
 class PositionEvaluator(Protocol):
     def evaluate(self, board: chess.Board) -> PositionEvaluation: ...
 
+    def evaluate_batch(
+        self, boards: list[chess.Board]
+    ) -> list[PositionEvaluation]: ...
+
+
+def _evaluate_batch(
+    evaluator: PositionEvaluator, boards: list[chess.Board]
+) -> list[PositionEvaluation]:
+    # use the evaluator's batched path when it has one; otherwise fall back to a
+    # per-board loop so stub evaluators without evaluate_batch still work (unbatched).
+    batch = getattr(evaluator, "evaluate_batch", None)
+    if batch is not None:
+        return batch(boards)
+    return [evaluator.evaluate(board) for board in boards]
+
 
 @dataclass
 class SearchNode:
@@ -125,6 +140,80 @@ def _run_simulations(
             value = -value
 
 
+# virtual loss added to each node on a batched descent so the next descent in the
+# same batch avoids the same path. raising value_sum makes a child's mean_value look
+# better for its own side to move, which its parent's negamax selection then avoids.
+_VIRTUAL_LOSS = 1.0
+
+
+def _run_simulations_batched(
+    root: SearchNode,
+    board: chess.Board,
+    evaluator: PositionEvaluator,
+    *,
+    simulations: int,
+    c_puct: float,
+    value_scale: float,
+    claim_draw: bool,
+    batch_size: int,
+) -> None:
+    completed = 0
+    while completed < simulations:
+        target = min(batch_size, simulations - completed)
+        pending: list[tuple[SearchNode, chess.Board, list[SearchNode]]] = []
+        pending_ids: set[int] = set()
+        allocated = 0  # simulations accounted this round: resolved terminals + queued leaves
+
+        while allocated < target:
+            simulation_board = board.copy(stack=True)
+            node = root
+            path = [node]
+
+            while node.children:
+                move, node = _select_child(node, c_puct, value_scale)
+                simulation_board.push(move)
+                path.append(node)
+                if simulation_board.is_game_over(claim_draw=claim_draw):
+                    break
+
+            if simulation_board.is_game_over(claim_draw=claim_draw):
+                value = terminal_value(simulation_board, claim_draw=claim_draw)
+                for visited in reversed(path):
+                    visited.visit_count += 1
+                    visited.value_sum += value
+                    value = -value
+                completed += 1
+                allocated += 1
+                continue
+
+            # already queued this round: flush the batch and rebuild from fresh stats
+            if id(node) in pending_ids:
+                break
+
+            for visited in path:
+                visited.visit_count += 1
+                visited.value_sum += _VIRTUAL_LOSS
+            pending.append((node, simulation_board, path))
+            pending_ids.add(id(node))
+            allocated += 1
+
+        if not pending:
+            continue
+
+        evaluations = _evaluate_batch(evaluator, [leaf_board for _, leaf_board, _ in pending])
+        for (leaf, _leaf_board, path), evaluation in zip(pending, evaluations, strict=True):
+            for visited in path:
+                visited.visit_count -= 1
+                visited.value_sum -= _VIRTUAL_LOSS
+            _expand(leaf, evaluation)
+            value = evaluation.value
+            for visited in reversed(path):
+                visited.visit_count += 1
+                visited.value_sum += value
+                value = -value
+        completed += len(pending)
+
+
 def _search_result(
     root: SearchNode,
     *,
@@ -156,11 +245,14 @@ def puct_search(
     dirichlet_alpha: float = 0.0,
     dirichlet_epsilon: float = 0.0,
     claim_draw: bool = True,
+    batch_size: int = 1,
 ) -> SearchResult:
     if simulations < 1:
         raise ValueError("simulations must be at least 1")
     if value_scale < 0.0:
         raise ValueError("value_scale must be non-negative")
+    if batch_size < 1:
+        raise ValueError("batch_size must be at least 1")
     if board.is_game_over(claim_draw=claim_draw):
         raise ValueError("cannot search a terminal board")
 
@@ -177,15 +269,27 @@ def puct_search(
             child = root.children[move]
             child.prior = (1.0 - dirichlet_epsilon) * child.prior + dirichlet_epsilon * (g / total)
 
-    _run_simulations(
-        root,
-        board,
-        evaluator,
-        simulations=simulations,
-        c_puct=c_puct,
-        value_scale=value_scale,
-        claim_draw=claim_draw,
-    )
+    if batch_size > 1:
+        _run_simulations_batched(
+            root,
+            board,
+            evaluator,
+            simulations=simulations,
+            c_puct=c_puct,
+            value_scale=value_scale,
+            claim_draw=claim_draw,
+            batch_size=batch_size,
+        )
+    else:
+        _run_simulations(
+            root,
+            board,
+            evaluator,
+            simulations=simulations,
+            c_puct=c_puct,
+            value_scale=value_scale,
+            claim_draw=claim_draw,
+        )
     return _search_result(root, simulations=simulations)
 
 

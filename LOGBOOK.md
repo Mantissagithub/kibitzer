@@ -64,6 +64,7 @@ The Elo labels are also not interchangeable:
 | best inference lever | deeper PUCT search |
 | post-training RL result | no external lift from AZ, TDLeaf, GRPO, preference, or process-reward variants |
 | present model band | roughly 2500-2600 at the normal gate, below stronger Leela settings |
+| official tournament Elo | 2581.6 +/- 102.3 at 512 sims, CCRL-style Stockfish-ladder gauntlet, 171 clean games, anchored SF-2500=2500 |
 
 The short version is that the model was data-starved first. More data and better spatial
 encoding produced the real jump. After that, most fine-tuning methods optimized the wrong
@@ -79,7 +80,7 @@ into the weights.
 | II. Clean rebuild | D20-D35 | Can real positions, position-only modeling, and value repair fix search? | Position-only worked; value proxies did not transfer. |
 | III. Scaling and calibration | D36-D47 | What scales, and how strong is the result? | Data, Shaw attention, and search produced a 2500-class engine. |
 | IV. Post-training repair | D48-D59 | Can self-play, competition data, tactics, or preferences lift it? | Tactical R1 gave a small lift; most branches regressed. |
-| V. RL and search ceiling | D60-D66 | Can better RL credit or search distillation move the frontier? | Search scaled; tested weight updates stayed flat or regressed. |
+| V. RL, search ceiling, and rating | D60-D67 | Can better RL credit or search distillation move the frontier, and what is the tournament Elo? | Search scaled; weight updates stayed flat or regressed; official rating 2581.6 +/- 102.3. |
 
 ---
 
@@ -1279,6 +1280,43 @@ Coefficient tuning on these 220 positions is not justified.
 ![Held-out selection across oracle-RL epochs](reports/oracle_process_rl/fig3_training_selection.png)
 
 ![Why the final oracle-RL gate is a base sample](reports/oracle_process_rl/fig4_external_identity.png)
+
+### D67. Measure a clean official tournament Elo
+
+**Status:** Completed, first tournament-anchored rating
+
+**Question:** What is the model's rating on a proper CCRL-style tournament, not a
+single-opponent score-to-Elo transform?
+
+**Setup and evidence:** `runs/tactical/tactical_repair.pt` wrapped in 512-sim PUCT played a
+cutechess-cli gauntlet against a Stockfish `UCI_Elo` ladder (2200, 2500, 2700, 2900, 3100),
+both colors, 8-move opening book, with Stockfish-eval resign and draw adjudication. Ordo
+computed ratings with a confidence interval, anchored SF-2500 = 2500. The engine reports no
+UCI score, so adjudication is driven entirely by the Stockfish side. Of 200 games, 29 ended
+in Stockfish time-forfeits (clock artifacts at `st=1s`, not board results, some worsened by
+CPU contention during the run) and were dropped; the remaining 171 were rated by
+`scripts/rate_pgn.sh`.
+
+| player | rating | error | games | score % |
+|---|---:|---:|---:|---:|
+| SF-3100 | 2979.1 | 207.1 | 32 | 91 |
+| SF-2900 | 2857.7 | 164.3 | 35 | 83 |
+| SF-2700 | 2660.8 | 138.5 | 36 | 61 |
+| **Kibitzer-s512** | **2581.6** | **102.3** | **171** | **42** |
+| SF-2500 (anchor) | 2500.0 | ---- | 35 | 39 |
+| SF-2200 | 2318.0 | 158.8 | 33 | 18 |
+
+The model rates **2581.6 +/- 102.3**, squarely inside the 2500-2600 band this log has
+asserted from the cheaper gates. The score curve is monotonic (crushes SF-2200/2500, loses to
+SF-2700 and up), and the reconstructed ladder is sensibly ordered, so the `st=1s` anchor time
+did not distort the scale.
+
+**Read:** this is the rating of the model **wrapped in 512-sim search**, a compute-asymmetric
+match statistic, not the raw-weight rating (the 512-sim strength does not distill into the
+weights, D65). The `UCI_Elo` ladder is Stockfish's internal relative scale, not FIDE. The
++/-102 interval is wide because 171 games split across five opponents is only about 34 each.
+Artifacts: `reports/official_elo/{official_elo_s512_gpp40.pgn, official_elo_s512_gpp40_clean.pgn}`,
+scripts `run_official_elo.sh` and `rate_pgn.sh`.
 
 ---
 

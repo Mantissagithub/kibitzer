@@ -37,6 +37,7 @@ def main() -> None:
     ap.add_argument("--sims", type=int, default=512)
     ap.add_argument("--c-puct", type=float, default=1.5)
     ap.add_argument("--value-scale", type=float, default=1.0)
+    ap.add_argument("--batch-size", type=int, default=32)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = ap.parse_args()
 
@@ -52,6 +53,21 @@ def main() -> None:
         nonlocal evaluator
         if evaluator is None:
             evaluator = ModelEvaluator.from_checkpoint(args.checkpoint, device=args.device)
+            # warm the cuda kernels/caches on the real search path during the isready
+            # handshake (clock not running yet) so the first timed move never eats a
+            # cold-start spike and forfeits on time.
+            try:
+                puct_search(
+                    chess.Board(),
+                    evaluator,
+                    simulations=sims,
+                    c_puct=cpuct,
+                    value_scale=vscale,
+                    claim_draw=False,
+                    batch_size=args.batch_size,
+                )
+            except Exception:
+                pass
 
     for raw in sys.stdin:
         line = raw.strip()
@@ -94,6 +110,7 @@ def main() -> None:
                     c_puct=cpuct,
                     value_scale=vscale,
                     claim_draw=False,
+                    batch_size=args.batch_size,
                 )
                 send(f"bestmove {res.move.uci()}")
         elif line in ("quit", "stop"):
