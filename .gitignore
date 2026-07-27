@@ -27,6 +27,7 @@ ENV/
 .coverage.*
 htmlcov/
 coverage.xml
+node_modules/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -66,3 +67,8 @@ data/
 CLAUDE.local.md
 /AGENTS.md
 /CLAUDE.md
+
+# Generated website content
+/website/src/generated/
+/website/public/generated/
+/website/.vercel/
