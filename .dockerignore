@@ -1,0 +1,6 @@
+**
+!kibitzer/
+!kibitzer/**
+!inference_service/
+!inference_service/**
+inference_service/tests/

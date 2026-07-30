@@ -42,12 +42,12 @@ export default function HomePage() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild variant="accent">
-                <Link to="/games">
-                  watch the games <ArrowRight className="size-4" />
+                <Link to="/play">
+                  play Kibitzer <ArrowRight className="size-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to="/logbook">open the full logbook</Link>
+                <Link to="/games">watch the games</Link>
               </Button>
               <Button asChild variant="ghost">
                 <a
@@ -210,10 +210,10 @@ export default function HomePage() {
           </div>
           <div className="flex flex-wrap gap-3 lg:justify-end">
             <Button asChild variant="inverse">
-              <Link to="/logbook">read the logbook</Link>
+              <Link to="/play">play Kibitzer</Link>
             </Button>
             <Button asChild variant="outline" className="border-background/30 text-background hover:bg-background/10">
-              <Link to="/games">open 171 games</Link>
+              <Link to="/logbook">read the logbook</Link>
             </Button>
           </div>
         </div>

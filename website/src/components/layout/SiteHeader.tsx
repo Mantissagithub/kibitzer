@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "overview", end: true },
+  { to: "/play", label: "play" },
   { to: "/games", label: "game traces", compactLabel: "games" },
   { to: "/logbook", label: "logbook" },
 ];

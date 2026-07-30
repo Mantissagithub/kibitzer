@@ -3,6 +3,7 @@ import { SiteLayout } from "@/components/layout/SiteLayout";
 import { useRouter } from "@/lib/router";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
+const PlayPage = lazy(() => import("@/pages/PlayPage"));
 const GamesPage = lazy(() => import("@/pages/GamesPage"));
 const LogbookPage = lazy(() => import("@/pages/LogbookPage"));
 
@@ -18,7 +19,9 @@ function RouteFallback() {
 
 export default function App() {
   const { pathname } = useRouter();
-  const page = pathname === "/games"
+  const page = pathname === "/play"
+    ? <PlayPage />
+    : pathname === "/games"
     ? <GamesPage />
     : pathname === "/logbook"
       ? <LogbookPage />
