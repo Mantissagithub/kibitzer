@@ -8,6 +8,7 @@ import {
   gameStatus,
   HUMAN_TIME_LIMIT_MS,
   isHumanLowTime,
+  remainingHumanTime,
   shouldRunHumanClock,
 } from "@/lib/play";
 
@@ -29,6 +30,22 @@ describe("play game state", () => {
     expect(applyBoardMove([], "e2", "e5")).toBeNull();
   });
 
+  it("requires an explicit piece for pawn promotion", () => {
+    const moves = [
+      "a2a4",
+      "h7h6",
+      "a4a5",
+      "h6h5",
+      "a5a6",
+      "g7g6",
+      "a6b7",
+      "g6g5",
+    ];
+
+    expect(applyBoardMove(moves, "b7", "a8")).toBeNull();
+    expect(applyBoardMove(moves, "b7", "a8", "n")?.uci).toBe("b7a8n");
+  });
+
   it("reports whose turn it is", () => {
     expect(gameStatus(gameFromMoves([]))).toBe("White to move");
     expect(gameStatus(gameFromMoves(["e2e4"]))).toBe("Black to move");
@@ -40,6 +57,8 @@ describe("play game state", () => {
     expect(formatHumanClock(0)).toBe("0:00");
     expect(isHumanLowTime(60_000)).toBe(true);
     expect(isHumanLowTime(60_001)).toBe(false);
+    expect(remainingHumanTime(61_000, 1_000)).toBe(60_000);
+    expect(remainingHumanTime(61_000, 62_000)).toBe(0);
   });
 
   it("runs the clock only while the human is on move", () => {

@@ -4,6 +4,12 @@ import { Chessboard } from "react-chessboard";
 import type { Square } from "chess.js";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   inferenceApiRoot,
   requestModelMove,
   type ModelMove,
@@ -18,6 +24,7 @@ import {
   gameStatus,
   HUMAN_TIME_LIMIT_MS,
   isHumanLowTime,
+  remainingHumanTime,
   shouldRunHumanClock,
   turnFor,
   type HumanColor,
@@ -41,6 +48,24 @@ const timeControls: Array<{ value: TimeControl; label: string }> = [
   { value: "unlimited", label: "unlimited" },
 ];
 
+type PromotionPiece = "q" | "r" | "b" | "n";
+
+type PendingPromotion = {
+  from: string;
+  to: string;
+};
+
+const promotionChoices: Array<{
+  value: PromotionPiece;
+  label: string;
+  symbol: Record<HumanColor, string>;
+}> = [
+  { value: "q", label: "Queen", symbol: { white: "♕", black: "♛" } },
+  { value: "r", label: "Rook", symbol: { white: "♖", black: "♜" } },
+  { value: "b", label: "Bishop", symbol: { white: "♗", black: "♝" } },
+  { value: "n", label: "Knight", symbol: { white: "♘", black: "♞" } },
+];
+
 function formatValue(value: number) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
 }
@@ -59,6 +84,7 @@ export default function PlayPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchLog, setSearchLog] = useState<SearchRecord[]>([]);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const [humanTimeMs, setHumanTimeMs] = useState(HUMAN_TIME_LIMIT_MS);
   const [lostOnTime, setLostOnTime] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
@@ -81,16 +107,18 @@ export default function PlayPage() {
   );
   const clockRunning = timedGame && humanTurnActive;
   const lowTime = timedGame && gameStarted && !resigned && isHumanLowTime(humanTimeMs);
-  const canMove = humanTurnActive && (!timedGame || humanTimeMs > 0);
+  const canMove = humanTurnActive && pendingPromotion === null && (!timedGame || humanTimeMs > 0);
   const status = resigned
     ? "You resigned"
     : !gameStarted
       ? "Ready when you are"
       : lostOnTime
-    ? "You lost on time"
-    : thinking
-      ? "Kibitzer is searching"
-      : gameStatus(game);
+        ? "You lost on time"
+        : pendingPromotion
+          ? "Choose a promotion piece"
+          : thinking
+            ? "Kibitzer is searching"
+            : gameStatus(game);
   const checkmate = checkmateResult(game, humanColor);
   const endNotice = resigned
     ? {
@@ -119,12 +147,13 @@ export default function PlayPage() {
     humanDeadlineRef.current = deadline;
     const interval = window.setInterval(() => {
       if (humanDeadlineRef.current !== deadline) return;
-      const remaining = Math.max(0, deadline - Date.now());
+      const remaining = remainingHumanTime(deadline);
       humanTimeRef.current = remaining;
       setHumanTimeMs(remaining);
       if (remaining === 0) {
         humanDeadlineRef.current = null;
         setLostOnTime(true);
+        setPendingPromotion(null);
       }
     }, 250);
 
@@ -161,17 +190,17 @@ export default function PlayPage() {
     setThinking(false);
   }
 
-  function commitHumanClock() {
+  const commitHumanClock = () => {
     const deadline = humanDeadlineRef.current;
     if (deadline === null) return humanTimeRef.current;
 
-    const remaining = Math.max(0, deadline - Date.now());
+    const remaining = remainingHumanTime(deadline);
     humanDeadlineRef.current = null;
     humanTimeRef.current = remaining;
     setHumanTimeMs(remaining);
     if (remaining === 0) setLostOnTime(true);
     return remaining;
-  }
+  };
 
   async function askKibitzer(positionMoves: string[]) {
     const generation = requestGeneration.current + 1;
@@ -214,6 +243,7 @@ export default function PlayPage() {
     humanTimeRef.current = HUMAN_TIME_LIMIT_MS;
     setMoves([]);
     setSelectedSquare(null);
+    setPendingPromotion(null);
     setError(null);
     setSearchLog([]);
     setHumanTimeMs(HUMAN_TIME_LIMIT_MS);
@@ -234,6 +264,7 @@ export default function PlayPage() {
     cancelPendingRequest();
     humanDeadlineRef.current = null;
     setSelectedSquare(null);
+    setPendingPromotion(null);
     setResigned(true);
   }
 
@@ -247,18 +278,40 @@ export default function PlayPage() {
     resetGame();
   }
 
-  function makeHumanMove(from: string, to: string) {
-    if (!canMove) return false;
-    const applied = applyBoardMove(moves, from, to);
+  function isPromotionMove(from: string, to: string) {
+    return game.moves({ square: from as Square, verbose: true }).some(
+      (move) => move.to === to && move.isPromotion(),
+    );
+  }
+
+  function makeHumanMove(from: string, to: string, promotion?: PromotionPiece) {
+    if (!humanTurnActive || (timedGame && humanTimeMs <= 0)) return false;
+    const applied = applyBoardMove(moves, from, to, promotion);
     if (!applied) return false;
     if (timedGame && commitHumanClock() === 0) return false;
 
     setMoves(applied.moves);
+    setPendingPromotion(null);
     setSelectedSquare(null);
     setError(null);
     const nextGame = gameFromMoves(applied.moves);
     if (!nextGame.isGameOver()) void askKibitzer(applied.moves);
     return true;
+  }
+
+  function requestHumanMove(from: string, to: string) {
+    if (!canMove) return "invalid";
+    if (isPromotionMove(from, to)) {
+      setPendingPromotion({ from, to });
+      setSelectedSquare(null);
+      return "promotion";
+    }
+    return makeHumanMove(from, to) ? "moved" : "invalid";
+  }
+
+  function choosePromotion(piece: PromotionPiece) {
+    if (!pendingPromotion) return;
+    makeHumanMove(pendingPromotion.from, pendingPromotion.to, piece);
   }
 
   function handleSquareClick(square: string) {
@@ -272,7 +325,7 @@ export default function PlayPage() {
       setSelectedSquare(null);
       return;
     }
-    if (makeHumanMove(selectedSquare, square)) return;
+    if (requestHumanMove(selectedSquare, square) !== "invalid") return;
     setSelectedSquare(piece?.color === humanTurn ? square : null);
   }
 
@@ -328,7 +381,9 @@ export default function PlayPage() {
                   arrows: lastMoveArrows,
                   canDragPiece: ({ piece }) => canMove && piece.pieceType.startsWith(humanTurn),
                   onPieceDrop: ({ sourceSquare, targetSquare }) => (
-                    targetSquare ? makeHumanMove(sourceSquare, targetSquare) : false
+                    targetSquare
+                      ? requestHumanMove(sourceSquare, targetSquare) === "moved"
+                      : false
                   ),
                   onSquareClick: ({ square }) => handleSquareClick(square),
                   squareStyles,
@@ -715,6 +770,52 @@ export default function PlayPage() {
           </div>
         </aside>
       </main>
+
+      <Dialog
+        open={pendingPromotion !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingPromotion(null);
+        }}
+      >
+        {pendingPromotion ? (
+          <DialogContent className="max-w-lg border border-divider p-0">
+            <div className="border-b border-divider bg-surface/55 px-6 py-5">
+              <p className="eyebrow">pawn promotion</p>
+              <DialogTitle className="mt-2 font-serif text-3xl font-semibold tracking-[-0.04em]">
+                Choose promotion piece
+              </DialogTitle>
+              <DialogDescription className="mt-2 text-sm leading-6 text-text-secondary">
+                Complete{" "}
+                <span className="font-mono font-semibold text-foreground">
+                  {pendingPromotion.from} → {pendingPromotion.to}
+                </span>
+                . Kibitzer moves after you choose.
+              </DialogDescription>
+            </div>
+            <div className="grid grid-cols-2 gap-px bg-divider p-px sm:grid-cols-4">
+              {promotionChoices.map((choice) => (
+                <button
+                  key={choice.value}
+                  type="button"
+                  className="group flex min-h-32 flex-col items-center justify-center bg-background px-3 py-5 transition-colors hover:bg-surface-hover focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  aria-label={`Promote to ${choice.label.toLowerCase()}`}
+                  onClick={() => choosePromotion(choice.value)}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="font-serif text-5xl leading-none transition-transform group-hover:-translate-y-0.5"
+                  >
+                    {choice.symbol[humanColor]}
+                  </span>
+                  <span className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em]">
+                    {choice.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </div>
   );
 }

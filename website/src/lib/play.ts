@@ -5,6 +5,10 @@ export type HumanColor = "white" | "black";
 export const HUMAN_TIME_LIMIT_MS = 10 * 60 * 1000;
 export const HUMAN_LOW_TIME_MS = 60 * 1000;
 
+export function remainingHumanTime(deadlineMs: number, nowMs = Date.now()) {
+  return Math.max(0, deadlineMs - nowMs);
+}
+
 function parseUci(uci: string) {
   const match = /^([a-h][1-8])([a-h][1-8])([qrbn])?$/.exec(uci);
   if (!match) throw new Error(`Invalid UCI move: ${uci}`);
@@ -27,7 +31,7 @@ export function applyBoardMove(
   moves: string[],
   from: string,
   to: string,
-  promotion = "q",
+  promotion?: string,
 ) {
   try {
     const game = gameFromMoves(moves);
