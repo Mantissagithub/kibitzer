@@ -3,8 +3,12 @@ import {
   applyBoardMove,
   applyUciMove,
   checkmateResult,
+  formatHumanClock,
   gameFromMoves,
   gameStatus,
+  HUMAN_TIME_LIMIT_MS,
+  isHumanLowTime,
+  shouldRunHumanClock,
 } from "@/lib/play";
 
 describe("play game state", () => {
@@ -28,6 +32,23 @@ describe("play game state", () => {
   it("reports whose turn it is", () => {
     expect(gameStatus(gameFromMoves([]))).toBe("White to move");
     expect(gameStatus(gameFromMoves(["e2e4"]))).toBe("Black to move");
+  });
+
+  it("formats and identifies the final minute of the human clock", () => {
+    expect(formatHumanClock(HUMAN_TIME_LIMIT_MS)).toBe("10:00");
+    expect(formatHumanClock(59_000)).toBe("0:59");
+    expect(formatHumanClock(0)).toBe("0:00");
+    expect(isHumanLowTime(60_000)).toBe(true);
+    expect(isHumanLowTime(60_001)).toBe(false);
+  });
+
+  it("runs the clock only while the human is on move", () => {
+    expect(shouldRunHumanClock(gameFromMoves([]), "white", false, false)).toBe(true);
+    expect(shouldRunHumanClock(gameFromMoves(["e2e4"]), "white", false, false)).toBe(false);
+    expect(shouldRunHumanClock(gameFromMoves([]), "black", false, false)).toBe(false);
+    expect(shouldRunHumanClock(gameFromMoves(["e2e4"]), "black", false, false)).toBe(true);
+    expect(shouldRunHumanClock(gameFromMoves([]), "white", true, false)).toBe(false);
+    expect(shouldRunHumanClock(gameFromMoves([]), "white", false, true)).toBe(false);
   });
 
   it("identifies a Kibitzer checkmate against the player", () => {

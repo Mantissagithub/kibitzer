@@ -2,6 +2,9 @@ import { Chess, type Square } from "chess.js";
 
 export type HumanColor = "white" | "black";
 
+export const HUMAN_TIME_LIMIT_MS = 10 * 60 * 1000;
+export const HUMAN_LOW_TIME_MS = 60 * 1000;
+
 function parseUci(uci: string) {
   const match = /^([a-h][1-8])([a-h][1-8])([qrbn])?$/.exec(uci);
   if (!match) throw new Error(`Invalid UCI move: ${uci}`);
@@ -43,6 +46,31 @@ export function applyUciMove(moves: string[], uci: string) {
 
 export function turnFor(color: HumanColor) {
   return color === "white" ? "w" : "b";
+}
+
+export function formatHumanClock(timeMs: number) {
+  const totalSeconds = Math.max(0, Math.ceil(timeMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+export function isHumanLowTime(timeMs: number) {
+  return timeMs > 0 && timeMs <= HUMAN_LOW_TIME_MS;
+}
+
+export function shouldRunHumanClock(
+  game: Chess,
+  humanColor: HumanColor,
+  thinking: boolean,
+  lostOnTime: boolean,
+) {
+  return (
+    !thinking
+    && !lostOnTime
+    && !game.isGameOver()
+    && game.turn() === turnFor(humanColor)
+  );
 }
 
 export function checkmateResult(game: Chess, humanColor: HumanColor) {
