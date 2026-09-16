@@ -207,9 +207,18 @@ both sides played with search: kibitzer at 128-sim PUCT (`tactical_repair.pt`), 
 documented search config (the one behind its claimed ~2004 elo; the raw one-pass policy is weaker
 per its card).
 
-| matchup | score | result |
-|---|---:|---|
-| kibitzer vs LFM2.5-230M-Chess | **5.5 / 8** (5W 1D 2L) | +137 elo implied (~2141 vs LFM's claimed 2004) |
+| game | white | black | kibitzer search | LFM search | result | winner |
+|---:|---|---|---|---|:---:|---|
+| 1 | Kibitzer | LFM2.5-230M-Chess | 128-sim PUCT | depth-3 / width-6 / root-12 negamax | 0-1 | LFM2.5-230M-Chess |
+| 2 | LFM2.5-230M-Chess | Kibitzer | 128-sim PUCT | depth-3 / width-6 / root-12 negamax | 0-1 | Kibitzer |
+| 3 | Kibitzer | LFM2.5-230M-Chess | 128-sim PUCT | depth-3 / width-6 / root-12 negamax | 1-0 | Kibitzer |
+| 4 | LFM2.5-230M-Chess | Kibitzer | 128-sim PUCT | depth-3 / width-6 / root-12 negamax | 0-1 | Kibitzer |
+| 5 | Kibitzer | LFM2.5-230M-Chess | 128-sim PUCT | depth-3 / width-6 / root-12 negamax | 1-0 | Kibitzer |
+| 6 | LFM2.5-230M-Chess | Kibitzer | 128-sim PUCT | depth-3 / width-6 / root-12 negamax | 1/2-1/2 | draw |
+| 7 | Kibitzer | LFM2.5-230M-Chess | 128-sim PUCT | depth-3 / width-6 / root-12 negamax | 1-0 | Kibitzer |
+| 8 | LFM2.5-230M-Chess | Kibitzer | 128-sim PUCT | depth-3 / width-6 / root-12 negamax | 1-0 | LFM2.5-230M-Chess |
+
+**total: kibitzer 5.5 / 8** (5W 1D 2L, 68.8%) → **+137 elo implied** (~2141 vs LFM's claimed 2004).
 
 colors swapped every game, shared opening book, same protocol as the Maia gauntlet above. read
 this as a fun exhibition, not a rating - 8 games is nowhere near enough for a real error bar. full
@@ -221,6 +230,10 @@ reproduce with:
 uv run python scripts/run_vs_lfm_chess.py --checkpoint runs/tactical/tactical_repair.pt \
   --games 8 --out-jsonl reports/lfm_chess_gauntlet/games.jsonl --out-pgn reports/lfm_chess_gauntlet/games.pgn
 ```
+
+![kibitzer vs LFM2.5-230M-Chess results](reports/lfm_chess_gauntlet/fig_result.png)
+
+model: [mlabonne/LFM2.5-230M-Chess](https://huggingface.co/mlabonne/LFM2.5-230M-Chess) on Hugging Face.
 
 ### az self-play
 
