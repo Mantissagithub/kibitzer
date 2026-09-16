@@ -196,6 +196,32 @@ moves, malformed games, and incomplete runs; `bash scripts/rate_pgn.sh <pgn>` sa
 from a finished run by dropping only the contaminated games. this is how the 2581 headline was
 produced.
 
+### exhibition: vs LFM2.5-230M-Chess
+
+**not an official rating** (only 8 games, no confidence interval) - a quick head-to-head against
+[mlabonne/LFM2.5-230M-Chess](https://huggingface.co/mlabonne/LFM2.5-230M-Chess), a 230M
+chess-tuned LFM2.5. its model card doesn't document its input protocol, so the board encoding and
+its own depth-3/width-6/root-width-12 search were reverse-engineered from
+[its browser demo's source](https://hf.co/spaces/mlabonne/ChessLFM) - see `kibitzer/lfm_chess.py`.
+both sides played with search: kibitzer at 128-sim PUCT (`tactical_repair.pt`), LFM at its own
+documented search config (the one behind its claimed ~2004 elo; the raw one-pass policy is weaker
+per its card).
+
+| matchup | score | result |
+|---|---:|---|
+| kibitzer vs LFM2.5-230M-Chess | **5.5 / 8** (5W 1D 2L) | +137 elo implied (~2141 vs LFM's claimed 2004) |
+
+colors swapped every game, shared opening book, same protocol as the Maia gauntlet above. read
+this as a fun exhibition, not a rating - 8 games is nowhere near enough for a real error bar. full
+PGNs: [`reports/lfm_chess_gauntlet/games.pgn`](reports/lfm_chess_gauntlet/games.pgn), per-game
+stats: [`reports/lfm_chess_gauntlet/games.jsonl`](reports/lfm_chess_gauntlet/games.jsonl).
+reproduce with:
+
+```bash
+uv run python scripts/run_vs_lfm_chess.py --checkpoint runs/tactical/tactical_repair.pt \
+  --games 8 --out-jsonl reports/lfm_chess_gauntlet/games.jsonl --out-pgn reports/lfm_chess_gauntlet/games.pgn
+```
+
 ### az self-play
 
 alphazero-style self-play: the model plays against itself using PUCT search with dirichlet root noise, trains on the visit distribution + game outcome, then we match the new model vs the old one.
