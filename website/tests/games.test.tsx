@@ -13,6 +13,7 @@ vi.mock("react-chessboard", () => ({
 const game: GameTrace = {
   id: "test-game",
   source: "built-in",
+  collection: "ladder",
   raw: "1. e4 e5",
   headers: {
     White: "Kibitzer-s512",

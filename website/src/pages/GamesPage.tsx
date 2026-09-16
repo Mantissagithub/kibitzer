@@ -26,6 +26,8 @@ export default function GamesPage() {
   const [opponentFilter, setOpponentFilter] = useState("all");
 
   const allGames = useMemo(() => [...importedGames, ...builtInGames], [builtInGames, importedGames]);
+  const ladderCount = useMemo(() => builtInGames.filter((game) => game.collection === "ladder").length, [builtInGames]);
+  const exhibitionCount = useMemo(() => builtInGames.filter((game) => game.collection === "exhibition").length, [builtInGames]);
   const opponents = useMemo(
     () => [...new Set(allGames.map(opponentFor))].sort((a, b) => a.localeCompare(b)),
     [allGames],
@@ -43,22 +45,35 @@ export default function GamesPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/generated/official-elo-clean.pgn")
-      .then((response) => {
-        if (!response.ok) throw new Error(`Could not load built-in PGN (${response.status})`);
-        return response.text();
-      })
-      .then((text) => {
-        if (cancelled) return;
-        const parsed = parsePgnDocument(text, "built-in");
-        setBuiltInGames(parsed.games);
-        setIssues(parsed.issues);
-        setSelectedId(parsed.games[0]?.id ?? null);
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) setIssues([{ gameIndex: 0, message: error instanceof Error ? error.message : String(error) }]);
-      })
-      .finally(() => !cancelled && setLoading(false));
+
+    async function loadCollection(path: string, collection: "ladder" | "exhibition") {
+      const response = await fetch(path);
+      if (!response.ok) throw new Error(`Could not load ${collection} PGN (${response.status})`);
+      const text = await response.text();
+      return parsePgnDocument(text, "built-in", collection);
+    }
+
+    Promise.allSettled([
+      loadCollection("/generated/official-elo-clean.pgn", "ladder"),
+      loadCollection("/generated/lfm-exhibition.pgn", "exhibition"),
+    ]).then((results) => {
+      if (cancelled) return;
+      const games: GameTrace[] = [];
+      const issues: PgnParseIssue[] = [];
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          games.push(...result.value.games);
+          issues.push(...result.value.issues);
+        } else {
+          issues.push({ gameIndex: 0, message: result.reason instanceof Error ? result.reason.message : String(result.reason) });
+        }
+      }
+      setBuiltInGames(games);
+      setIssues(issues);
+      setSelectedId(games[0]?.id ?? null);
+      setLoading(false);
+    });
+
     return () => { cancelled = true; };
   }, []);
 
@@ -124,7 +139,9 @@ export default function GamesPage() {
   return (
     <div className="py-10">
       <header className="page-shell mb-8 grid gap-6 border-b border-divider pb-8 lg:grid-cols-[0.72fr_1.45fr]">
-        <p className="eyebrow">171 clean games · local imports</p>
+        <p className="eyebrow">
+          {ladderCount} tournament games · {exhibitionCount} vs LFM2.5-230M-Chess · local imports
+        </p>
         <div>
           <h1 className="font-serif text-4xl font-semibold tracking-[-0.045em] sm:text-6xl">Game traces</h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">

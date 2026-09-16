@@ -13,6 +13,7 @@ const REPO_ROOT = path.resolve(WEBSITE_ROOT, "..");
 const LOGBOOK_PATH = path.join(REPO_ROOT, "LOGBOOK.md");
 const PGN_PATH = path.join(REPO_ROOT, "reports/official_elo/official_elo_s512_gpp40_clean.pgn");
 const RATINGS_PATH = path.join(REPO_ROOT, "reports/official_elo/ratings_clean.txt");
+const LFM_EXHIBITION_PGN_PATH = path.join(REPO_ROOT, "reports/lfm_chess_gauntlet/games.pgn");
 
 const SRC_GENERATED = path.join(WEBSITE_ROOT, "src/generated");
 const PUBLIC_GENERATED = path.join(WEBSITE_ROOT, "public/generated");
@@ -182,6 +183,7 @@ async function main() {
   );
 
   await fs.copyFile(PGN_PATH, path.join(PUBLIC_GENERATED, "official-elo-clean.pgn"));
+  await fs.copyFile(LFM_EXHIBITION_PGN_PATH, path.join(PUBLIC_GENERATED, "lfm-exhibition.pgn"));
 
   const ratingsRaw = await readText(RATINGS_PATH);
   const leaderboard = parseRatings(ratingsRaw);
@@ -192,7 +194,7 @@ async function main() {
   );
 
   console.log(
-    `generate-content: wrote ${decisions.length} decisions, ${imageCount} images, ${leaderboard.length} leaderboard rows`,
+    `generate-content: wrote ${decisions.length} decisions, ${imageCount} images, ${leaderboard.length} leaderboard rows, lfm exhibition pgn`,
   );
 }
 

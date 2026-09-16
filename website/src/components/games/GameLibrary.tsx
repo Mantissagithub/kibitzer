@@ -112,8 +112,15 @@ export function GameLibrary(props: GameLibraryProps) {
                   <span className="block truncate text-[11px] font-medium text-foreground">
                     {game.headers.White ?? "?"} / {game.headers.Black ?? "?"}
                   </span>
-                  <span className="mt-1 block truncate font-mono text-[9px] text-text-tertiary">
-                    {game.headers.Opening ?? game.headers.Event ?? "Imported game"}
+                  <span className="mt-1 flex min-w-0 items-center gap-1.5">
+                    {game.collection === "exhibition" ? (
+                      <span className="shrink-0 rounded-[2px] border border-kibitzer/40 bg-kibitzer/10 px-1 py-px font-mono text-[8px] uppercase leading-tight tracking-[0.08em] text-kibitzer">
+                        exhibition
+                      </span>
+                    ) : null}
+                    <span className="truncate font-mono text-[9px] text-text-tertiary">
+                      {game.headers.Opening ?? game.headers.Event ?? "Imported game"}
+                    </span>
                   </span>
                 </span>
                 <span

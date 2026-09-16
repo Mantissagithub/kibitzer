@@ -13,9 +13,12 @@ export interface TracePly {
   comment?: string;
 }
 
+export type GameCollection = "ladder" | "exhibition" | "imported";
+
 export interface GameTrace {
   id: string;
   source: GameSource;
+  collection: GameCollection;
   raw: string;
   headers: Record<string, string>;
   plies: TracePly[];
@@ -135,6 +138,7 @@ export function splitPgnGames(doc: string): string[] {
 export function parsePgnDocument(
   doc: string,
   source: GameSource = "imported",
+  collection: GameCollection = source === "imported" ? "imported" : "ladder",
 ): PgnParseResult {
   const rawGames = splitPgnGames(doc);
   const games: GameTrace[] = [];
@@ -166,6 +170,7 @@ export function parsePgnDocument(
       games.push({
         id: buildGameId(source, gameIndex, headers, raw),
         source,
+        collection,
         raw,
         headers,
         plies,
