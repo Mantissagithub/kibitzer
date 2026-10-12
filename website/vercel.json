@@ -5,6 +5,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://mantissagithub--kibitzer-inference-serve.modal.run/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
